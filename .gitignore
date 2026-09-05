@@ -1,0 +1,29 @@
+# Agent configuration is per-developer
+AGENTS.md
+CLAUDE.md
+.claude/
+
+# Environment configuration
+.env
+
+# Node.js dependencies
+node_modules/
+
+# Generated Artifacts
+dist/
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+coverage/
+
+# Editor artifacts
+*~
+*.un~
+*.swp
+*.swo
+
+# Tool-generated artifacts (see spec section 5)
+_generated/
+
+# The spec has its own repo, cloned in here
+spec/
