@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
-import { systemVersions } from "@/renderer/api";
-import { type SystemVersions } from "@/models";
+import { useCallback, useEffect, useState } from "react";
+import { api } from "@/renderer/api";
+import { type SystemVersions } from "@/shared/system/system.types";
+import Button from "@/renderer/components/Button";
 
 export default function App() {
   const [versions, setVersions] = useState<SystemVersions | null>(null);
 
-  useEffect(function readVersions() {
-    void systemVersions().then(setVersions);
+  const readVersions = useCallback(function read() {
+    void api.system.versions().then(setVersions);
   }, []);
+
+  useEffect(readVersions, [readVersions]);
 
   return (
     <main>
@@ -24,6 +27,7 @@ export default function App() {
           <dd>{versions.node}</dd>
         </dl>
       )}
+      <Button onClick={readVersions}>Refresh</Button>
     </main>
   );
 }

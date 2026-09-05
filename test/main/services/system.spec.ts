@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { systemVersions } from "@/main/services/system";
+import { system } from "@/main/services/system";
 
 test("reports the versions the process is running on", () => {
   const expected = {
@@ -8,7 +8,7 @@ test("reports the versions the process is running on", () => {
     node: process.versions.node,
   };
 
-  const actual = systemVersions();
+  const actual = system.versions();
 
   expect(actual).toEqual(expected);
 });

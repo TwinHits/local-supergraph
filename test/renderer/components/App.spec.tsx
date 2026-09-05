@@ -6,8 +6,12 @@ const versions = { electron: "44.0.0", chrome: "140.0.0", node: "22.0.0" };
 
 vi.mock("@/renderer/api", function stubBridge() {
   return {
-    systemVersions() {
-      return Promise.resolve(versions);
+    api: {
+      system: {
+        versions() {
+          return Promise.resolve(versions);
+        },
+      },
     },
   };
 });
