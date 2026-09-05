@@ -7,11 +7,19 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,
+    // fixtures/ import each other with .ts extensions, which is how Node runs them
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "types": ["vite/client", "node"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "test", "vite.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "fixtures",
+    "vite.config.ts",
+    "vite.electron.config.ts"
+  ]
 }

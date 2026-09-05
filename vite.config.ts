@@ -4,6 +4,8 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // Electron loads the built index.html over file://, where absolute paths break
+  base: "./",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

@@ -11,9 +11,12 @@ node_modules/
 
 # Generated Artifacts
 dist/
+dist-electron/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+vite.electron.config.js
+vite.electron.config.d.ts
 coverage/
 
 # Editor artifacts
@@ -27,3 +30,6 @@ _generated/
 
 # The spec has its own repo, cloned in here
 spec/
+
+# Spike fixtures, local only
+fixtures/
