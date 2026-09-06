@@ -14,10 +14,10 @@ export default function ErrorDetails({ diagnosis, onCopy }: ErrorDetailsProps) {
   const unknown = diagnosis.key === ErrorKey.Unknown;
 
   return (
-    <div className={styles.details}>
+    <div className={styles.errorDetails}>
       <Text>{diagnosis.summary}</Text>
       <Text muted>{diagnosis.cause}</Text>
-      <ul className={styles.steps}>
+      <ul className={styles.errorDetails__steps}>
         {diagnosis.resolution.map(function toStep(step) {
           return (
             <li key={step}>

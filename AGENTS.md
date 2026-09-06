@@ -124,6 +124,10 @@ Never the wiring.
 
 - Stylesheets, not CSS-in-JS. No `styled()`, no `sx`, no style objects in markup.
 - One stylesheet per component, beside it in its folder, named after it.
+- BEM names. The block is the component, in camelCase; parts of it are
+  `block__element`; variations are `block--modifier`. Scoping already isolates
+  the file, so the value is that a class says what it belongs to when you meet
+  it in markup or in a devtools inspector.
 - Scoped, not global. In a bundler that means the `.module` infix —
   `Name.module.scss` — which is what makes the import return a class-name object
   instead of leaking the names into the page. Dropping it gives a silent

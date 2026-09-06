@@ -12,11 +12,11 @@ export default function RawOutput({ raw, startOpen }: RawOutputProps) {
     return null;
   }
   if (startOpen) {
-    return <pre className={styles.output}>{raw}</pre>;
+    return <pre className={styles.rawOutput}>{raw}</pre>;
   }
   return (
     <Collapsible label="More info">
-      <pre className={styles.output}>{raw}</pre>
+      <pre className={styles.rawOutput}>{raw}</pre>
     </Collapsible>
   );
 }

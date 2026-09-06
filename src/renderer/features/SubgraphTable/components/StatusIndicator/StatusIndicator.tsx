@@ -9,9 +9,9 @@ type StatusIndicatorProps = {
 };
 
 const SHAPES: Record<RowStatus, string> = {
-  [RowStatus.Healthy]: styles.healthy,
-  [RowStatus.Failed]: styles.failed,
-  [RowStatus.Pending]: styles.pending,
+  [RowStatus.Healthy]: styles["statusIndicator--healthy"],
+  [RowStatus.Failed]: styles["statusIndicator--failed"],
+  [RowStatus.Pending]: styles["statusIndicator--pending"],
 };
 
 /** One definition of what healthy, failed and pending look like. */
@@ -24,7 +24,7 @@ export default function StatusIndicator({
     <span
       role="img"
       aria-label={`${status}: ${reason}`}
-      className={`${styles.indicator} ${SHAPES[status]}`}
+      className={`${styles.statusIndicator} ${SHAPES[status]}`}
     />
   );
 
@@ -37,7 +37,7 @@ export default function StatusIndicator({
       <button
         type="button"
         aria-label={`${status}: ${reason}`}
-        className={styles.button}
+        className={styles.statusIndicator__button}
         onClick={onClick}
       >
         {shape}

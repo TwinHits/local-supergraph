@@ -1,10 +1,10 @@
-.details {
+.errorDetails {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.steps {
+.errorDetails__steps {
   margin: 0;
   padding-left: 1.25rem;
 }

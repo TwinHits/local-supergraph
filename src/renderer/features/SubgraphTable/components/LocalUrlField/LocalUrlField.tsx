@@ -25,9 +25,9 @@ export default function LocalUrlField({
   }
 
   return (
-    <span className={styles.cell}>
+    <span className={styles.localUrlField}>
       <Text muted>localhost:</Text>
-      <span className={styles.port}>
+      <span className={styles.localUrlField__port}>
         <NumberField
           value={port}
           label={`${name} port`}

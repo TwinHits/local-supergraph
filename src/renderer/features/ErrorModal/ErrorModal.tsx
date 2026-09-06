@@ -45,7 +45,7 @@ export default function ErrorModal({
   return (
     <Modal open={open} title={`${subgraph} — ${url}`} onClose={onClose}>
       {hasArrows(diagnoses.length) ? (
-        <div className={styles.pager}>
+        <div className={styles.errorModal__pager}>
           <IconButton
             label="Previous error"
             tooltip="Previous error"
@@ -71,7 +71,7 @@ export default function ErrorModal({
       {diagnosis === undefined ? null : (
         <ErrorDetails diagnosis={diagnosis} onCopy={onCopy} />
       )}
-      <div className={styles.footer}>
+      <div className={styles.errorModal__footer}>
         <Button onClick={onRetry}>Retry</Button>
       </div>
     </Modal>

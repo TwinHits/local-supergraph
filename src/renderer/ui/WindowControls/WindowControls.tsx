@@ -17,7 +17,7 @@ export default function WindowControls({
   onClose,
 }: WindowControlsProps) {
   return (
-    <span className={styles.controls}>
+    <span className={styles.windowControls}>
       <IconButton label="Minimize" onClick={onMinimize}>
         <Icon name={IconName.Minimize} />
       </IconButton>

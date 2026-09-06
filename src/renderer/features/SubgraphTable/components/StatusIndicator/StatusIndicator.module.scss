@@ -1,26 +1,26 @@
-.indicator {
+.statusIndicator {
   display: inline-block;
   width: 0.75rem;
   height: 0.75rem;
   vertical-align: middle;
 }
 
-.healthy {
+.statusIndicator--healthy {
   border-radius: 50%;
   background: #1b7f3b;
 }
 
-.failed {
+.statusIndicator--failed {
   background: #b3261e;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 
-.pending {
+.statusIndicator--pending {
   border-radius: 50%;
   border: 2px solid #8a8a8a;
 }
 
-.button {
+.statusIndicator__button {
   padding: 0;
   background: none;
   border: 0;

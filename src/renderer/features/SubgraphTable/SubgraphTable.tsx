@@ -48,7 +48,7 @@ export default function SubgraphTable({
 }: SubgraphTableProps) {
   return (
     <div>
-      <div className={styles.controls}>
+      <div className={styles.subgraphTable__controls}>
         <SearchField value={search} onChange={onSearchChange} />
         <Text muted>{`${rows.length} subgraphs`}</Text>
       </div>

@@ -18,18 +18,18 @@
 }
 
 // Anything you click has to opt out, or the drag region swallows the click.
-.graph,
-.actions {
+.header__graph,
+.header__actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   -webkit-app-region: no-drag;
 }
 
-.actions {
+.header__actions {
   align-self: stretch;
 }
 
-.spacer {
+.header__spacer {
   height: var(--title-bar-height);
 }

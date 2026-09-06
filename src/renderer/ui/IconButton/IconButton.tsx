@@ -22,7 +22,7 @@ export default function IconButton({
 }: IconButtonProps) {
   const button = (
     <MuiIconButton
-      className={styles.button}
+      className={styles.iconButton}
       aria-label={label}
       disableRipple
       disabled={disabled === true}

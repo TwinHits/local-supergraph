@@ -27,7 +27,7 @@ export default function SettingsModal({
 }: SettingsModalProps) {
   return (
     <Modal open={open} title="Settings" onClose={onClose}>
-      <div className={styles.fields}>
+      <div className={styles.settingsModal__fields}>
         <Select
           value={theme}
           label="Theme"

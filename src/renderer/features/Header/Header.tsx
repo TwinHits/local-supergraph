@@ -31,7 +31,7 @@ export default function Header({
   return (
     <>
       <header className={styles.header}>
-        <span className={styles.graph}>
+        <span className={styles.header__graph}>
           <Text>{graphName}</Text>
           <Select
             value={variant}
@@ -40,7 +40,7 @@ export default function Header({
             onChange={onVariantChange}
           />
         </span>
-        <span className={styles.actions}>
+        <span className={styles.header__actions}>
           {children}
           <IconButton label="Settings" onClick={onOpenSettings}>
             <Icon name={IconName.Settings} />
@@ -53,7 +53,7 @@ export default function Header({
           />
         </span>
       </header>
-      <div className={styles.spacer} />
+      <div className={styles.header__spacer} />
     </>
   );
 }

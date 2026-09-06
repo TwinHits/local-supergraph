@@ -10,7 +10,7 @@ type CopyCommandProps = {
 /** A command a signature defines, next to a button that copies it. */
 export default function CopyCommand({ command, onCopy }: CopyCommandProps) {
   return (
-    <div className={styles.command}>
+    <div className={styles.copyCommand}>
       <code>{command}</code>
       <IconButton
         label="Copy command"
