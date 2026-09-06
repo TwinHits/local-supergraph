@@ -1,3 +1,3 @@
-export { default, type Column } from "./Table";
-export { default as Row } from "./Row";
 export { default as Cell } from "./Cell";
+export { default as Row } from "./Row";
+export { type Column, default } from "./Table";

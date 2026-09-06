@@ -1,4 +1,5 @@
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
+
 import { theme, titleBarOverlay } from "@/main/services/theme/theme.service";
 import { ThemeName } from "@/shared/themes/themes.types";
 

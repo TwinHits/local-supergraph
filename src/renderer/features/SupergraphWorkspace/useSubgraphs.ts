@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+
 import { api } from "@/renderer/api";
 import {
   portMessage,
@@ -7,10 +8,10 @@ import {
 } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
 import {
   Composition,
-  SortColumn,
   type HealthMap,
   type OverrideMap,
   type Row,
+  SortColumn,
   type Subgraph,
 } from "@/shared/subgraph/subgraph.types";
 

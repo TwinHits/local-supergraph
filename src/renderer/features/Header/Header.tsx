@@ -1,9 +1,10 @@
 import { type ReactNode } from "react";
+
+import styles from "@/renderer/features/Header/Header.module.scss";
 import Icon, { IconName } from "@/renderer/ui/Icon";
 import IconAction from "@/renderer/ui/IconAction";
 import Select from "@/renderer/ui/Select";
 import Text from "@/renderer/ui/Text";
-import styles from "@/renderer/features/Header/Header.module.scss";
 
 type HeaderProps = {
   graphName: string;
@@ -14,7 +15,7 @@ type HeaderProps = {
   children: ReactNode;
 };
 
-/** The window's title bar: graph ref, variant, launch, and settings. */
+/** The window's title bar: graph, variant, launch, and settings. */
 export default function Header({
   graphName,
   variant,

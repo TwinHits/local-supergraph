@@ -1,5 +1,6 @@
 import { Collapse } from "@mui/material";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+
 import Button from "@/renderer/ui/Button";
 
 type CollapsibleProps = {

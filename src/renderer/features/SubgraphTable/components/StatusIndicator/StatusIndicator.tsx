@@ -1,6 +1,6 @@
+import styles from "@/renderer/features/SubgraphTable/components/StatusIndicator/StatusIndicator.module.scss";
 import Tooltip from "@/renderer/ui/Tooltip";
 import { RowStatus } from "@/shared/subgraph/subgraph.types";
-import styles from "@/renderer/features/SubgraphTable/components/StatusIndicator/StatusIndicator.module.scss";
 
 type StatusIndicatorProps = {
   status: RowStatus;

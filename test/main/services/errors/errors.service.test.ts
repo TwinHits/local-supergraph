@@ -1,4 +1,5 @@
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
+
 import { diagnosesFor } from "@/main/services/errors/errors.service";
 import { ErrorKey } from "@/shared/errors/errors.types";
 

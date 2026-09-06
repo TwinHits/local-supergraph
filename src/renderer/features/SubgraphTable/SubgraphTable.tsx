@@ -1,9 +1,21 @@
-import Table, { type Column } from "@/renderer/ui/Table";
-import SearchField from "@/renderer/ui/SearchField";
 import SubgraphRow from "@/renderer/features/SubgraphTable/components/SubgraphRow";
-import Text from "@/renderer/ui/Text";
-import { SortColumn, type Row } from "@/shared/subgraph/subgraph.types";
 import styles from "@/renderer/features/SubgraphTable/SubgraphTable.module.scss";
+import SearchField from "@/renderer/ui/SearchField";
+import Table, { type Column } from "@/renderer/ui/Table";
+import Text from "@/renderer/ui/Text";
+import { type Row, SortColumn } from "@/shared/subgraph/subgraph.types";
+
+type SubgraphTableProps = {
+  rows: Row[];
+  search: string;
+  sort: SortColumn;
+  portErrors: Record<string, string>;
+  onSearchChange: (search: string) => void;
+  onSortChange: (column: SortColumn) => void;
+  onLocalChange: (name: string, local: boolean) => void;
+  onPortChange: (name: string, port: number | null) => void;
+  onShowErrors: (name: string) => void;
+};
 
 /** The generic table speaks strings; only the sortable ones mean anything here. */
 function toSortColumn(key: string): SortColumn | null {
@@ -22,19 +34,7 @@ const COLUMNS: Column[] = [
   { key: SortColumn.Local, label: "Local?", sortable: true },
 ];
 
-type SubgraphTableProps = {
-  rows: Row[];
-  search: string;
-  sort: SortColumn;
-  portErrors: Record<string, string>;
-  onSearchChange: (search: string) => void;
-  onSortChange: (column: SortColumn) => void;
-  onLocalChange: (name: string, local: boolean) => void;
-  onPortChange: (name: string, port: number | null) => void;
-  onShowErrors: (name: string) => void;
-};
-
-/** The main screen's table: one row per subgraph, searchable and sortable. */
+/** One row per subgraph, searchable and sortable. */
 export default function SubgraphTable({
   rows,
   search,
@@ -55,7 +55,7 @@ export default function SubgraphTable({
       <Table
         columns={COLUMNS}
         sortKey={sort}
-        onSort={function sort(key) {
+        onSort={function sortBy(key) {
           const column = toSortColumn(key);
           if (column !== null) {
             onSortChange(column);
@@ -74,7 +74,7 @@ export default function SubgraphTable({
               onPortChange={function setPort(port) {
                 onPortChange(row.name, port);
               }}
-              onShowErrors={function showErrors() {
+              onShowErrors={function show() {
                 onShowErrors(row.name);
               }}
             />

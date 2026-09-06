@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+
 import { api } from "@/renderer/api";
 import { applyTheme } from "@/renderer/theme";
 import { DEFAULT_THEME } from "@/shared/themes/themes.constants";

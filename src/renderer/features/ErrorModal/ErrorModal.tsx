@@ -1,10 +1,7 @@
 import { useState } from "react";
-import Button from "@/renderer/ui/Button";
+
 import ErrorDetails from "@/renderer/features/ErrorModal/components/ErrorDetails";
-import Icon, { IconName } from "@/renderer/ui/Icon";
-import IconAction from "@/renderer/ui/IconAction";
-import Modal from "@/renderer/ui/Modal";
-import Text from "@/renderer/ui/Text";
+import styles from "@/renderer/features/ErrorModal/ErrorModal.module.scss";
 import {
   canGoBack,
   hasArrows,
@@ -12,8 +9,12 @@ import {
   position,
   previousIndex,
 } from "@/renderer/features/ErrorModal/errorModal.utils";
+import Button from "@/renderer/ui/Button";
+import Icon, { IconName } from "@/renderer/ui/Icon";
+import IconAction from "@/renderer/ui/IconAction";
+import Modal from "@/renderer/ui/Modal";
+import Text from "@/renderer/ui/Text";
 import { type Diagnosis } from "@/shared/errors/errors.types";
-import styles from "@/renderer/features/ErrorModal/ErrorModal.module.scss";
 
 type ErrorModalProps = {
   open: boolean;

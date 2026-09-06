@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+
 import { api } from "@/renderer/api";
 import { type Diagnosis } from "@/shared/errors/errors.types";
 

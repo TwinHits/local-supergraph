@@ -1,7 +1,7 @@
 import dark from "@/shared/themes/dark.module.scss";
 import layout from "@/shared/themes/layout.module.scss";
 import light from "@/shared/themes/light.module.scss";
-import { ThemeName, type Theme } from "@/shared/themes/themes.types";
+import { type Theme, ThemeName } from "@/shared/themes/themes.types";
 
 /** Names the values a stylesheet exports, once, for both themes. */
 function toTheme(exported: Record<string, string>): Theme {

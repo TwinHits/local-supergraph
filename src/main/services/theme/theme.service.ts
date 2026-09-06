@@ -1,9 +1,9 @@
-import { type ThemeContract } from "@/shared/themes/themes.contract";
 import {
   DEFAULT_THEME,
   THEMES,
   TITLE_BAR_HEIGHT,
 } from "@/shared/themes/themes.constants";
+import { type ThemeContract } from "@/shared/themes/themes.contract";
 import { type ThemeName } from "@/shared/themes/themes.types";
 
 type Listener = (name: ThemeName) => void;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+
 import { api } from "@/renderer/api";
 import { DEFAULT_SETTINGS } from "@/shared/settings/settings.constants";
 import { type Settings } from "@/shared/settings/settings.types";

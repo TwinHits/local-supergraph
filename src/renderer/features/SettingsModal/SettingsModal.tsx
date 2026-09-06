@@ -1,9 +1,9 @@
+import styles from "@/renderer/features/SettingsModal/SettingsModal.module.scss";
+import Modal from "@/renderer/ui/Modal";
 import NumberField from "@/renderer/ui/NumberField";
 import Select from "@/renderer/ui/Select";
-import Modal from "@/renderer/ui/Modal";
 import { type Settings } from "@/shared/settings/settings.types";
 import { ThemeName } from "@/shared/themes/themes.types";
-import styles from "@/renderer/features/SettingsModal/SettingsModal.module.scss";
 
 type SettingsModalProps = {
   open: boolean;
@@ -16,7 +16,7 @@ type SettingsModalProps = {
 
 const THEME_NAMES: string[] = [ThemeName.Light, ThemeName.Dark];
 
-/** Every defaulted setting (§4.1a). Nothing here is asked for during setup. */
+/** Every defaulted setting. Nothing here is asked for during setup. */
 export default function SettingsModal({
   open,
   settings,

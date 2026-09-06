@@ -1,6 +1,6 @@
+import styles from "@/renderer/features/SubgraphTable/components/LocalUrlField/LocalUrlField.module.scss";
 import NumberField from "@/renderer/ui/NumberField";
 import Text from "@/renderer/ui/Text";
-import styles from "@/renderer/features/SubgraphTable/components/LocalUrlField/LocalUrlField.module.scss";
 
 type LocalUrlFieldProps = {
   name: string;

@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import reactHooks from "eslint-plugin-react-hooks";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import prettier from "eslint-config-prettier";
 
 const MAIN_GROUP = ["@/main", "@/main/**"];
@@ -34,6 +35,7 @@ export default [
     plugins: {
       "@typescript-eslint": tseslint,
       "react-hooks": reactHooks,
+      "simple-import-sort": simpleImportSort,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
@@ -41,6 +43,8 @@ export default [
       "no-undef": "off",
       // a const and a type may share a name; tsc catches real redeclarations
       "no-redeclare": "off",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
     },
   },
   // The process split (spec §2.2), enforced. Each scope below is disjoint, so

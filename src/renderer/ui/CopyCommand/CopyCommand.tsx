@@ -1,6 +1,6 @@
+import styles from "@/renderer/ui/CopyCommand/CopyCommand.module.scss";
 import Icon, { IconName } from "@/renderer/ui/Icon";
 import IconAction from "@/renderer/ui/IconAction";
-import styles from "@/renderer/ui/CopyCommand/CopyCommand.module.scss";
 
 type CopyCommandProps = {
   command: string;

@@ -1,11 +1,11 @@
-import { test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { expect, test, vi } from "vitest";
+
 import SettingsModal from "@/renderer/features/SettingsModal";
 import { ThemeName } from "@/shared/themes/themes.types";
 
 const settings = { routerPort: 4041, healthCheckIntervalMs: 5000 };
-
 const onThemeChange = vi.fn();
 
 function show(onChange = vi.fn()) {

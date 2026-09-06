@@ -1,8 +1,9 @@
-import { test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { expect, test, vi } from "vitest";
+
 import ErrorModal from "@/renderer/features/ErrorModal";
-import { ErrorKey, type Diagnosis } from "@/shared/errors/errors.types";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 function diagnosis(key: ErrorKey, summary: string): Diagnosis {
   return {

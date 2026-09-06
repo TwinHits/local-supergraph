@@ -1,8 +1,8 @@
+import styles from "@/renderer/features/ErrorModal/components/ErrorDetails/ErrorDetails.module.scss";
 import CopyCommand from "@/renderer/ui/CopyCommand";
 import RawOutput from "@/renderer/ui/RawOutput";
 import Text from "@/renderer/ui/Text";
-import { ErrorKey, type Diagnosis } from "@/shared/errors/errors.types";
-import styles from "@/renderer/features/ErrorModal/components/ErrorDetails/ErrorDetails.module.scss";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 type ErrorDetailsProps = {
   diagnosis: Diagnosis;

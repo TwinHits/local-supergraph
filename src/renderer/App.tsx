@@ -1,11 +1,12 @@
 import { useState } from "react";
+
+import styles from "@/renderer/App.module.scss";
 import Header from "@/renderer/features/Header";
 import LaunchControl, { RouterState } from "@/renderer/features/LaunchControl";
 import SettingsModal from "@/renderer/features/SettingsModal";
 import SupergraphWorkspace from "@/renderer/features/SupergraphWorkspace";
 import { useSettings } from "@/renderer/hooks/useSettings";
 import { useTheme } from "@/renderer/hooks/useTheme";
-import styles from "@/renderer/App.module.scss";
 
 const GRAPH_NAME = "local-supergraph";
 const VARIANTS = ["current", "staging"];
@@ -19,7 +20,7 @@ export default function App() {
   return (
     <div className={styles.app}>
       <Header
-        graphName={`${GRAPH_NAME}@${variant}`}
+        graphName={GRAPH_NAME}
         variant={variant}
         variants={VARIANTS}
         onVariantChange={setVariant}

@@ -1,9 +1,9 @@
-import { Cell, Row as TableRow } from "@/renderer/ui/Table";
 import LocalUrlField from "@/renderer/features/SubgraphTable/components/LocalUrlField";
 import StatusIndicator from "@/renderer/features/SubgraphTable/components/StatusIndicator";
+import { Cell, Row as TableRow } from "@/renderer/ui/Table";
 import Text from "@/renderer/ui/Text";
 import Toggle from "@/renderer/ui/Toggle";
-import { RowStatus, type Row } from "@/shared/subgraph/subgraph.types";
+import { type Row, RowStatus } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphRowProps = {
   row: Row;

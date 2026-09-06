@@ -1,6 +1,7 @@
-import { test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { expect, test, vi } from "vitest";
+
 import Button from "@/renderer/ui/Button";
 
 test("shows its label", () => {

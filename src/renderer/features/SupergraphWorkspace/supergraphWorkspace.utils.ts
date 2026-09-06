@@ -1,11 +1,11 @@
 import {
   Composition,
-  Reachability,
-  RowStatus,
-  SortColumn,
   type HealthMap,
   type OverrideMap,
+  Reachability,
   type Row,
+  RowStatus,
+  SortColumn,
   type Subgraph,
 } from "@/shared/subgraph/subgraph.types";
 

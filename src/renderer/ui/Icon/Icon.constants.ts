@@ -3,6 +3,7 @@ import ChevronRightGlyph from "@mui/icons-material/ChevronRight";
 import ContentCopyGlyph from "@mui/icons-material/ContentCopy";
 import SettingsGlyph from "@mui/icons-material/Settings";
 import { type ComponentType } from "react";
+
 import { IconName } from "@/renderer/ui/Icon/Icon.types";
 
 export type Glyph = ComponentType<{ fontSize: "inherit" }>;

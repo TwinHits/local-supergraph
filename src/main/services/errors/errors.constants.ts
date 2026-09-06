@@ -1,4 +1,4 @@
-import { ErrorKey, type Diagnosis } from "@/shared/errors/errors.types";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 type Signature = Omit<Diagnosis, "raw">;
 

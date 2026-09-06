@@ -1,6 +1,6 @@
 import { PRIORITY, SIGNATURES } from "@/main/services/errors/errors.constants";
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
-import { ErrorKey, type Diagnosis } from "@/shared/errors/errors.types";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 /** Puts a subgraph's matches in priority order, highest first. */
 function inPriorityOrder(keys: ErrorKey[]): ErrorKey[] {

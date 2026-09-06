@@ -1,4 +1,5 @@
-import { test, expect } from "vitest";
+import { expect, test } from "vitest";
+
 import {
   filterRows,
   isValidPort,
@@ -11,9 +12,9 @@ import {
 import {
   Composition,
   Reachability,
+  type Row,
   RowStatus,
   SortColumn,
-  type Row,
 } from "@/shared/subgraph/subgraph.types";
 
 test("a local subgraph that answers is healthy", () => {

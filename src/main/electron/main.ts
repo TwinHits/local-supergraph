@@ -1,12 +1,15 @@
 /* v8 ignore file -- window and app lifecycle, only real Electron exercises it */
 import { join } from "node:path";
+
 import { app, BrowserWindow } from "electron";
-import { registerBridge } from "./bridge";
+
 import {
   onThemeChange,
   titleBarOverlay,
 } from "@/main/services/theme/theme.service";
 import { DEFAULT_THEME } from "@/shared/themes/themes.constants";
+
+import { registerBridge } from "./bridge";
 
 const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");

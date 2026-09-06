@@ -45,7 +45,7 @@ export default function SupergraphWorkspace({
         subgraph={errors.shown.subgraph}
         url={errors.shown.url}
         diagnoses={errors.shown.diagnoses}
-        onCopy={function copy(command) {
+        onCopy={function copy(command: string) {
           void navigator.clipboard.writeText(command);
         }}
         onRetry={subgraphs.reload}

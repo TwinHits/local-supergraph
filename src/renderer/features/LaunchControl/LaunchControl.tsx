@@ -15,7 +15,7 @@ type LaunchControlProps = {
   onStop: () => void;
 };
 
-/** Start, the wait, and the running address. No status sentences (spec §4.5). */
+/** Start, the wait, and the running address. No status sentences. */
 export default function LaunchControl({
   state,
   address,

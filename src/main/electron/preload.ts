@@ -1,5 +1,6 @@
 /* v8 ignore file -- runs only inside Electron's preload context */
 import { contextBridge, ipcRenderer } from "electron";
+
 import { BRIDGE_KEY, CHANNELS } from "@/shared/contract/contract.constants";
 import { type Calls } from "@/shared/contract/contract.types";
 
