@@ -3,6 +3,12 @@ import { type ReactNode } from "react";
 
 import HoverTooltip from "@/renderer/ui/HoverTooltip";
 import styles from "@/renderer/ui/IconButton/IconButton.module.scss";
+import { IconButtonVariant } from "@/renderer/ui/IconButton/IconButton.types";
+
+const VARIANTS: Record<IconButtonVariant, string> = {
+  [IconButtonVariant.Default]: "",
+  [IconButtonVariant.Muted]: styles["iconButton--muted"],
+};
 
 type IconButtonProps = {
   label: string;
@@ -10,6 +16,7 @@ type IconButtonProps = {
   tooltip?: string;
   disabled?: boolean;
   busy?: boolean;
+  variant?: IconButtonVariant;
   onClick: () => void;
 };
 
@@ -21,12 +28,16 @@ export default function IconButton({
   tooltip,
   disabled,
   busy,
+  variant,
   onClick,
 }: IconButtonProps) {
-  const look =
-    busy === true
-      ? `${styles.iconButton} ${styles["iconButton--busy"]}`
-      : styles.iconButton;
+  const look = [
+    styles.iconButton,
+    VARIANTS[variant ?? IconButtonVariant.Default],
+    busy === true ? styles["iconButton--busy"] : "",
+  ]
+    .join(" ")
+    .trim();
   const button = (
     <MuiIconButton
       className={look}
