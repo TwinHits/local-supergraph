@@ -25,7 +25,7 @@ export default [
   },
   js.configs.recommended,
   {
-    files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}", "fixtures/**/*.ts"],
+    files: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"],
     languageOptions: {
       parser: tsparser,
       parserOptions: {

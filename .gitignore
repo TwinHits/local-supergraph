@@ -29,6 +29,3 @@ _generated/
 
 # The spec has its own repo, cloned in here
 spec/
-
-# Spike fixtures, local only
-fixtures/

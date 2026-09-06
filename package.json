@@ -12,7 +12,6 @@
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "fix": "npm run format && npm run lint",
-    "fixtures": "node fixtures/start.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "build": "vite build && vite build --config vite.electron.config.ts --mode main && vite build --config vite.electron.config.ts --mode preload",
@@ -32,8 +31,6 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@apollo/server": "^5.5.1",
-    "@apollo/subgraph": "^2.15.0",
     "@eslint/js": "^10.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -49,7 +46,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^14.0.0",
-    "graphql": "^16.14.2",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
