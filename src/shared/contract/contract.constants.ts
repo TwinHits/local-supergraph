@@ -9,7 +9,15 @@ type Channel = {
 
 /** The runtime half of the contract: contextBridge copies real keys, so it cannot read a type. */
 export const CHANNELS = [
-  "system.versions",
+  "errors.diagnose",
+  "settings.read",
+  "settings.update",
+  "subgraph.list",
+  "subgraph.overrides",
+  "subgraph.setOverride",
+  "subgraph.health",
+  "theme.read",
+  "theme.set",
 ] as const satisfies readonly Channel[];
 
 type Unlisted = Exclude<Channel, (typeof CHANNELS)[number]>;

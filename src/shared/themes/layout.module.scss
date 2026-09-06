@@ -1,0 +1,6 @@
+// Unitless, so main can use it as a number.
+$title-bar-height: 44;
+
+:export {
+  titleBarHeight: $title-bar-height;
+}

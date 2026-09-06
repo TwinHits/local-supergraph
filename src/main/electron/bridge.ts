@@ -2,9 +2,17 @@
 import { ipcMain } from "electron";
 import { type Contract, type Handlers } from "@/shared/contract/contract.types";
 import { channelName } from "@/shared/contract/contract.constants";
-import { system } from "@/main/services/system";
+import { errors } from "@/main/services/errors/errors.service";
+import { settings } from "@/main/services/settings/settings.service";
+import { subgraph } from "@/main/services/subgraph/subgraph.service";
+import { theme } from "@/main/services/theme/theme.service";
 
-const handlers = { system } satisfies Contract;
+const handlers = {
+  errors,
+  settings,
+  subgraph,
+  theme,
+} satisfies Contract;
 
 /** Registers one IPC handler per contract method. */
 export function registerBridge(): void {
@@ -18,7 +26,9 @@ function register(implementations: Handlers): void {
       ipcMain.handle(
         channelName(namespace, method),
         function handle(_event, ...args: unknown[]) {
-          return implementation(...args);
+          // IPC gives us untyped arguments. The cast holds because the only
+          // caller is the renderer's api, typed from this same Contract.
+          return (implementation as (...called: unknown[]) => unknown)(...args);
         }
       );
     }

@@ -2,6 +2,11 @@
 import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 import { registerBridge } from "./bridge";
+import {
+  onThemeChange,
+  titleBarOverlay,
+} from "@/main/services/theme/theme.service";
+import { DEFAULT_THEME } from "@/shared/themes/themes.constants";
 
 const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");
@@ -11,16 +16,22 @@ function createWindow(): void {
   const window = new BrowserWindow({
     width: 1100,
     height: 700,
+    titleBarStyle: "hidden",
+    titleBarOverlay: titleBarOverlay(DEFAULT_THEME),
+    trafficLightPosition: { x: 16, y: 14 },
     webPreferences: {
       preload: PRELOAD_SCRIPT,
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  onThemeChange(function repaint(name) {
+    window.setTitleBarOverlay(titleBarOverlay(name));
+  });
+
   void window.loadFile(RENDERER_HTML);
 }
 
-// Quits on macOS too. One window, and closing it means the developer is done.
 function quit(): void {
   app.quit();
 }

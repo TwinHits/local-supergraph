@@ -1,0 +1,29 @@
+.indicator {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  vertical-align: middle;
+}
+
+.healthy {
+  border-radius: 50%;
+  background: #1b7f3b;
+}
+
+.failed {
+  background: #b3261e;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.pending {
+  border-radius: 50%;
+  border: 2px solid #8a8a8a;
+}
+
+.button {
+  padding: 0;
+  background: none;
+  border: 0;
+  line-height: 0;
+  cursor: pointer;
+}

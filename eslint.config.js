@@ -14,7 +14,7 @@ const MAIN_MESSAGE =
   "The renderer reaches main through @/renderer/api, never by importing it.";
 const RENDERER_MESSAGE = "Main must not depend on the renderer.";
 const MUI_MESSAGE =
-  "Only src/renderer/components may import MUI. One file decides how a control looks (spec §2.6).";
+  "Only src/renderer/ui may import MUI. One file decides how a control looks (spec §2.6).";
 const MODELS_MESSAGE =
   "models.ts is shared by both sides, so it depends on neither.";
 
@@ -86,7 +86,7 @@ export default [
     },
   },
   {
-    files: ["src/renderer/components/**/*.{ts,tsx}"],
+    files: ["src/renderer/ui/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -99,7 +99,7 @@ export default [
   },
   {
     files: ["src/renderer/**/*.{ts,tsx}"],
-    ignores: ["src/renderer/components/**"],
+    ignores: ["src/renderer/ui/**"],
     rules: {
       "no-restricted-imports": [
         "error",

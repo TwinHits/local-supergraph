@@ -1,0 +1,33 @@
+.header {
+  position: fixed;
+  top: env(titlebar-area-y, 0);
+  left: env(titlebar-area-x, 0);
+  width: env(titlebar-area-width, 100%);
+  height: env(titlebar-area-height, var(--title-bar-height));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  // Border-box, or the padding and border push the header past the safe area
+  // and under the native buttons. The right padding is the gap before them.
+  box-sizing: border-box;
+  padding: 0 2.5rem 0 1rem;
+  background: var(--title-bar-background);
+  border-bottom: 1px solid var(--title-bar-border);
+
+  -webkit-app-region: drag;
+  z-index: 1;
+}
+
+// Anything you click has to opt out, or the drag region swallows the click.
+.graph,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  -webkit-app-region: no-drag;
+}
+
+.spacer {
+  height: env(titlebar-area-height, var(--title-bar-height));
+}

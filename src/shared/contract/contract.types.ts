@@ -1,8 +1,14 @@
-import { type SystemContract } from "@/shared/system/system.contract";
+import { type ErrorsContract } from "@/shared/errors/errors.contract";
+import { type SettingsContract } from "@/shared/settings/settings.contract";
+import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
+import { type ThemeContract } from "@/shared/themes/themes.contract";
 
 /** Every domain's surface, composed. One line per domain, no signatures here. */
 export type Contract = {
-  system: SystemContract;
+  errors: ErrorsContract;
+  settings: SettingsContract;
+  subgraph: SubgraphContract;
+  theme: ThemeContract;
 };
 
 /** The same surface as the renderer sees it: every call crosses IPC, so every call is async. */
@@ -17,10 +23,10 @@ export type Promised<T> = {
 };
 
 /**
- * One contract method, with its own signature erased. A method with fewer
- * parameters is assignable to one taking more, so every Contract method fits.
+ * One contract method with its parameters erased. `never` accepts every
+ * signature, since parameters are checked the other way round from returns.
  */
-type AnyMethod = (...args: unknown[]) => unknown;
+type AnyMethod = (...args: never[]) => unknown;
 
 /** The contract with its keys erased, so main can walk it in a loop. */
 export type Handlers = Record<string, Record<string, AnyMethod>>;

@@ -16,7 +16,7 @@ npm start
 - **Components** — one file each. A component earns a folder with an `index.ts` when it outgrows one file; the import path is the same either way, so no caller changes. Three tiers: MUI wrappers, composed components, screens. See spec §2.6.
 - **Services** — main-process logic lives in plain `.ts` modules behind named interfaces, testable without Electron. See spec §2.3.
 - **Imports** — `@/` resolves to `src/`. No relative paths that climb.
-- **Tests** — `test/` mirrors `src/` folder for folder, `.spec.tsx` naming.
+- **Tests** — `test/` mirrors `src/` folder for folder, `.test.tsx` naming.
 - **Node** — pinned in `.nvmrc` and `engines`, tracking the active LTS line.
 - **Hooks** — `check` on commit, `test:coverage` on push. Raise the coverage thresholds as the project grows.
 
