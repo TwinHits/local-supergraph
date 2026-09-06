@@ -30,7 +30,7 @@ const COLUMNS: Column[] = [
   { key: SortColumn.Status, label: "Status", sortable: true },
   { key: SortColumn.Name, label: "Name", sortable: true },
   { key: "url", label: "URL", sortable: false },
-  { key: SortColumn.Local, label: "Local?", sortable: true },
+  { key: SortColumn.Local, label: "Local", sortable: true },
 ];
 
 /** One row per subgraph, searchable and sortable. */
