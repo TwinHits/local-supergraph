@@ -2,10 +2,10 @@ import { type ReactNode } from "react";
 
 import styles from "@/renderer/features/Header/Header.module.scss";
 import { useWindowControls } from "@/renderer/hooks/useWindowControls";
-import Icon, { IconName } from "@/renderer/ui/Icon";
+import DropdownSelect from "@/renderer/ui/DropdownSelect";
 import IconButton from "@/renderer/ui/IconButton";
-import Select from "@/renderer/ui/Select";
-import Text from "@/renderer/ui/Text";
+import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import TextLabel from "@/renderer/ui/TextLabel";
 import WindowControls from "@/renderer/ui/WindowControls";
 
 type HeaderProps = {
@@ -32,19 +32,25 @@ export default function Header({
     <>
       <header className={styles.header}>
         <span className={styles.header__graph}>
-          <Text>{graphName}</Text>
-          <Select
-            value={variant}
-            label="Variant"
-            options={variants}
-            onChange={onVariantChange}
-          />
+          <IconButton
+            label="Settings"
+            tooltip="Settings"
+            onClick={onOpenSettings}
+          >
+            <IconGlyph name={IconName.Settings} />
+          </IconButton>
+          <span className={styles.header__label}>
+            <TextLabel>{graphName}</TextLabel>
+            <DropdownSelect
+              value={variant}
+              label="Variant"
+              options={variants}
+              onChange={onVariantChange}
+            />
+          </span>
+          {children}
         </span>
         <span className={styles.header__actions}>
-          {children}
-          <IconButton label="Settings" onClick={onOpenSettings}>
-            <Icon name={IconName.Settings} />
-          </IconButton>
           <WindowControls
             maximized={controls.maximized}
             onMinimize={controls.minimize}

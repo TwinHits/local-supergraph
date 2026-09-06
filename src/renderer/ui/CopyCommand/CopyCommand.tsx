@@ -1,6 +1,6 @@
 import styles from "@/renderer/ui/CopyCommand/CopyCommand.module.scss";
-import Icon, { IconName } from "@/renderer/ui/Icon";
 import IconButton from "@/renderer/ui/IconButton";
+import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 
 type CopyCommandProps = {
   command: string;
@@ -19,7 +19,7 @@ export default function CopyCommand({ command, onCopy }: CopyCommandProps) {
           onCopy(command);
         }}
       >
-        <Icon name={IconName.Copy} />
+        <IconGlyph name={IconName.Copy} />
       </IconButton>
     </div>
   );

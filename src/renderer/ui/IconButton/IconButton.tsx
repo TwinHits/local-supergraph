@@ -1,28 +1,35 @@
 import { IconButton as MuiIconButton } from "@mui/material";
 import { type ReactNode } from "react";
 
+import HoverTooltip from "@/renderer/ui/HoverTooltip";
 import styles from "@/renderer/ui/IconButton/IconButton.module.scss";
-import Tooltip from "@/renderer/ui/Tooltip";
 
 type IconButtonProps = {
   label: string;
   children: ReactNode;
   tooltip?: string;
   disabled?: boolean;
+  busy?: boolean;
   onClick: () => void;
 };
 
-/** Every icon-only button, in the one shape the app uses. */
+/** Every icon-only button, in the one shape the app uses. Busy adds a ring for
+ * work this button started that is still going. */
 export default function IconButton({
   label,
   children,
   tooltip,
   disabled,
+  busy,
   onClick,
 }: IconButtonProps) {
+  const look =
+    busy === true
+      ? `${styles.iconButton} ${styles["iconButton--busy"]}`
+      : styles.iconButton;
   const button = (
     <MuiIconButton
-      className={styles.iconButton}
+      className={look}
       aria-label={label}
       disableRipple
       disabled={disabled === true}
@@ -38,8 +45,8 @@ export default function IconButton({
 
   // A disabled button fires no events, so the tooltip needs a wrapper to hear.
   return (
-    <Tooltip title={tooltip}>
-      <span>{button}</span>
-    </Tooltip>
+    <HoverTooltip title={tooltip}>
+      <span className={styles.iconButton__tooltip}>{button}</span>
+    </HoverTooltip>
   );
 }

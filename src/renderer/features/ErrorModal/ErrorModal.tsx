@@ -9,11 +9,11 @@ import {
   position,
   previousIndex,
 } from "@/renderer/features/ErrorModal/errorModal.utils";
-import Button from "@/renderer/ui/Button";
-import Icon, { IconName } from "@/renderer/ui/Icon";
+import ActionButton from "@/renderer/ui/ActionButton";
 import IconButton from "@/renderer/ui/IconButton";
-import Modal from "@/renderer/ui/Modal";
-import Text from "@/renderer/ui/Text";
+import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import ModalDialog from "@/renderer/ui/ModalDialog";
+import TextLabel from "@/renderer/ui/TextLabel";
 import { type Diagnosis } from "@/shared/errors/errors.types";
 
 type ErrorModalProps = {
@@ -43,7 +43,7 @@ export default function ErrorModal({
   const diagnosis = diagnoses[index];
 
   return (
-    <Modal open={open} title={`${subgraph} — ${url}`} onClose={onClose}>
+    <ModalDialog open={open} title={`${subgraph} — ${url}`} onClose={onClose}>
       {hasArrows(diagnoses.length) ? (
         <div className={styles.errorModal__pager}>
           <IconButton
@@ -54,9 +54,9 @@ export default function ErrorModal({
               setIndex(previousIndex(index));
             }}
           >
-            <Icon name={IconName.Back} />
+            <IconGlyph name={IconName.Back} />
           </IconButton>
-          <Text muted>{position(index, diagnoses.length)}</Text>
+          <TextLabel muted>{position(index, diagnoses.length)}</TextLabel>
           <IconButton
             label="Next error"
             tooltip="Next error"
@@ -64,7 +64,7 @@ export default function ErrorModal({
               setIndex(nextIndex(index, diagnoses.length));
             }}
           >
-            <Icon name={IconName.Forward} />
+            <IconGlyph name={IconName.Forward} />
           </IconButton>
         </div>
       ) : null}
@@ -72,8 +72,8 @@ export default function ErrorModal({
         <ErrorDetails diagnosis={diagnosis} onCopy={onCopy} />
       )}
       <div className={styles.errorModal__footer}>
-        <Button onClick={onRetry}>Retry</Button>
+        <ActionButton onClick={onRetry}>Retry</ActionButton>
       </div>
-    </Modal>
+    </ModalDialog>
   );
 }

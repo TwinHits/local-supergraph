@@ -1,6 +1,6 @@
-import Button from "@/renderer/ui/Button";
-import Spinner from "@/renderer/ui/Spinner";
-import Text from "@/renderer/ui/Text";
+import IconButton from "@/renderer/ui/IconButton";
+import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
 
 export enum RouterState {
   Stopped = "stopped",
@@ -10,30 +10,40 @@ export enum RouterState {
 
 type LaunchControlProps = {
   state: RouterState;
-  address: string;
   onStart: () => void;
   onStop: () => void;
 };
 
-/** Start, the wait, and the running address. No status sentences. */
+/** Starts the supergraph, and stops it. One button, two jobs. */
 export default function LaunchControl({
   state,
-  address,
   onStart,
   onStop,
 }: LaunchControlProps) {
   if (state === RouterState.Starting) {
-    return <Spinner label="Starting" />;
+    return <LoadingSpinner label="Starting supergraph" />;
   }
 
   if (state === RouterState.Running) {
     return (
-      <>
-        <Text>{address}</Text>
-        <Button onClick={onStop}>Stop</Button>
-      </>
+      <IconButton
+        label="Stop supergraph"
+        tooltip="Stop supergraph"
+        busy
+        onClick={onStop}
+      >
+        <IconGlyph name={IconName.Stop} />
+      </IconButton>
     );
   }
 
-  return <Button onClick={onStart}>Start Supergraph</Button>;
+  return (
+    <IconButton
+      label="Start supergraph"
+      tooltip="Start supergraph"
+      onClick={onStart}
+    >
+      <IconGlyph name={IconName.Start} />
+    </IconButton>
+  );
 }

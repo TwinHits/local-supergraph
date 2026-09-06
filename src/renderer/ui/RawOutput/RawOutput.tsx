@@ -1,4 +1,4 @@
-import Collapsible from "@/renderer/ui/Collapsible";
+import CollapsiblePanel from "@/renderer/ui/CollapsiblePanel";
 import styles from "@/renderer/ui/RawOutput/RawOutput.module.scss";
 
 type RawOutputProps = {
@@ -15,8 +15,8 @@ export default function RawOutput({ raw, startOpen }: RawOutputProps) {
     return <pre className={styles.rawOutput}>{raw}</pre>;
   }
   return (
-    <Collapsible label="More info">
+    <CollapsiblePanel label="More info">
       <pre className={styles.rawOutput}>{raw}</pre>
-    </Collapsible>
+    </CollapsiblePanel>
   );
 }

@@ -1,5 +1,6 @@
 // Element plus class, or MUI's own rules win the tie and round the hover.
 button.iconButton {
+  position: relative;
   align-self: stretch;
   width: 46px;
   padding: 0;
@@ -10,4 +11,27 @@ button.iconButton {
   &:hover {
     background: var(--title-bar-hover);
   }
+}
+
+.iconButton--busy::after {
+  content: "";
+  position: absolute;
+  inset: 0.55rem;
+  border: 2px solid transparent;
+  border-top-color: currentcolor;
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+// A tooltip wraps its child, so the wrapper has to stretch or the button
+// inside it stops short of the bar's height.
+.iconButton__tooltip {
+  display: flex;
+  align-self: stretch;
 }

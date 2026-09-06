@@ -1,8 +1,8 @@
 import LocalUrlField from "@/renderer/features/SubgraphTable/components/LocalUrlField";
 import StatusIndicator from "@/renderer/features/SubgraphTable/components/StatusIndicator";
-import { Cell, Row as TableRow } from "@/renderer/ui/Table";
-import Text from "@/renderer/ui/Text";
-import Toggle from "@/renderer/ui/Toggle";
+import { TableCell, TableRow } from "@/renderer/ui/DataTable";
+import TextLabel from "@/renderer/ui/TextLabel";
+import ToggleSwitch from "@/renderer/ui/ToggleSwitch";
 import { type Row, RowStatus } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphRowProps = {
@@ -23,17 +23,17 @@ export default function SubgraphRow({
 }: SubgraphRowProps) {
   return (
     <TableRow>
-      <Cell>
+      <TableCell>
         <StatusIndicator
           status={row.status}
           reason={row.reason}
           onClick={row.status === RowStatus.Failed ? onShowErrors : undefined}
         />
-      </Cell>
-      <Cell>
-        <Text>{row.name}</Text>
-      </Cell>
-      <Cell>
+      </TableCell>
+      <TableCell>
+        <TextLabel>{row.name}</TextLabel>
+      </TableCell>
+      <TableCell>
         <LocalUrlField
           name={row.name}
           local={row.local}
@@ -42,14 +42,14 @@ export default function SubgraphRow({
           portError={portError}
           onPortChange={onPortChange}
         />
-      </Cell>
-      <Cell>
-        <Toggle
+      </TableCell>
+      <TableCell>
+        <ToggleSwitch
           checked={row.local}
           label={`Run ${row.name} locally`}
           onChange={onLocalChange}
         />
-      </Cell>
+      </TableCell>
     </TableRow>
   );
 }

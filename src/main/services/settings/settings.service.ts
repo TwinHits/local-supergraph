@@ -1,4 +1,7 @@
-import { DEFAULT_SETTINGS } from "@/shared/settings/settings.constants";
+import {
+  DEFAULT_SETTINGS,
+  LOCAL_HOST,
+} from "@/shared/settings/settings.constants";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type Settings } from "@/shared/settings/settings.types";
 
@@ -11,5 +14,14 @@ export const settings: SettingsContract = {
   update(patch: Partial<Settings>) {
     Object.assign(current, patch);
     return current;
+  },
+  routerAddress() {
+    return `http://${LOCAL_HOST}:${current.routerPort}`;
+  },
+  localAddress(port: number | null) {
+    if (port === null) {
+      return `${LOCAL_HOST}:`;
+    }
+    return `${LOCAL_HOST}:${port}`;
   },
 };

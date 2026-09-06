@@ -12,6 +12,8 @@ export const CHANNELS = [
   "errors.diagnose",
   "settings.read",
   "settings.update",
+  "settings.routerAddress",
+  "settings.localAddress",
   "subgraph.list",
   "subgraph.overrides",
   "subgraph.setOverride",

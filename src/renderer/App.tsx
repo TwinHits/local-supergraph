@@ -28,7 +28,6 @@ export default function App() {
       >
         <LaunchControl
           state={router}
-          address={`http://localhost:${settings.settings.routerPort}`}
           onStart={function start() {
             setRouter(RouterState.Running);
           }}

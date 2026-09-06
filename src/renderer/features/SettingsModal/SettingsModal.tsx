@@ -1,7 +1,7 @@
 import styles from "@/renderer/features/SettingsModal/SettingsModal.module.scss";
-import Modal from "@/renderer/ui/Modal";
+import DropdownSelect from "@/renderer/ui/DropdownSelect";
+import ModalDialog from "@/renderer/ui/ModalDialog";
 import NumberField from "@/renderer/ui/NumberField";
-import Select from "@/renderer/ui/Select";
 import { type Settings } from "@/shared/settings/settings.types";
 import { ThemeName } from "@/shared/themes/themes.types";
 
@@ -26,9 +26,9 @@ export default function SettingsModal({
   onClose,
 }: SettingsModalProps) {
   return (
-    <Modal open={open} title="Settings" onClose={onClose}>
+    <ModalDialog open={open} title="Settings" onClose={onClose}>
       <div className={styles.settingsModal__fields}>
-        <Select
+        <DropdownSelect
           value={theme}
           label="Theme"
           options={THEME_NAMES}
@@ -51,6 +51,6 @@ export default function SettingsModal({
           }}
         />
       </div>
-    </Modal>
+    </ModalDialog>
   );
 }

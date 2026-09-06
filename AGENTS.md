@@ -44,6 +44,12 @@ feature imports them — private functions with a test seam.
 When a second feature needs the same helper, it moves to `shared/utils/` and
 keeps its own name, `<thing>.utils.ts`.
 
+### Wrappers that add an element
+
+A wrapper that puts its child inside a new element makes that element the one
+the parent lays out. Layout properties have to move onto the wrapper, or the
+child stops obeying the parent it appears to be in.
+
 ### A thin entry point
 
 The top-level component wires the parts together and does nothing else. A reader
@@ -63,7 +69,8 @@ types and constants land beside it as `<domain>.types.ts` and
 
 - Name the thing, not the category. A folder called `components/` describes
   every folder in the project; one called `features/` says what is in it.
-- Two words for a component, so it reads as a thing rather than a label.
+- Two words for every component, wrappers included. A one-word name is usually
+  the category, and it collides with the library type it wraps.
 - Never pick a name one character from another name in the same import list.
 - A value belongs in one place. If a default is written twice, one of them is
   about to be wrong.
@@ -84,9 +91,6 @@ rule.
 
 Write these as disjoint lint scopes. `no-restricted-imports` does not merge
 options across configs, so overlapping scopes silently drop a restriction.
-
-Every restriction has a case that violates it, checked once. A rule that passes
-because nothing matches it is not a rule.
 
 ## Crossing a process boundary
 
@@ -128,6 +132,9 @@ Never the wiring.
   `block__element`; variations are `block--modifier`. Scoping already isolates
   the file, so the value is that a class says what it belongs to when you meet
   it in markup or in a devtools inspector.
+- Overriding a component library needs a stronger selector than its own. A
+  library injects its styles after yours, so equal specificity loses. Add the
+  element to the selector and say in a comment why it is there.
 - Scoped, not global. In a bundler that means the `.module` infix —
   `Name.module.scss` — which is what makes the import return a class-name object
   instead of leaking the names into the page. Dropping it gives a silent

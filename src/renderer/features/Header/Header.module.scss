@@ -5,11 +5,9 @@
   width: 100%;
   height: var(--title-bar-height);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
-  gap: 1rem;
   box-sizing: border-box;
-  padding-left: 1rem;
   background: var(--title-bar-background);
   border-bottom: 1px solid var(--title-bar-border);
 
@@ -22,12 +20,12 @@
 .header__actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
   -webkit-app-region: no-drag;
 }
 
-.header__actions {
-  align-self: stretch;
+.header__label {
+  display: flex;
+  align-items: center;
 }
 
 .header__spacer {

@@ -4,4 +4,6 @@ import { type Settings } from "@/shared/settings/settings.types";
 export type SettingsContract = {
   read(): Settings;
   update(patch: Partial<Settings>): Settings;
+  routerAddress(): string;
+  localAddress(port: number | null): string;
 };

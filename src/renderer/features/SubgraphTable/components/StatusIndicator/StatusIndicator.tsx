@@ -1,5 +1,5 @@
 import styles from "@/renderer/features/SubgraphTable/components/StatusIndicator/StatusIndicator.module.scss";
-import Tooltip from "@/renderer/ui/Tooltip";
+import HoverTooltip from "@/renderer/ui/HoverTooltip";
 import { RowStatus } from "@/shared/subgraph/subgraph.types";
 
 type StatusIndicatorProps = {
@@ -29,11 +29,11 @@ export default function StatusIndicator({
   );
 
   if (onClick === undefined) {
-    return <Tooltip title={reason}>{shape}</Tooltip>;
+    return <HoverTooltip title={reason}>{shape}</HoverTooltip>;
   }
 
   return (
-    <Tooltip title={reason}>
+    <HoverTooltip title={reason}>
       <button
         type="button"
         aria-label={`${status}: ${reason}`}
@@ -42,6 +42,6 @@ export default function StatusIndicator({
       >
         {shape}
       </button>
-    </Tooltip>
+    </HoverTooltip>
   );
 }

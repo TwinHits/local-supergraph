@@ -1,6 +1,6 @@
 import styles from "@/renderer/features/SubgraphTable/components/LocalUrlField/LocalUrlField.module.scss";
 import NumberField from "@/renderer/ui/NumberField";
-import Text from "@/renderer/ui/Text";
+import TextLabel from "@/renderer/ui/TextLabel";
 
 type LocalUrlFieldProps = {
   name: string;
@@ -21,12 +21,12 @@ export default function LocalUrlField({
   onPortChange,
 }: LocalUrlFieldProps) {
   if (!local) {
-    return <Text muted>{routingUrl}</Text>;
+    return <TextLabel muted>{routingUrl}</TextLabel>;
   }
 
   return (
     <span className={styles.localUrlField}>
-      <Text muted>localhost:</Text>
+      <TextLabel muted>localhost:</TextLabel>
       <span className={styles.localUrlField__port}>
         <NumberField
           value={port}

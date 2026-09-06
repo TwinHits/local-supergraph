@@ -1,7 +1,7 @@
 import styles from "@/renderer/features/ErrorModal/components/ErrorDetails/ErrorDetails.module.scss";
 import CopyCommand from "@/renderer/ui/CopyCommand";
 import RawOutput from "@/renderer/ui/RawOutput";
-import Text from "@/renderer/ui/Text";
+import TextLabel from "@/renderer/ui/TextLabel";
 import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 type ErrorDetailsProps = {
@@ -15,13 +15,13 @@ export default function ErrorDetails({ diagnosis, onCopy }: ErrorDetailsProps) {
 
   return (
     <div className={styles.errorDetails}>
-      <Text>{diagnosis.summary}</Text>
-      <Text muted>{diagnosis.cause}</Text>
+      <TextLabel>{diagnosis.summary}</TextLabel>
+      <TextLabel muted>{diagnosis.cause}</TextLabel>
       <ul className={styles.errorDetails__steps}>
         {diagnosis.resolution.map(function toStep(step) {
           return (
             <li key={step}>
-              <Text>{step}</Text>
+              <TextLabel>{step}</TextLabel>
             </li>
           );
         })}
