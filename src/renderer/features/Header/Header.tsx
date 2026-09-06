@@ -39,15 +39,13 @@ export default function Header({
           >
             <IconGlyph name={IconName.Settings} />
           </IconButton>
-          <span className={styles.header__label}>
-            <TextLabel>{graphName}</TextLabel>
-            <DropdownSelect
-              value={variant}
-              label="Variant"
-              options={variants}
-              onChange={onVariantChange}
-            />
-          </span>
+          <TextLabel>{graphName}</TextLabel>
+          <DropdownSelect
+            value={variant}
+            label="Variant"
+            options={variants}
+            onChange={onVariantChange}
+          />
           {children}
         </span>
         <span className={styles.header__actions}>

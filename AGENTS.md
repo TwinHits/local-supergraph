@@ -156,6 +156,12 @@ Two kinds only:
 Not comments: status notes ("canned until X is wired in"), references to
 external documents, or anything restating the line below it.
 
+Nor the story of how the code got here — what a library does, what broke before
+this line was written, why one selector beat another. That is temporal: true on
+the day it was written, unread later, and wrong once the library changes. A
+comment describes the code as it is. If the reasoning is worth keeping, the
+place for it is the commit message.
+
 ## Tests
 
 - `test/` mirrors `src/`. Naming is `.test.ts` / `.test.tsx`.

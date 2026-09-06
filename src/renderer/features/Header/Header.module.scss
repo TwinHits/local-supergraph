@@ -15,7 +15,6 @@
   z-index: 1;
 }
 
-// Anything you click has to opt out, or the drag region swallows the click.
 .header__graph,
 .header__actions {
   display: flex;
@@ -23,9 +22,8 @@
   -webkit-app-region: no-drag;
 }
 
-.header__label {
-  display: flex;
-  align-items: center;
+.header__graph {
+  gap: 8px;
 }
 
 .header__spacer {

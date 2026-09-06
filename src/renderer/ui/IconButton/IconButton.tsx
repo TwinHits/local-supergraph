@@ -43,7 +43,6 @@ export default function IconButton({
     return button;
   }
 
-  // A disabled button fires no events, so the tooltip needs a wrapper to hear.
   return (
     <HoverTooltip title={tooltip}>
       <span className={styles.iconButton__tooltip}>{button}</span>

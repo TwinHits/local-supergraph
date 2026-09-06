@@ -1,5 +1,7 @@
 import { MenuItem, Select as MuiSelect } from "@mui/material";
 
+import styles from "@/renderer/ui/DropdownSelect/DropdownSelect.module.scss";
+
 type DropdownSelectProps = {
   value: string;
   label: string;
@@ -16,6 +18,7 @@ export default function DropdownSelect({
 }: DropdownSelectProps) {
   return (
     <MuiSelect
+      className={styles.dropdownSelect}
       size="small"
       value={value}
       inputProps={{ "aria-label": label }}

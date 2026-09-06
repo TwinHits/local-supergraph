@@ -2,7 +2,6 @@ import SubgraphRow from "@/renderer/features/SubgraphTable/components/SubgraphRo
 import styles from "@/renderer/features/SubgraphTable/SubgraphTable.module.scss";
 import DataTable, { type Column } from "@/renderer/ui/DataTable";
 import SearchField from "@/renderer/ui/SearchField";
-import TextLabel from "@/renderer/ui/TextLabel";
 import { type Row, SortColumn } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphTableProps = {
@@ -50,7 +49,6 @@ export default function SubgraphTable({
     <div>
       <div className={styles.subgraphTable__controls}>
         <SearchField value={search} onChange={onSearchChange} />
-        <TextLabel muted>{`${rows.length} subgraphs`}</TextLabel>
       </div>
       <DataTable
         columns={COLUMNS}

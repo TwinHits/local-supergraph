@@ -1,4 +1,3 @@
-// Element plus class, or MUI's own rules win the tie and round the hover.
 button.iconButton {
   position: relative;
   align-self: stretch;
@@ -29,8 +28,6 @@ button.iconButton {
   }
 }
 
-// A tooltip wraps its child, so the wrapper has to stretch or the button
-// inside it stops short of the bar's height.
 .iconButton__tooltip {
   display: flex;
   align-self: stretch;

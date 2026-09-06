@@ -1,8 +1,6 @@
 import { Tooltip as MuiTooltip } from "@mui/material";
 import { type ReactElement } from "react";
 
-// Long enough that a tooltip is something you ask for, not something that
-// interrupts you crossing the toolbar.
 const ENTER_DELAY_MS = 2500;
 
 type HoverTooltipProps = {
