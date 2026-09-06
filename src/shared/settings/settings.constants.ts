@@ -5,5 +5,4 @@ export const LOCAL_HOST = "localhost";
 
 export const DEFAULT_SETTINGS: Settings = {
   routerPort: 4041,
-  healthCheckIntervalMs: 5000,
 };

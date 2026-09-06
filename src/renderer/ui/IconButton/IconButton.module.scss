@@ -1,3 +1,5 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
 button.iconButton {
   position: relative;
   align-self: stretch;
@@ -8,14 +10,14 @@ button.iconButton {
   border-radius: 0;
 
   &:hover {
-    background: var(--title-bar-hover);
+    background: colors.$hover;
   }
 }
 
 .iconButton--busy::after {
   content: "";
   position: absolute;
-  inset: 0.55rem;
+  inset: 0.4rem;
   border: 2px solid transparent;
   border-top-color: currentcolor;
   border-radius: 50%;

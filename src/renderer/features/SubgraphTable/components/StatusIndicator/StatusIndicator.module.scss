@@ -1,3 +1,5 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
 .statusIndicator {
   display: inline-block;
   width: 0.75rem;
@@ -7,17 +9,17 @@
 
 .statusIndicator--healthy {
   border-radius: 50%;
-  background: #1b7f3b;
+  background: colors.$healthy;
 }
 
 .statusIndicator--failed {
-  background: #b3261e;
+  background: colors.$failed;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 
 .statusIndicator--pending {
   border-radius: 50%;
-  border: 2px solid #8a8a8a;
+  border: 2px solid colors.$pending;
 }
 
 .statusIndicator__button {

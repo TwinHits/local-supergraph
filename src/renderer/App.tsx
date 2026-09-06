@@ -6,14 +6,12 @@ import LaunchControl, { RouterState } from "@/renderer/features/LaunchControl";
 import SettingsModal from "@/renderer/features/SettingsModal";
 import SupergraphWorkspace from "@/renderer/features/SupergraphWorkspace";
 import { useSettings } from "@/renderer/hooks/useSettings";
-import { useTheme } from "@/renderer/hooks/useTheme";
 
 const GRAPH_NAME = "local-supergraph";
 const VARIANTS = ["current", "staging"];
 
 export default function App() {
   const settings = useSettings();
-  const theme = useTheme();
   const [variant, setVariant] = useState(VARIANTS[0]);
   const [router, setRouter] = useState(RouterState.Stopped);
 
@@ -40,9 +38,7 @@ export default function App() {
       <SettingsModal
         open={settings.open}
         settings={settings.settings}
-        theme={theme.name}
         onChange={settings.change}
-        onThemeChange={theme.change}
         onClose={settings.close}
       />
     </div>

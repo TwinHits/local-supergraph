@@ -31,7 +31,7 @@ const stub = vi.hoisted(function fixtures() {
         raw: "",
       },
     ],
-    settings: { routerPort: 4041, healthCheckIntervalMs: 5000 },
+    settings: { routerPort: 4041 },
     setOverride: vi.fn(function noop() {
       return Promise.resolve({ starships: { local: true, port: 4002 } });
     }),

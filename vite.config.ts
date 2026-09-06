@@ -4,7 +4,6 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  // Electron loads the built index.html over file://, where absolute paths break
   base: "./",
   resolve: {
     alias: {
@@ -14,9 +13,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
-    // Vitest stubs CSS modules by default, which turns the themes' :export
-    // values into class names. These stylesheets carry data, so compile them.
-    css: { include: [/shared[\/]themes/] },
+    css: { include: [/colors\.module\.scss/] },
     coverage: {
       reporter: ["text", "json", "html"],
       include: ["src/**"],

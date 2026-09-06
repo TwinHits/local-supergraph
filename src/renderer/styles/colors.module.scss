@@ -1,0 +1,24 @@
+$ink-900: #121212;
+$ink-800: #1e1e1e;
+$ink-700: #333333;
+$ink-600: #3a3a3a;
+$grey-500: #8a8a8a;
+$grey-300: #909090;
+$grey-100: #cfcfcf;
+$green-600: #1b7f3b;
+$red-600: #b3261e;
+
+$surface: $ink-900;
+$surface-raised: $ink-800;
+$hover: $ink-700;
+$border: $ink-600;
+$pending: $grey-500;
+$text-muted: $grey-300;
+$text-primary: $grey-100;
+$healthy: $green-600;
+$failed: $red-600;
+
+:export {
+  textPrimary: $text-primary;
+  textMuted: $text-muted;
+}

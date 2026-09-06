@@ -1,15 +1,18 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
 .header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: var(--title-bar-height);
+  height: sizes.$title-bar-height;
   display: flex;
   align-items: stretch;
   justify-content: space-between;
   box-sizing: border-box;
-  background: var(--title-bar-background);
-  border-bottom: 1px solid var(--title-bar-border);
+  background: colors.$surface;
+  border-bottom: 1px solid colors.$border;
 
   -webkit-app-region: drag;
   z-index: 1;
@@ -27,5 +30,5 @@
 }
 
 .header__spacer {
-  height: var(--title-bar-height);
+  height: sizes.$title-bar-height;
 }

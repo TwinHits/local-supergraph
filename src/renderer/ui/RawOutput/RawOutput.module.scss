@@ -1,3 +1,5 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
 .rawOutput {
   margin: 0.5rem 0 0;
   padding: 0.5rem;
@@ -5,6 +7,6 @@
   font-family: ui-monospace, monospace;
   font-size: 0.75rem;
   white-space: pre;
-  background: #f4f4f4;
+  background: colors.$surface-raised;
   border-radius: 4px;
 }

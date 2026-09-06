@@ -1,3 +1,11 @@
 .dropdownSelect fieldset {
   border: 0;
 }
+
+.dropdownSelect :global(.MuiSelect-icon) {
+  right: 0;
+}
+
+.dropdownSelect :global(.MuiSelect-select) {
+  padding-right: 24px;
+}
