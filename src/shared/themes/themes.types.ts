@@ -8,4 +8,5 @@ export type Theme = {
   titleBarBackground: string;
   titleBarSymbol: string;
   titleBarBorder: string;
+  titleBarHover: string;
 };

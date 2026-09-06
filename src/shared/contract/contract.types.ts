@@ -1,14 +1,14 @@
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
-import { type ThemeContract } from "@/shared/themes/themes.contract";
+import { type WindowContract } from "@/shared/window/window.contract";
 
 /** Every domain's surface, composed. One line per domain, no signatures here. */
 export type Contract = {
   errors: ErrorsContract;
   settings: SettingsContract;
   subgraph: SubgraphContract;
-  theme: ThemeContract;
+  windowControls: WindowContract;
 };
 
 /** The same surface as the renderer sees it: every call crosses IPC, so every call is async. */

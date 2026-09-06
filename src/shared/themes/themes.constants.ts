@@ -9,6 +9,7 @@ function toTheme(exported: Record<string, string>): Theme {
     titleBarBackground: exported.titleBarBackground,
     titleBarSymbol: exported.titleBarSymbol,
     titleBarBorder: exported.titleBarBorder,
+    titleBarHover: exported.titleBarHover,
   };
 }
 

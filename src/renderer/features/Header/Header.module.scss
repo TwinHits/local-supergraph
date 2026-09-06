@@ -1,17 +1,15 @@
 .header {
   position: fixed;
-  top: env(titlebar-area-y, 0);
-  left: env(titlebar-area-x, 0);
-  width: env(titlebar-area-width, 100%);
-  height: env(titlebar-area-height, var(--title-bar-height));
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--title-bar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  // Border-box, or the padding and border push the header past the safe area
-  // and under the native buttons. The right padding is the gap before them.
   box-sizing: border-box;
-  padding: 0 2.5rem 0 1rem;
+  padding-left: 1rem;
   background: var(--title-bar-background);
   border-bottom: 1px solid var(--title-bar-border);
 
@@ -28,6 +26,10 @@
   -webkit-app-region: no-drag;
 }
 
+.actions {
+  align-self: stretch;
+}
+
 .spacer {
-  height: env(titlebar-area-height, var(--title-bar-height));
+  height: var(--title-bar-height);
 }

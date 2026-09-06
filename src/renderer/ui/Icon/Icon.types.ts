@@ -4,4 +4,8 @@ export enum IconName {
   Forward = "forward",
   Copy = "copy",
   Settings = "settings",
+  Minimize = "minimize",
+  Maximize = "maximize",
+  Restore = "restore",
+  Close = "close",
 }

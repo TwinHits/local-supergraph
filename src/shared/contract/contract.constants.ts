@@ -16,8 +16,10 @@ export const CHANNELS = [
   "subgraph.overrides",
   "subgraph.setOverride",
   "subgraph.health",
-  "theme.read",
-  "theme.set",
+  "windowControls.minimize",
+  "windowControls.toggleMaximize",
+  "windowControls.close",
+  "windowControls.isMaximized",
 ] as const satisfies readonly Channel[];
 
 type Unlisted = Exclude<Channel, (typeof CHANNELS)[number]>;

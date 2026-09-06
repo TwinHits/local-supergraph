@@ -66,12 +66,18 @@ vi.mock("@/renderer/api", function stubBridge() {
           return Promise.resolve(stub.settings);
         },
       },
-      theme: {
-        read() {
-          return Promise.resolve("light");
+      windowControls: {
+        isMaximized() {
+          return Promise.resolve(false);
         },
-        set() {
-          return Promise.resolve("light");
+        minimize() {
+          return Promise.resolve(undefined);
+        },
+        toggleMaximize() {
+          return Promise.resolve(false);
+        },
+        close() {
+          return Promise.resolve(undefined);
         },
       },
     },

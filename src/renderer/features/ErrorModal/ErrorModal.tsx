@@ -11,7 +11,7 @@ import {
 } from "@/renderer/features/ErrorModal/errorModal.utils";
 import Button from "@/renderer/ui/Button";
 import Icon, { IconName } from "@/renderer/ui/Icon";
-import IconAction from "@/renderer/ui/IconAction";
+import IconButton from "@/renderer/ui/IconButton";
 import Modal from "@/renderer/ui/Modal";
 import Text from "@/renderer/ui/Text";
 import { type Diagnosis } from "@/shared/errors/errors.types";
@@ -40,31 +40,32 @@ export default function ErrorModal({
   onClose,
 }: ErrorModalProps) {
   const [index, setIndex] = useState(0);
-
   const diagnosis = diagnoses[index];
 
   return (
     <Modal open={open} title={`${subgraph} — ${url}`} onClose={onClose}>
       {hasArrows(diagnoses.length) ? (
         <div className={styles.pager}>
-          <IconAction
+          <IconButton
             label="Previous error"
+            tooltip="Previous error"
             disabled={!canGoBack(index)}
             onClick={function back() {
               setIndex(previousIndex(index));
             }}
           >
             <Icon name={IconName.Back} />
-          </IconAction>
+          </IconButton>
           <Text muted>{position(index, diagnoses.length)}</Text>
-          <IconAction
+          <IconButton
             label="Next error"
+            tooltip="Next error"
             onClick={function forward() {
               setIndex(nextIndex(index, diagnoses.length));
             }}
           >
             <Icon name={IconName.Forward} />
-          </IconAction>
+          </IconButton>
         </div>
       ) : null}
       {diagnosis === undefined ? null : (

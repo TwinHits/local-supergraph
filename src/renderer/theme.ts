@@ -7,5 +7,6 @@ export function applyTheme(name: ThemeName): void {
   const root = document.documentElement.style;
   root.setProperty("--title-bar-background", theme.titleBarBackground);
   root.setProperty("--title-bar-border", theme.titleBarBorder);
+  root.setProperty("--title-bar-hover", theme.titleBarHover);
   root.setProperty("--title-bar-height", `${TITLE_BAR_HEIGHT}px`);
 }

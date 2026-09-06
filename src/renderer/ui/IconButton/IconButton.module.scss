@@ -1,0 +1,13 @@
+// Element plus class, or MUI's own rules win the tie and round the hover.
+button.button {
+  align-self: stretch;
+  width: 46px;
+  padding: 0;
+  color: inherit;
+  font-size: 1.5rem;
+  border-radius: 0;
+
+  &:hover {
+    background: var(--title-bar-hover);
+  }
+}

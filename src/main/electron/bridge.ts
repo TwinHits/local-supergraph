@@ -4,7 +4,7 @@ import { ipcMain } from "electron";
 import { errors } from "@/main/services/errors/errors.service";
 import { settings } from "@/main/services/settings/settings.service";
 import { subgraph } from "@/main/services/subgraph/subgraph.service";
-import { theme } from "@/main/services/theme/theme.service";
+import { windowControls } from "@/main/services/window/window.service";
 import { channelName } from "@/shared/contract/contract.constants";
 import { type Contract, type Handlers } from "@/shared/contract/contract.types";
 
@@ -12,7 +12,7 @@ const handlers = {
   errors,
   settings,
   subgraph,
-  theme,
+  windowControls,
 } satisfies Contract;
 
 /** Registers one IPC handler per contract method. */

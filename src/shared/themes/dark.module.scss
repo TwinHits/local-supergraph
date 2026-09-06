@@ -1,9 +1,11 @@
 $title-bar-background: #1f1f1f;
 $title-bar-symbol: #f5f5f5;
 $title-bar-border: #3a3a3a;
+$title-bar-hover: #333333;
 
 :export {
   titleBarBackground: $title-bar-background;
   titleBarSymbol: $title-bar-symbol;
   titleBarBorder: $title-bar-border;
+  titleBarHover: $title-bar-hover;
 }

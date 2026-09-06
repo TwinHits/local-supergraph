@@ -3,11 +3,7 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
-import {
-  onThemeChange,
-  titleBarOverlay,
-} from "@/main/services/theme/theme.service";
-import { DEFAULT_THEME } from "@/shared/themes/themes.constants";
+import { registerWindowActions } from "@/main/services/window/window.service";
 
 import { registerBridge } from "./bridge";
 
@@ -19,17 +15,32 @@ function createWindow(): void {
   const window = new BrowserWindow({
     width: 1100,
     height: 700,
-    titleBarStyle: "hidden",
-    titleBarOverlay: titleBarOverlay(DEFAULT_THEME),
-    trafficLightPosition: { x: 16, y: 14 },
+    frame: false,
     webPreferences: {
       preload: PRELOAD_SCRIPT,
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
-  onThemeChange(function repaint(name) {
-    window.setTitleBarOverlay(titleBarOverlay(name));
+
+  registerWindowActions({
+    minimize() {
+      window.minimize();
+    },
+    toggleMaximize() {
+      if (window.isMaximized()) {
+        window.unmaximize();
+      } else {
+        window.maximize();
+      }
+      return window.isMaximized();
+    },
+    close() {
+      window.close();
+    },
+    isMaximized() {
+      return window.isMaximized();
+    },
   });
 
   void window.loadFile(RENDERER_HTML);
