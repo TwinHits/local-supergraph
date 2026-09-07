@@ -5,7 +5,7 @@ import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
 import { type WindowContract } from "@/shared/window/window.contract";
 
-/** Every domain's surface, composed. One line per domain, no signatures here. */
+/** Every domain the renderer can call. */
 export type Contract = {
   apollo: ApolloContract;
   environment: EnvironmentContract;
@@ -15,7 +15,7 @@ export type Contract = {
   windowControls: WindowContract;
 };
 
-/** One domain as main may implement it: any method is free to answer later. */
+/** One domain's methods, each free to answer with a promise. */
 export type Awaitable<Namespace> = {
   [Method in keyof Namespace]: Namespace[Method] extends (
     ...args: infer Args
@@ -24,12 +24,12 @@ export type Awaitable<Namespace> = {
     : never;
 };
 
-/** The whole surface as main implements it. */
+/** Every domain as main implements it. */
 export type Implementation = {
   [Namespace in keyof Contract]: Awaitable<Contract[Namespace]>;
 };
 
-/** The same surface as the renderer sees it: every call crosses IPC, so every call is async. */
+/** Every domain as the renderer sees it, with every call async. */
 export type Promised<T> = {
   [Namespace in keyof T]: {
     [Method in keyof T[Namespace]]: T[Namespace][Method] extends (
@@ -40,16 +40,13 @@ export type Promised<T> = {
   };
 };
 
-/**
- * One contract method with its parameters erased. `never` accepts every
- * signature, since parameters are checked the other way round from returns.
- */
+/** One contract method with its parameters erased. */
 type AnyMethod = (...args: never[]) => unknown;
 
-/** The contract with its keys erased, so main can walk it in a loop. */
+/** The contract with its keys erased, so main can loop over it. */
 export type Handlers = Record<string, Record<string, AnyMethod>>;
 
-/** The same, for the async side preload builds and the renderer receives. */
+/** The same for the async copy preload puts on the window. */
 export type Calls = Record<
   string,
   Record<string, (...args: unknown[]) => Promise<unknown>>

@@ -8,7 +8,7 @@ type CollapsiblePanelProps = {
   children: ReactNode;
 };
 
-/** A section that stays shut until asked for, like "More info". */
+/** A section that stays shut until its label is clicked. */
 export default function CollapsiblePanel({
   label,
   children,

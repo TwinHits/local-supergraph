@@ -4,7 +4,7 @@ type LoadingSpinnerProps = {
   label: string;
 };
 
-/** The wait. One size everywhere, so nothing jumps when it appears. */
+/** Shows that something is still loading. */
 export default function LoadingSpinner({ label }: LoadingSpinnerProps) {
   return <CircularProgress size={24} aria-label={label} />;
 }

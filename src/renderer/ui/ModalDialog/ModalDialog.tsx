@@ -8,7 +8,7 @@ type ModalDialogProps = {
   onClose: () => void;
 };
 
-/** Every dialog in the app: one width, one way to close. */
+/** Every dialog in the app. */
 export default function ModalDialog({
   open,
   title,

@@ -11,7 +11,7 @@ type LocalUrlFieldProps = {
   onPortChange: (port: number | null) => void;
 };
 
-/** The URL cell: the Studio URL when remote, localhost and a port when local. */
+/** Shows the routing URL when a subgraph is remote and a port when it is local. */
 export default function LocalUrlField({
   name,
   local,

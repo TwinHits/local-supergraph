@@ -1,4 +1,4 @@
-/* v8 ignore file -- bootstrap only; covering it would assert that React mounts */
+/* v8 ignore file -- this only mounts React */
 import { createRoot } from "react-dom/client";
 
 import App from "@/renderer/App";

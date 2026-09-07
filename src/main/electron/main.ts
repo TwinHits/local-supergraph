@@ -1,4 +1,4 @@
-/* v8 ignore file -- window and app lifecycle, only real Electron exercises it */
+/* v8 ignore file -- only real Electron runs this */
 import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
@@ -11,7 +11,7 @@ import { registerBridge } from "./bridge";
 const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");
 
-/** Opens the single window this app has. */
+/** Opens the app's only window. */
 function createWindow(): void {
   const window = new BrowserWindow({
     width: 1100,
@@ -47,11 +47,11 @@ function createWindow(): void {
   void window.loadFile(RENDERER_HTML);
 }
 
-function quit(): void {
+function quitApp(): void {
   app.quit();
 }
 
 registerBridge();
 startServices();
 void app.whenReady().then(createWindow);
-app.on("window-all-closed", quit);
+app.on("window-all-closed", quitApp);

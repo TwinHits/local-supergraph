@@ -9,7 +9,7 @@ type WindowControlsProps = {
   onClose: () => void;
 };
 
-/** Minimise, maximise and close, drawn by the app rather than the OS. */
+/** The window buttons the app draws instead of the OS. */
 export default function WindowControls({
   maximized,
   onMinimize,

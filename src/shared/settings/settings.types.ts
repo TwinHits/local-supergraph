@@ -1,4 +1,4 @@
-/** The defaulted settings, the ones the new user experience never asks for. */
+/** The settings that have a default. */
 export type Settings = {
   routerPort: number;
 };

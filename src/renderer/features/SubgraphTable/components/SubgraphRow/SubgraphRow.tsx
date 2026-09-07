@@ -13,7 +13,7 @@ type SubgraphRowProps = {
   onShowErrors: () => void;
 };
 
-/** One subgraph: status, name, URL, and the local switch. */
+/** One line of the table for one subgraph. */
 export default function SubgraphRow({
   row,
   portError,

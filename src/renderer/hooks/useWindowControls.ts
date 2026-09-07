@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/renderer/api";
 
-/** The window buttons' state, and what each one does. */
+/** The state of the window buttons and what each one does. */
 export function useWindowControls() {
   const [maximized, setMaximized] = useState(false);
 

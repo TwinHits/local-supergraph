@@ -1,4 +1,4 @@
-/* v8 ignore file -- the one file tests replace; it names the bridge, nothing more */
+/* v8 ignore file -- tests replace this file instead of the bridge */
 import { type Contract, type Promised } from "@/shared/contract/contract.types";
 
 declare global {
@@ -7,5 +7,5 @@ declare global {
   }
 }
 
-/** Every call main answers, as plain async methods. The only route out of the renderer. */
+/** The only route from the renderer to main. */
 export const api: Promised<Contract> = window.bridge;

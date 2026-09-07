@@ -16,8 +16,8 @@ import {
 const run = promisify(execFile);
 
 /**
- * Rover's own installer only updates PATH for shells opened afterward, so a
- * developer who just installed it fails a PATH-only check.
+ * Looks in rover's install path first, because its installer only updates PATH
+ * for shells opened afterward.
  */
 export function findRover(): string {
   for (const candidate of [INSTALLED_PATH, `${INSTALLED_PATH}.exe`]) {
@@ -28,10 +28,7 @@ export function findRover(): string {
   return PATH_COMMAND;
 }
 
-/**
- * Runs rover and hands back its streams. The only module that spawns it, and it
- * never blocks: rover takes about a minute to fail on a rejected key.
- */
+/** Runs rover and returns its output. */
 export async function runRover(args: string[]): Promise<RoverResult> {
   try {
     const result = await run(findRover(), args, {

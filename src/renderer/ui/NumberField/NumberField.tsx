@@ -7,7 +7,7 @@ type NumberFieldProps = {
   onChange: (value: number | null) => void;
 };
 
-/** MUI has no number input, so this adds the numeric rules to our TextField. */
+/** An input that takes a number or nothing. */
 export default function NumberField({
   value,
   label,

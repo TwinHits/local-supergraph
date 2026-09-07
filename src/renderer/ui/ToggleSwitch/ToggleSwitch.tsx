@@ -6,7 +6,7 @@ type ToggleSwitchProps = {
   onChange: (checked: boolean) => void;
 };
 
-/** The local/remote switch on a subgraph row. */
+/** An on/off switch. */
 export default function ToggleSwitch({
   checked,
   label,

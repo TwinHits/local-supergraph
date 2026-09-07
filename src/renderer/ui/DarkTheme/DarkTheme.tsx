@@ -14,7 +14,7 @@ type DarkThemeProps = {
   children: ReactNode;
 };
 
-/** Puts every MUI component into dark mode and paints the page to match. */
+/** Puts the app into dark mode. */
 export default function DarkTheme({ children }: DarkThemeProps) {
   return (
     <ThemeProvider theme={THEME}>

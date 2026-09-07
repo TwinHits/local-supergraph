@@ -10,7 +10,7 @@ type SettingsModalProps = {
   onClose: () => void;
 };
 
-/** Every defaulted setting. Nothing here is asked for during setup. */
+/** The dialog for settings that already have a default. */
 export default function SettingsModal({
   open,
   settings,

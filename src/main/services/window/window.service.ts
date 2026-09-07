@@ -3,6 +3,7 @@ import { type WindowContract } from "@/shared/window/window.contract";
 
 let actions: WindowActions | null = null;
 
+/** Gives the service the window it acts on. */
 export function registerWindowActions(supplied: WindowActions): void {
   actions = supplied;
 }

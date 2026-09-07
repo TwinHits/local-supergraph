@@ -7,7 +7,7 @@ type ActionButtonProps = {
   disabled?: boolean;
 };
 
-/** The one button in the app: every caller gets this size and this variant. */
+/** Every button with a label on it. */
 export default function ActionButton({
   children,
   onClick,

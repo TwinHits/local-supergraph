@@ -8,7 +8,7 @@ type HoverTooltipProps = {
   children: ReactElement;
 };
 
-/** One line of explanation, on hover. */
+/** One line of explanation on hover. */
 export default function HoverTooltip({ title, children }: HoverTooltipProps) {
   return (
     <MuiTooltip title={title} enterDelay={ENTER_DELAY_MS}>

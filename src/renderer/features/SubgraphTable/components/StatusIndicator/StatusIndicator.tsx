@@ -14,7 +14,7 @@ const SHAPES: Record<RowStatus, string> = {
   [RowStatus.Pending]: styles["statusIndicator--pending"],
 };
 
-/** One definition of what healthy, failed and pending look like. */
+/** What healthy, failed and pending look like. */
 export default function StatusIndicator({
   status,
   reason,

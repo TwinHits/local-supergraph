@@ -21,7 +21,7 @@ type DataTableProps = {
   onSort: (key: string) => void;
 };
 
-/** A sortable table. Rows come from Row and Cell below. */
+/** A sortable table. */
 export default function DataTable({
   columns,
   sortKey,

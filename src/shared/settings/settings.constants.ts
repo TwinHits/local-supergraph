@@ -1,6 +1,6 @@
 import { type Settings } from "@/shared/settings/settings.types";
 
-/** Everything local runs on this host: the router, and every local subgraph. */
+/** The host every local service runs on. */
 export const LOCAL_HOST = "localhost";
 
 export const DEFAULT_SETTINGS: Settings = {

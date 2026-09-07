@@ -5,7 +5,7 @@ type SearchFieldProps = {
   onChange: (value: string) => void;
 };
 
-/** Filters the table on name and URL. */
+/** A search input. */
 export default function SearchField({ value, onChange }: SearchFieldProps) {
   return <TextField value={value} label="Search" onChange={onChange} />;
 }
