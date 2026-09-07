@@ -8,8 +8,8 @@ import { type EnvironmentContract } from "@/shared/environment/environment.contr
 
 let loaded = false;
 
-/** Reads .env into process.env once, so every later read is a plain lookup. */
-function load(): void {
+/** Reads .env into process.env once. */
+function loadEnvFile(): void {
   if (loaded) {
     return;
   }
@@ -19,38 +19,38 @@ function load(): void {
   }
 }
 
-function read(key: EnvironmentVariable): string {
-  load();
+function readVariable(key: EnvironmentVariable): string {
+  loadEnvFile();
   return process.env[key] ?? "";
 }
 
-function graphRefParts(): string[] {
-  return read(EnvironmentVariable.ApolloGraphRef).split("@");
+function splitGraphRef(): string[] {
+  return readVariable(EnvironmentVariable.ApolloGraphRef).split("@");
 }
 
 export const environment = {
   graphRef(): string {
-    return read(EnvironmentVariable.ApolloGraphRef);
+    return readVariable(EnvironmentVariable.ApolloGraphRef);
   },
   graphName(): string {
-    return graphRefParts()[0] ?? "";
+    return splitGraphRef()[0] ?? "";
   },
 
   apolloKey(): string {
-    return read(EnvironmentVariable.ApolloKey);
+    return readVariable(EnvironmentVariable.ApolloKey);
   },
   variants(): string[] {
-    return read(EnvironmentVariable.SupergraphVariants)
+    return readVariable(EnvironmentVariable.SupergraphVariants)
       .split(",")
       .map(function trim(name) {
         return name.trim();
       })
-      .filter(function present(name) {
+      .filter(function isPresent(name) {
         return name !== "";
       });
   },
   childEnv(): NodeJS.ProcessEnv {
-    load();
+    loadEnvFile();
     return {
       ...process.env,
       [EnvironmentVariable.ApolloElv2License]: "accept",
