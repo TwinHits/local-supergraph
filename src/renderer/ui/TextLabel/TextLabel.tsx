@@ -8,7 +8,7 @@ type TextLabelProps = {
   muted?: boolean;
 };
 
-/** Every piece of text in the app. */
+/** A line of text. */
 export default function TextLabel({ children, muted }: TextLabelProps) {
   return (
     <Typography

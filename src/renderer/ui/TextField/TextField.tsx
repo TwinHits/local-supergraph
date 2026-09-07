@@ -7,7 +7,7 @@ type TextFieldProps = {
   onChange: (value: string) => void;
 };
 
-/** Every text input in the app. */
+/** A text input. */
 export default function TextField({
   value,
   label,

@@ -7,7 +7,7 @@ type ActionButtonProps = {
   disabled?: boolean;
 };
 
-/** Every button with a label on it. */
+/** A button with a label on it. */
 export default function ActionButton({
   children,
   onClick,
