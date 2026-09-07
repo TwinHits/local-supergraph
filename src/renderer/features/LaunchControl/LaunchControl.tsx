@@ -1,4 +1,4 @@
-import IconButton from "@/renderer/ui/IconButton";
+import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
 
@@ -14,7 +14,7 @@ type LaunchControlProps = {
   onStop: () => void;
 };
 
-/** Starts the supergraph, and stops it. One button, two jobs. */
+/** Starts the supergraph and stops it again. */
 export default function LaunchControl({
   state,
   onStart,
@@ -30,6 +30,7 @@ export default function LaunchControl({
         label="Stop supergraph"
         tooltip="Stop supergraph"
         busy
+        variant={IconButtonVariant.Running}
         onClick={onStop}
       >
         <IconGlyph name={IconName.Stop} />

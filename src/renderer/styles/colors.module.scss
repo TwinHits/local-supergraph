@@ -1,13 +1,13 @@
-$ink-900: #121212;
-$ink-800: #1e1e1e;
-$ink-750: #262626;
-$ink-700: #333333;
-$ink-600: #3a3a3a;
-$grey-500: #8a8a8a;
-$grey-300: #909090;
-$grey-100: #cfcfcf;
-$green-600: #1b7f3b;
-$red-600: #b3261e;
+$ink-900: #121215;
+$ink-800: #1e1e22;
+$ink-750: #26262b;
+$ink-700: #333339;
+$ink-600: #3a3a41;
+$grey-500: #8a8a92;
+$grey-300: #909096;
+$grey-100: #cfcfd4;
+$green-300: #8fbfa0;
+$red-500: #f0463c;
 
 $surface: $ink-900;
 $surface-raised: $ink-800;
@@ -17,8 +17,8 @@ $border: $ink-600;
 $pending: $grey-500;
 $text-muted: $grey-300;
 $text-primary: $grey-100;
-$healthy: $green-600;
-$failed: $red-600;
+$healthy: $green-300;
+$failed: $red-500;
 
 :export {
   textPrimary: $text-primary;

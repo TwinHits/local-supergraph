@@ -8,6 +8,7 @@ import { IconButtonVariant } from "@/renderer/ui/IconButton/IconButton.types";
 const VARIANTS: Record<IconButtonVariant, string> = {
   [IconButtonVariant.Default]: "",
   [IconButtonVariant.Muted]: styles["iconButton--muted"],
+  [IconButtonVariant.Running]: styles["iconButton--running"],
 };
 
 type IconButtonProps = {
@@ -20,8 +21,7 @@ type IconButtonProps = {
   onClick: () => void;
 };
 
-/** Every icon-only button, in the one shape the app uses. Busy adds a ring for
- * work this button started that is still going. */
+/** A button that is only an icon. */
 export default function IconButton({
   label,
   children,
