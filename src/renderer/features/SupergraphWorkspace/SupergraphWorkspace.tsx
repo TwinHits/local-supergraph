@@ -1,7 +1,9 @@
 import ErrorModal from "@/renderer/features/ErrorModal";
 import SubgraphTable from "@/renderer/features/SubgraphTable";
+import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.module.scss";
 import { useSubgraphErrors } from "@/renderer/features/SupergraphWorkspace/useSubgraphErrors";
 import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
+import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
 
 type SupergraphWorkspaceProps = {
   routerPort: number;
@@ -14,10 +16,19 @@ export default function SupergraphWorkspace({
   const subgraphs = useSubgraphs(routerPort);
   const errors = useSubgraphErrors();
 
+  if (subgraphs.loading) {
+    return (
+      <div className={styles.supergraphWorkspace__loading}>
+        <LoadingSpinner label="Reading the graph" />
+      </div>
+    );
+  }
+
   return (
     <>
       <SubgraphTable
         rows={subgraphs.rows}
+        error={subgraphs.error}
         search={subgraphs.search}
         sort={subgraphs.sort}
         portErrors={subgraphs.portErrors}

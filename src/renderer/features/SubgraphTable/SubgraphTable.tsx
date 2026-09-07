@@ -6,6 +6,7 @@ import { type Row, SortColumn } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphTableProps = {
   rows: Row[];
+  error: string;
   search: string;
   sort: SortColumn;
   portErrors: Record<string, string>;
@@ -36,6 +37,7 @@ const COLUMNS: Column[] = [
 /** One row per subgraph, searchable and sortable. */
 export default function SubgraphTable({
   rows,
+  error,
   search,
   sort,
   portErrors,
@@ -50,6 +52,9 @@ export default function SubgraphTable({
       <div className={styles.subgraphTable__controls}>
         <SearchField value={search} onChange={onSearchChange} />
       </div>
+      {error === "" ? null : (
+        <p className={styles.subgraphTable__error}>{error}</p>
+      )}
       <DataTable
         columns={COLUMNS}
         sortKey={sort}

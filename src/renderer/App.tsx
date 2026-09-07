@@ -5,23 +5,21 @@ import Header from "@/renderer/features/Header";
 import LaunchControl, { RouterState } from "@/renderer/features/LaunchControl";
 import SettingsModal from "@/renderer/features/SettingsModal";
 import SupergraphWorkspace from "@/renderer/features/SupergraphWorkspace";
+import { useGraph } from "@/renderer/hooks/useGraph";
 import { useSettings } from "@/renderer/hooks/useSettings";
 
-const GRAPH_NAME = "local-supergraph";
-const VARIANTS = ["current", "staging"];
-
 export default function App() {
+  const graph = useGraph();
   const settings = useSettings();
-  const [variant, setVariant] = useState(VARIANTS[0]);
   const [router, setRouter] = useState(RouterState.Stopped);
 
   return (
     <div className={styles.app}>
       <Header
-        graphName={GRAPH_NAME}
-        variant={variant}
-        variants={VARIANTS}
-        onVariantChange={setVariant}
+        graphName={graph.graphName}
+        variant={graph.variant}
+        variants={graph.variants}
+        onVariantChange={graph.select}
         onOpenSettings={settings.show}
       >
         <LaunchControl
@@ -34,7 +32,10 @@ export default function App() {
           }}
         />
       </Header>
-      <SupergraphWorkspace routerPort={settings.settings.routerPort} />
+      <SupergraphWorkspace
+        key={graph.variant}
+        routerPort={settings.settings.routerPort}
+      />
       <SettingsModal
         open={settings.open}
         settings={settings.settings}

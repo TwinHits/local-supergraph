@@ -7,6 +7,10 @@ import {
   tableView,
 } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
 import {
+  ApolloFailure,
+  type SubgraphListing,
+} from "@/shared/apollo/apollo.types";
+import {
   Composition,
   type HealthMap,
   type OverrideMap,
@@ -21,9 +25,46 @@ type Snapshot = {
   subgraphs: Subgraph[];
   overrides: OverrideMap;
   health: HealthMap;
+  error: string;
 };
 
-const EMPTY: Snapshot = { subgraphs: [], overrides: {}, health: {} };
+const EMPTY: Snapshot = {
+  subgraphs: [],
+  overrides: {},
+  health: {},
+  error: "",
+};
+
+/** Builds the table's snapshot from what main answered. */
+function toSnapshot(
+  listing: SubgraphListing,
+  overrides: OverrideMap,
+  health: HealthMap
+): Snapshot {
+  return {
+    subgraphs: listing.subgraphs,
+    overrides,
+    health,
+    error:
+      listing.failure === ApolloFailure.None
+        ? ""
+        : `Could not read the graph. ${listing.message}`,
+  };
+}
+
+/** True when a reload brought back the same subgraphs and the same error. */
+function sameListing(current: Snapshot, next: Snapshot): boolean {
+  return (
+    current.error === next.error &&
+    current.subgraphs.length === next.subgraphs.length &&
+    current.subgraphs.every(function matches(subgraph, index) {
+      const other = next.subgraphs[index];
+      return (
+        subgraph.name === other.name && subgraph.routingUrl === other.routingUrl
+      );
+    })
+  );
+}
 
 /** Collects the ports every local row is asking for. */
 function claimedPorts(rows: Row[]): number[] {
@@ -54,16 +95,27 @@ function portErrors(rows: Row[], routerPort: number): Record<string, string> {
 /** Holds the table's state and talks to main. Components take the result. */
 export function useSubgraphs(routerPort: number) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortColumn>(SortColumn.Status);
 
   const load = useCallback(function read() {
     void Promise.all([
-      api.subgraph.list(),
+      api.apollo.listSubgraphs(),
       api.subgraph.overrides(),
       api.subgraph.health(),
-    ]).then(function store([subgraphs, overrides, health]) {
-      setSnapshot({ subgraphs, overrides, health });
+    ]).then(function store([listing, overrides, health]) {
+      setSnapshot(toSnapshot(listing, overrides, health));
+      setLoading(false);
+    });
+
+    // The cached answer is on screen already; only replace it when the registry
+    // has moved since it was cached.
+    void api.apollo.reloadSubgraphs().then(function reloaded(listing) {
+      setSnapshot(function keepUnlessChanged(current) {
+        const next = toSnapshot(listing, current.overrides, current.health);
+        return sameListing(current, next) ? current : next;
+      });
     });
   }, []);
 
@@ -88,6 +140,8 @@ export function useSubgraphs(routerPort: number) {
   return {
     rows: tableView(all, search, sort),
     portErrors: portErrors(all, routerPort),
+    error: snapshot.error,
+    loading,
     search,
     sort,
     setSearch,

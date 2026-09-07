@@ -41,10 +41,31 @@ const stub = vi.hoisted(function fixtures() {
 vi.mock("@/renderer/api", function stubBridge() {
   return {
     api: {
-      subgraph: {
-        list() {
-          return Promise.resolve(stub.subgraphs);
+      environment: {
+        graphName() {
+          return Promise.resolve("My-Graph");
         },
+        variants() {
+          return Promise.resolve(["current", "staging"]);
+        },
+      },
+      apollo: {
+        listSubgraphs() {
+          return Promise.resolve({
+            subgraphs: stub.subgraphs,
+            failure: "none",
+            message: "",
+          });
+        },
+        reloadSubgraphs() {
+          return Promise.resolve({
+            subgraphs: stub.subgraphs,
+            failure: "none",
+            message: "",
+          });
+        },
+      },
+      subgraph: {
         overrides() {
           return Promise.resolve(stub.overrides);
         },
@@ -64,6 +85,12 @@ vi.mock("@/renderer/api", function stubBridge() {
         },
         update() {
           return Promise.resolve(stub.settings);
+        },
+        currentVariant() {
+          return Promise.resolve("current");
+        },
+        selectVariant() {
+          return Promise.resolve("staging");
         },
       },
       windowControls: {

@@ -9,12 +9,17 @@ type Channel = {
 
 /** The runtime half of the contract: contextBridge copies real keys, so it cannot read a type. */
 export const CHANNELS = [
+  "apollo.listSubgraphs",
+  "apollo.reloadSubgraphs",
+  "environment.graphName",
+  "environment.variants",
   "errors.diagnose",
   "settings.read",
   "settings.update",
   "settings.routerAddress",
+  "settings.currentVariant",
+  "settings.selectVariant",
   "settings.localAddress",
-  "subgraph.list",
   "subgraph.overrides",
   "subgraph.setOverride",
   "subgraph.health",

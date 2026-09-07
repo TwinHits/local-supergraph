@@ -1,12 +1,5 @@
+import { type WindowActions } from "@/main/services/window/window.types";
 import { type WindowContract } from "@/shared/window/window.contract";
-
-/** What the Electron layer supplies, since only it may hold a BrowserWindow. */
-export type WindowActions = {
-  minimize(): void;
-  toggleMaximize(): boolean;
-  close(): void;
-  isMaximized(): boolean;
-};
 
 let actions: WindowActions | null = null;
 

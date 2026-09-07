@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
+import { startServices } from "@/main/services/startup/startup.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
 
 import { registerBridge } from "./bridge";
@@ -51,5 +52,6 @@ function quit(): void {
 }
 
 registerBridge();
+startServices();
 void app.whenReady().then(createWindow);
 app.on("window-all-closed", quit);

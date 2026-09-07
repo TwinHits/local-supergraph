@@ -1,3 +1,5 @@
+import { type ApolloContract } from "@/shared/apollo/apollo.contract";
+import { type EnvironmentContract } from "@/shared/environment/environment.contract";
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
@@ -5,10 +7,26 @@ import { type WindowContract } from "@/shared/window/window.contract";
 
 /** Every domain's surface, composed. One line per domain, no signatures here. */
 export type Contract = {
+  apollo: ApolloContract;
+  environment: EnvironmentContract;
   errors: ErrorsContract;
   settings: SettingsContract;
   subgraph: SubgraphContract;
   windowControls: WindowContract;
+};
+
+/** One domain as main may implement it: any method is free to answer later. */
+export type Awaitable<Namespace> = {
+  [Method in keyof Namespace]: Namespace[Method] extends (
+    ...args: infer Args
+  ) => infer Result
+    ? (...args: Args) => Result | Promise<Result>
+    : never;
+};
+
+/** The whole surface as main implements it. */
+export type Implementation = {
+  [Namespace in keyof Contract]: Awaitable<Contract[Namespace]>;
 };
 
 /** The same surface as the renderer sees it: every call crosses IPC, so every call is async. */
