@@ -1,36 +1,44 @@
 # Local Supergraph Dev Tool
 
-An Electron app that runs the federated supergraph on a developer's machine and
-points individual subgraphs at local services instead of deployed ones.
+An Electron app that runs a federated supergraph on your machine. Point any
+subgraph at a service running locally instead of the deployed one, and see which
+subgraphs are answering.
 
-## Quick Start
+## Requirements
+
+- Node, the version in `.nvmrc`.
+- [rover](https://www.apollographql.com/docs/rover/getting-started), on your
+  PATH or installed in its default location.
+- An Apollo API key that can read your graph.
+
+## Setup
+
+```bash
+cp .env.template .env
+```
+
+Fill in `.env`:
+
+- `APOLLO_KEY` — a personal key from studio.apollographql.com.
+- `APOLLO_GRAPH_REF` — the graph to run, as `name@variant`.
+- `SUPERGRAPH_VARIANTS` — the variants the header dropdown offers, comma
+  separated.
+
+`.env` is gitignored. Put any credentials your local subgraphs need in it too.
+
+## Run
 
 ```bash
 npm install
 npm start
 ```
 
-## Conventions
+The header shows the graph and the variant you are on. The table lists every
+subgraph in that variant. Flip a subgraph to local and give it a port to point
+the supergraph at your machine. A failing row opens the error behind it.
 
-- **Stack** — React, TypeScript in strict mode, Vite, Vitest with jsdom, ESLint, Prettier, Husky. Electron on top.
-- **Components** — one file each. A component earns a folder with an `index.ts` when it outgrows one file; the import path is the same either way, so no caller changes. Three tiers: MUI wrappers, composed components, screens. See spec §2.6.
-- **Services** — main-process logic lives in plain `.ts` modules behind named interfaces, testable without Electron. See spec §2.3.
-- **Imports** — `@/` resolves to `src/`. No relative paths that climb.
-- **Tests** — `test/` mirrors `src/` folder for folder, `.test.tsx` naming.
-- **Node** — pinned in `.nvmrc` and `engines`, tracking the active LTS line.
-- **Hooks** — `check` on commit, `test:coverage` on push. Raise the coverage thresholds as the project grows.
+## Working on the code
 
-## Configuration
-
-Every configuration line serves a deliberate purpose. Please do not declare default values, add "just in case" settings, or add settings that might be needed in the future. If a line exists in a config file, it's there because the default behavior wasn't suitable for our specific needs.
-
-## Generated Files
-
-`_generated/` holds every artifact the tool writes: the composed supergraph YAML
-per variant, and the cached Studio response. It is gitignored and disposable —
-delete it to reset. User settings live outside the repo, in Electron's
-`userData`.
-
-## VS Code
-
-Install the recommended extensions when prompted. `.vscode/` holds the settings the project requires and a Chrome launch configuration for debugging against `npm start`; keep personal preferences in your user settings.
+`AGENTS.md` says how the code is organised. Install the recommended VS Code
+extensions when prompted; `.vscode/` holds the settings the project needs and a
+Chrome launch configuration for debugging against `npm start`.
