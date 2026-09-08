@@ -1,7 +1,21 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+.errorModal__raw {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  overflow-x: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  white-space: pre;
+  background: colors.$surface-raised;
+  border-radius: 4px;
+}
+
 .errorModal__footer {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
+  gap: 1rem;
 }
 
 .errorModal__pager {

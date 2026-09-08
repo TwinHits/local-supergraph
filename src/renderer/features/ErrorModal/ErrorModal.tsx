@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import ErrorDetails from "@/renderer/features/ErrorModal/components/ErrorDetails";
 import styles from "@/renderer/features/ErrorModal/ErrorModal.module.scss";
+import ActionButton from "@/renderer/ui/ActionButton";
+import Collapse from "@/renderer/ui/Collapse";
 import ModalDialog, { ModalSeverity } from "@/renderer/ui/ModalDialog";
 import PagerArrows from "@/renderer/ui/PagerArrows";
-import RawOutput from "@/renderer/ui/RawOutput";
 import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 const MODAL_TITLE = "Error";
@@ -32,8 +33,10 @@ export default function ErrorModal({
   onClose,
 }: ErrorModalProps) {
   const [index, setIndex] = useState(0);
+  const [rawOpen, setRawOpen] = useState(false);
   const shown = diagnoses.length === 0 ? [FALLBACK_DIAGNOSIS] : diagnoses;
   const diagnosis = shown[index];
+  const alwaysShowRaw = diagnosis.key === ErrorKey.Unknown;
 
   return (
     <ModalDialog
@@ -43,17 +46,30 @@ export default function ErrorModal({
       onClose={onClose}
     >
       <ErrorDetails subject={subject} diagnosis={diagnosis} />
+      {diagnosis.raw === null ? null : (
+        <Collapse in={alwaysShowRaw || rawOpen}>
+          <pre className={styles.errorModal__raw}>{diagnosis.raw}</pre>
+        </Collapse>
+      )}
       <div className={styles.errorModal__footer}>
-        <RawOutput
-          raw={diagnosis.raw}
-          startOpen={diagnosis.key === ErrorKey.Unknown}
-        />
+        {diagnosis.raw === null || alwaysShowRaw ? null : (
+          <ActionButton
+            onClick={function toggleRaw() {
+              setRawOpen(!rawOpen);
+            }}
+          >
+            More info
+          </ActionButton>
+        )}
         <div className={styles.errorModal__pager}>
           <PagerArrows
             index={index}
             count={shown.length}
             subject="error"
-            onChange={setIndex}
+            onChange={function changeIndex(next) {
+              setIndex(next);
+              setRawOpen(false);
+            }}
           />
         </div>
       </div>

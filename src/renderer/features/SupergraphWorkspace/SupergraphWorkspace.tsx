@@ -2,7 +2,6 @@ import ErrorModal from "@/renderer/features/ErrorModal";
 import SubgraphTable from "@/renderer/features/SubgraphTable";
 import SupergraphError from "@/renderer/features/SupergraphWorkspace/components/SupergraphError";
 import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.module.scss";
-import { buildErrorSubject } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
 import { useErrorModal } from "@/renderer/features/SupergraphWorkspace/useErrorModal";
 import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
@@ -11,13 +10,11 @@ const SUPERGRAPH_NAME = "Supergraph";
 
 type SupergraphWorkspaceProps = {
   routerPort: number;
-  variant: string;
 };
 
 /** Everything below the header. */
 export default function SupergraphWorkspace({
   routerPort,
-  variant,
 }: SupergraphWorkspaceProps) {
   const subgraphs = useSubgraphs(routerPort);
   const modal = useErrorModal();
@@ -35,10 +32,7 @@ export default function SupergraphWorkspace({
       <SupergraphError
         diagnoses={subgraphs.supergraphErrors}
         onShowErrors={function showSupergraphErrors() {
-          modal.show(
-            buildErrorSubject(SUPERGRAPH_NAME, variant),
-            subgraphs.supergraphErrors
-          );
+          modal.show(SUPERGRAPH_NAME, subgraphs.supergraphErrors);
         }}
       />
       <SubgraphTable
@@ -57,10 +51,7 @@ export default function SupergraphWorkspace({
           subgraphs.updateOverride(name, true, port);
         }}
         onShowErrors={function showErrors(name) {
-          modal.show(
-            buildErrorSubject(name, variant),
-            subgraphs.errors[name] ?? []
-          );
+          modal.show(name, subgraphs.errors[name] ?? []);
         }}
         onRefresh={subgraphs.reload}
         refreshing={subgraphs.refreshing}

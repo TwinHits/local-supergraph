@@ -19,11 +19,6 @@ export function buildDiagnosisMessage(diagnosis: Diagnosis): string {
   return `${diagnosis.summary}: ${diagnosis.cause}`;
 }
 
-/** Names which subgraph and variant an error modal is showing. */
-export function buildErrorSubject(name: string, variant: string): string {
-  return `${name} — ${variant}`;
-}
-
 type Signals = {
   local: boolean;
   reachability: Reachability;
