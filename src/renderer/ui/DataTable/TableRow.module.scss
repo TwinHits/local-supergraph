@@ -1,5 +1,9 @@
 @use "@/renderer/styles/colors.module.scss" as colors;
 
+tr.tableRow {
+  transition: background-color 0.2s ease;
+}
+
 tr.tableRow--highlighted {
   background: rgba(colors.$local, 0.12);
 }

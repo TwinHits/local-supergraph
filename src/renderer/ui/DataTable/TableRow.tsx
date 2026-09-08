@@ -12,9 +12,12 @@ type TableRowProps = {
 export default function TableRow({ children, highlighted }: TableRowProps) {
   return (
     <MuiTableRow
-      className={
-        highlighted === true ? styles["tableRow--highlighted"] : undefined
-      }
+      className={[
+        styles.tableRow,
+        highlighted === true ? styles["tableRow--highlighted"] : "",
+      ]
+        .join(" ")
+        .trim()}
     >
       {children}
     </MuiTableRow>
