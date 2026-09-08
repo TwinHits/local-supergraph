@@ -96,7 +96,7 @@ export function useSubgraphs(routerPort: number) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortColumn>(SortColumn.Status);
+  const [sort, setSort] = useState<SortColumn>(SortColumn.Name);
 
   const load = useCallback(function read() {
     const primary = Promise.all([

@@ -1,7 +1,7 @@
 import { Tooltip as MuiTooltip } from "@mui/material";
 import { type ReactElement } from "react";
 
-const ENTER_DELAY_MS = 2500;
+const ENTER_DELAY_MS = 1000;
 
 type HoverTooltipProps = {
   title: string;

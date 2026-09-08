@@ -20,7 +20,7 @@ export default function SupergraphError({
   const diagnosis = diagnoses[index] ?? diagnoses[0];
 
   if (diagnosis === undefined) {
-    return <div className={styles.supergraphError} />;
+    return null;
   }
 
   return (
