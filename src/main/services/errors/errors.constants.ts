@@ -13,14 +13,14 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   },
   [ErrorKey.GraphRefUnset]: {
     key: ErrorKey.GraphRefUnset,
-    summary: "Vampires have drained the schema registry",
-    cause: "Every field came back pale and empty.",
+    summary: "The graph ref or variant is not set",
+    cause: "APOLLO_GRAPH_REF or SUPERGRAPH_VARIANTS is missing from .env.",
     resolution: ["Fill both in .env", "Reopen the app"],
   },
   [ErrorKey.ApolloKeyInvalid]: {
     key: ErrorKey.ApolloKeyInvalid,
-    summary: "A katana has severed the router link",
-    cause: "One clean cut, straight through the socket.",
+    summary: "The Apollo API key was rejected",
+    cause: "The key is missing, expired, or lacks access to the graph.",
     resolution: [
       "Regenerate the key at studio.apollographql.com",
       "Paste it into .env",

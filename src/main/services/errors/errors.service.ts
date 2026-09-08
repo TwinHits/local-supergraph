@@ -15,15 +15,7 @@ type Report = {
 };
 
 const subgraphReports = new Map<string, Report>();
-// PLACEHOLDER
-let supergraphReport: Report | null = {
-  keys: [
-    ErrorKey.RoverMissing,
-    ErrorKey.GraphRefUnset,
-    ErrorKey.ApolloKeyInvalid,
-  ],
-  raw: "placeholder",
-};
+let supergraphReport: Report | null = null;
 
 /** The keys the caller named plus any found in the text. */
 function buildReport(keys: ErrorKey[], raw: string | null): Report {

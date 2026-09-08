@@ -13,19 +13,26 @@ import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import { type Awaitable } from "@/shared/contract/contract.types";
 import { ErrorKey } from "@/shared/errors/errors.types";
 
-const cache = new Map<string, RegisteredSubgraph[]>();
+type VariantCheck = {
+  subgraphs: RegisteredSubgraph[];
+  failed: boolean;
+  keys: ErrorKey[];
+  raw: string | null;
+};
 
-/** Asks the registry which subgraphs a variant has. */
-async function readSubgraphsForVariant(
-  variant: string
-): Promise<RegisteredSubgraph[]> {
+const cache = new Map<string, RegisteredSubgraph[]>();
+let startupCheck: Promise<void> | null = null;
+
+/** Asks the registry which subgraphs a variant has, without reporting the result. */
+async function checkVariant(variant: string): Promise<VariantCheck> {
   const graphName = environment.graphName();
   if (graphName === "" || variant === "") {
-    reportSupergraphFailure(
-      [ErrorKey.GraphRefUnset],
-      `${EnvironmentVariable.ApolloGraphRef} or ${EnvironmentVariable.SupergraphVariants} is not set.`
-    );
-    return [];
+    return {
+      subgraphs: [],
+      failed: true,
+      keys: [ErrorKey.GraphRefUnset],
+      raw: `${EnvironmentVariable.ApolloGraphRef} or ${EnvironmentVariable.SupergraphVariants} is not set.`,
+    };
   }
 
   const result = await runRover([
@@ -36,40 +43,75 @@ async function readSubgraphsForVariant(
   ]);
 
   if (!result.found) {
-    reportSupergraphFailure([ErrorKey.RoverMissing], "rover is not installed.");
-    return [];
+    return {
+      subgraphs: [],
+      failed: true,
+      keys: [ErrorKey.RoverMissing],
+      raw: "rover is not installed.",
+    };
   }
 
   const listing = parseSubgraphList(result.stdout);
   if (listing.failed) {
-    reportSupergraphFailure(listing.keys, listing.raw);
-    return [];
+    return {
+      subgraphs: [],
+      failed: true,
+      keys: listing.keys,
+      raw: listing.raw,
+    };
   }
 
-  clearSupergraphFailure();
-  return listing.subgraphs;
+  return { subgraphs: listing.subgraphs, failed: false, keys: [], raw: null };
 }
 
-/** Reads every variant before anything asks for one. */
+/**
+ * Reads every variant before anything asks for one, and reports once every
+ * variant has answered, because a variant that fails after another already
+ * cleared the supergraph error must not be silently overwritten.
+ */
 export function cacheAllVariants(): void {
-  for (const variant of environment.variants()) {
-    void readSubgraphsForVariant(variant).then(function store(subgraphs) {
-      cache.set(variant, subgraphs);
+  const variants = environment.variants();
+  startupCheck = Promise.all(variants.map(checkVariant)).then(function summarize(
+    checks
+  ) {
+    checks.forEach(function store(check, index) {
+      cache.set(variants[index], check.subgraphs);
     });
-  }
+
+    const failure = checks.find(function isFailed(check) {
+      return check.failed;
+    });
+
+    if (failure === undefined) {
+      clearSupergraphFailure();
+    } else {
+      reportSupergraphFailure(failure.keys, failure.raw);
+    }
+  });
 }
 
 /** Reads a variant from the registry and caches what came back. */
 async function refreshSubgraphs(
   variant: string
 ): Promise<RegisteredSubgraph[]> {
-  const subgraphs = await readSubgraphsForVariant(variant);
-  cache.set(variant, subgraphs);
-  return subgraphs;
+  const check = await checkVariant(variant);
+  cache.set(variant, check.subgraphs);
+
+  if (check.failed) {
+    reportSupergraphFailure(check.keys, check.raw);
+  } else {
+    clearSupergraphFailure();
+  }
+
+  return check.subgraphs;
 }
 
 export const apollo: Awaitable<ApolloContract> = {
   async listSubgraphs(): Promise<RegisteredSubgraph[]> {
+    if (startupCheck !== null) {
+      await startupCheck;
+    }
+
     const variant = settings.currentVariant();
     const cached = cache.get(variant);
 

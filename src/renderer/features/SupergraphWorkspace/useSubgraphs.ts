@@ -103,26 +103,30 @@ export function useSubgraphs(routerPort: number) {
       api.subgraph.overrides(),
       api.subgraph.checkHealth(),
       api.errors.subgraphErrors(),
-      api.errors.supergraphErrors(),
-    ]).then(function store([subgraphs, overrides, health, errors, supergraph]) {
-      setSnapshot({
-        subgraphs,
-        overrides,
-        health,
-        errors,
-        supergraphErrors: supergraph,
+    ]).then(function store([subgraphs, overrides, health, errors]) {
+      void api.errors.supergraphErrors().then(function withSupergraph(
+        supergraph
+      ) {
+        setSnapshot({
+          subgraphs,
+          overrides,
+          health,
+          errors,
+          supergraphErrors: supergraph,
+        });
+        setLoading(false);
       });
-      setLoading(false);
     });
 
     // Only replace the cached answer when the registry has moved since.
-    void Promise.all([
-      api.apollo.reloadSubgraphs(),
-      api.errors.supergraphErrors(),
-    ]).then(function reloaded([subgraphs, supergraph]) {
-      setSnapshot(function keepUnlessChanged(current) {
-        const next = { ...current, subgraphs, supergraphErrors: supergraph };
-        return isSameListing(current, next) ? current : next;
+    void api.apollo.reloadSubgraphs().then(function reloaded(subgraphs) {
+      void api.errors.supergraphErrors().then(function withSupergraph(
+        supergraph
+      ) {
+        setSnapshot(function keepUnlessChanged(current) {
+          const next = { ...current, subgraphs, supergraphErrors: supergraph };
+          return isSameListing(current, next) ? current : next;
+        });
       });
     });
   }, []);
