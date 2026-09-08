@@ -1,41 +1,42 @@
 import { FAILURES } from "@/main/services/apollo/apollo.constants";
 import {
+  type ParsedListing,
   type RoverResponse,
   type RoverSubgraph,
 } from "@/main/services/apollo/apollo.types";
-import {
-  ApolloFailure,
-  type RegisteredSubgraph,
-  type SubgraphListing,
-} from "@/shared/apollo/apollo.types";
+import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
+import { type ErrorKey } from "@/shared/errors/errors.types";
 
-function empty(failure: ApolloFailure, message: string): SubgraphListing {
-  return { subgraphs: [], failure, message };
+function toFailure(keys: ErrorKey[], raw: string | null): ParsedListing {
+  return { subgraphs: [], failed: true, keys, raw };
 }
 
 function toSubgraph(subgraph: RoverSubgraph): RegisteredSubgraph {
   return { name: subgraph.name, routingUrl: subgraph.url };
 }
 
-/** Turns rover's JSON into a listing, or into the reason there is none. */
-export function parseSubgraphList(stdout: string): SubgraphListing {
+/** Parses rover's JSON into a listing. */
+export function parseSubgraphList(stdout: string): ParsedListing {
   let response: RoverResponse;
   try {
     response = JSON.parse(stdout) as RoverResponse;
   } catch {
-    return empty(ApolloFailure.Unknown, "Rover did not answer with JSON.");
+    return toFailure([], stdout);
   }
 
   if (response.error !== undefined && response.error !== null) {
-    const code = response.error.code ?? "";
-    const message = response.error.message ?? "";
-    return empty(FAILURES[code] ?? ApolloFailure.Unknown, message);
+    const key = FAILURES[response.error.code ?? ""];
+    return toFailure(
+      key === undefined ? [] : [key],
+      response.error.message ?? null
+    );
   }
 
   const subgraphs = response.data?.subgraphs ?? [];
   return {
     subgraphs: subgraphs.map(toSubgraph),
-    failure: ApolloFailure.None,
-    message: "",
+    failed: false,
+    keys: [],
+    raw: null,
   };
 }

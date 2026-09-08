@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
 
 import { parseSubgraphList } from "@/main/services/apollo/apollo.utils";
-import { ApolloFailure } from "@/shared/apollo/apollo.types";
+import { ErrorKey } from "@/shared/errors/errors.types";
 
 const LISTING = JSON.stringify({
   json_version: "1",
@@ -33,25 +33,25 @@ test("reads the registered subgraphs", () => {
   ]);
 });
 
-test("a listing has no failure", () => {
+test("a listing has not failed", () => {
   const actual = parseSubgraphList(LISTING);
 
-  expect(actual.failure).toBe(ApolloFailure.None);
+  expect(actual.failed).toBe(false);
 });
 
 test("names a rejected key by its code, not its wording", () => {
   const actual = parseSubgraphList(BAD_KEY);
 
-  expect(actual.failure).toBe(ApolloFailure.InvalidKey);
+  expect(actual.keys).toEqual([ErrorKey.ApolloKeyInvalid]);
 });
 
 test("keeps rover's message for a failure", () => {
   const actual = parseSubgraphList(BAD_KEY);
 
-  expect(actual.message).toContain("401 Unauthorized");
+  expect(actual.raw).toContain("401 Unauthorized");
 });
 
-test("an unrecognised code is an unknown failure", () => {
+test("an unrecognised code names no signature, and leaves the text to say why", () => {
   const actual = parseSubgraphList(
     JSON.stringify({
       data: { success: false },
@@ -59,13 +59,16 @@ test("an unrecognised code is an unknown failure", () => {
     })
   );
 
-  expect(actual.failure).toBe(ApolloFailure.Unknown);
+  expect(actual.failed).toBe(true);
+  expect(actual.keys).toEqual([]);
+  expect(actual.raw).toBe("boom");
 });
 
-test("output that is not JSON is an unknown failure", () => {
+test("output that is not JSON is a failure carrying whatever rover wrote", () => {
   const actual = parseSubgraphList("rover fell over");
 
-  expect(actual.failure).toBe(ApolloFailure.Unknown);
+  expect(actual.failed).toBe(true);
+  expect(actual.raw).toBe("rover fell over");
 });
 
 test("a listing with no subgraphs is still a listing", () => {
@@ -75,7 +78,8 @@ test("a listing with no subgraphs is still a listing", () => {
 
   expect(actual).toEqual({
     subgraphs: [],
-    failure: ApolloFailure.None,
-    message: "",
+    failed: false,
+    keys: [],
+    raw: null,
   });
 });

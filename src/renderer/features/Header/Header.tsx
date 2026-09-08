@@ -17,7 +17,7 @@ type HeaderProps = {
   children: ReactNode;
 };
 
-/** The window's title bar: graph, variant, launch, and settings. */
+/** The window's own title bar. */
 export default function Header({
   graphName,
   variant,

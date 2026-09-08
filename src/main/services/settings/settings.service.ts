@@ -18,14 +18,14 @@ export const settings: SettingsContract = {
     Object.assign(current, patch);
     return current;
   },
-  /** The variant every other service reads. Defaults to the first offered. */
+  /** The variant every other service reads, defaulting to the first offered. */
   currentVariant() {
     if (variant === "") {
       variant = environment.variants()[0] ?? "";
     }
     return variant;
   },
-  selectVariant(name: string) {
+  updateVariant(name: string) {
     variant = name;
     return variant;
   },

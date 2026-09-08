@@ -1,0 +1,24 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+// The element beats MUI's own filled-severity rule, which lands after ours.
+div.alertBanner {
+  align-items: center;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  color: colors.$text-primary;
+  background: colors.$failed-fill;
+  border-radius: 6px;
+}
+
+// ButtonBase centres its content, and MUI injects that rule after ours.
+button.alertBanner__message,
+span.alertBanner__message {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  font: inherit;
+  text-align: left;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}

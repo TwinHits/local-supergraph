@@ -2,60 +2,55 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/renderer/api";
 import {
-  portMessage,
-  subgraphRows,
-  tableView,
+  buildPortMessage,
+  buildSubgraphRows,
+  buildTableView,
 } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
+import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import {
-  ApolloFailure,
-  type SubgraphListing,
-} from "@/shared/apollo/apollo.types";
+  type Diagnosis,
+  type SubgraphErrorMap,
+} from "@/shared/errors/errors.types";
 import {
   Composition,
   type HealthMap,
   type OverrideMap,
   type Row,
   SortColumn,
-  type Subgraph,
 } from "@/shared/subgraph/subgraph.types";
 
 const NO_COMPOSITION: Record<string, Composition> = {};
 
 type Snapshot = {
-  subgraphs: Subgraph[];
+  subgraphs: RegisteredSubgraph[];
   overrides: OverrideMap;
   health: HealthMap;
-  error: string;
+  errors: SubgraphErrorMap;
+  supergraphErrors: Diagnosis[];
 };
 
 const EMPTY: Snapshot = {
   subgraphs: [],
   overrides: {},
   health: {},
-  error: "",
+  errors: {},
+  supergraphErrors: [],
 };
 
-/** Builds the table's snapshot from what main answered. */
-function toSnapshot(
-  listing: SubgraphListing,
-  overrides: OverrideMap,
-  health: HealthMap
-): Snapshot {
-  return {
-    subgraphs: listing.subgraphs,
-    overrides,
-    health,
-    error:
-      listing.failure === ApolloFailure.None
-        ? ""
-        : `Could not read the graph. ${listing.message}`,
-  };
+/** True when two runs of failures say the same thing. */
+function areFailuresEqual(current: Diagnosis[], next: Diagnosis[]): boolean {
+  return (
+    current.length === next.length &&
+    current.every(function matches(diagnosis, index) {
+      return diagnosis.key === next[index].key;
+    })
+  );
 }
 
-/** True when a reload brought back the same subgraphs and the same error. */
-function sameListing(current: Snapshot, next: Snapshot): boolean {
+/** True when a reload brought back the same subgraphs and the same failures. */
+function isSameListing(current: Snapshot, next: Snapshot): boolean {
   return (
-    current.error === next.error &&
+    areFailuresEqual(current.supergraphErrors, next.supergraphErrors) &&
     current.subgraphs.length === next.subgraphs.length &&
     current.subgraphs.every(function matches(subgraph, index) {
       const other = next.subgraphs[index];
@@ -67,7 +62,7 @@ function sameListing(current: Snapshot, next: Snapshot): boolean {
 }
 
 /** Collects the ports every local row is asking for. */
-function claimedPorts(rows: Row[]): number[] {
+function collectClaimedPorts(rows: Row[]): number[] {
   return rows
     .filter(function isLocal(row) {
       return row.local && row.port !== null;
@@ -78,8 +73,11 @@ function claimedPorts(rows: Row[]): number[] {
 }
 
 /** Builds the message under each local row's port input. */
-function portErrors(rows: Row[], routerPort: number): Record<string, string> {
-  const ports = claimedPorts(rows);
+function buildPortErrors(
+  rows: Row[],
+  routerPort: number
+): Record<string, string> {
+  const ports = collectClaimedPorts(rows);
   const errors: Record<string, string> = {};
   for (const row of rows) {
     if (!row.local) {
@@ -87,12 +85,12 @@ function portErrors(rows: Row[], routerPort: number): Record<string, string> {
     }
     const others = [...ports];
     others.splice(others.indexOf(row.port ?? 0), 1);
-    errors[row.name] = portMessage(row.port, others, routerPort);
+    errors[row.name] = buildPortMessage(row.port, others, routerPort);
   }
   return errors;
 }
 
-/** Holds the table's state and talks to main. Components take the result. */
+/** Holds the table's state and talks to main. */
 export function useSubgraphs(routerPort: number) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -103,31 +101,41 @@ export function useSubgraphs(routerPort: number) {
     void Promise.all([
       api.apollo.listSubgraphs(),
       api.subgraph.overrides(),
-      api.subgraph.health(),
-    ]).then(function store([listing, overrides, health]) {
-      setSnapshot(toSnapshot(listing, overrides, health));
+      api.subgraph.checkHealth(),
+      api.errors.subgraphErrors(),
+      api.errors.supergraphErrors(),
+    ]).then(function store([subgraphs, overrides, health, errors, supergraph]) {
+      setSnapshot({
+        subgraphs,
+        overrides,
+        health,
+        errors,
+        supergraphErrors: supergraph,
+      });
       setLoading(false);
     });
 
-    // The cached answer is on screen already; only replace it when the registry
-    // has moved since it was cached.
-    void api.apollo.reloadSubgraphs().then(function reloaded(listing) {
+    // Only replace the cached answer when the registry has moved since.
+    void Promise.all([
+      api.apollo.reloadSubgraphs(),
+      api.errors.supergraphErrors(),
+    ]).then(function reloaded([subgraphs, supergraph]) {
       setSnapshot(function keepUnlessChanged(current) {
-        const next = toSnapshot(listing, current.overrides, current.health);
-        return sameListing(current, next) ? current : next;
+        const next = { ...current, subgraphs, supergraphErrors: supergraph };
+        return isSameListing(current, next) ? current : next;
       });
     });
   }, []);
 
   useEffect(load, [load]);
 
-  const setOverride = useCallback(function write(
+  const updateOverride = useCallback(function write(
     name: string,
     local: boolean,
     port: number | null
   ) {
     void api.subgraph
-      .setOverride(name, { local, port })
+      .updateOverride(name, { local, port })
       .then(function store(overrides) {
         setSnapshot(function merge(current) {
           return { ...current, overrides };
@@ -135,18 +143,19 @@ export function useSubgraphs(routerPort: number) {
       });
   }, []);
 
-  const all = subgraphRows({ ...snapshot, composition: NO_COMPOSITION });
+  const all = buildSubgraphRows({ ...snapshot, composition: NO_COMPOSITION });
 
   return {
-    rows: tableView(all, search, sort),
-    portErrors: portErrors(all, routerPort),
-    error: snapshot.error,
+    rows: buildTableView(all, search, sort),
+    portErrors: buildPortErrors(all, routerPort),
+    errors: snapshot.errors,
+    supergraphErrors: snapshot.supergraphErrors,
     loading,
     search,
     sort,
     setSearch,
     setSort,
-    setOverride,
+    updateOverride,
     reload: load,
   };
 }

@@ -1,4 +1,4 @@
-/* v8 ignore file -- the IPC boundary holds no logic to assert */
+/* v8 ignore file -- the IPC boundary has no logic to test */
 import { ipcMain } from "electron";
 
 import { apollo } from "@/main/services/apollo/apollo.service";
@@ -8,17 +8,18 @@ import { settings } from "@/main/services/settings/settings.service";
 import { subgraphHealth } from "@/main/services/subgraph-health/subgraph-health.service";
 import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-overrides.service";
 import { windowControls } from "@/main/services/window/window.service";
-import { channelName } from "@/shared/contract/contract.constants";
+import { buildChannelName } from "@/shared/contract/contract.constants";
 import {
+  type Awaitable,
   type Handlers,
   type Implementation,
 } from "@/shared/contract/contract.types";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
 
-const subgraph: SubgraphContract = {
+const subgraph: Awaitable<SubgraphContract> = {
   overrides: subgraphOverrides.overrides,
-  setOverride: subgraphOverrides.setOverride,
-  health: subgraphHealth.health,
+  updateOverride: subgraphOverrides.updateOverride,
+  checkHealth: subgraphHealth.checkHealth,
 };
 
 const handlers = {
@@ -32,18 +33,18 @@ const handlers = {
 
 /** Registers one IPC handler per contract method. */
 export function registerBridge(): void {
-  register(handlers);
+  registerHandlers(handlers);
 }
 
-/** Walks the handlers and puts each one on its channel. */
-function register(implementations: Handlers): void {
+/** Puts each handler on its channel. */
+function registerHandlers(implementations: Handlers): void {
   for (const [namespace, methods] of Object.entries(implementations)) {
     for (const [method, implementation] of Object.entries(methods)) {
       ipcMain.handle(
-        channelName(namespace, method),
+        buildChannelName(namespace, method),
         function handle(_event, ...args: unknown[]) {
-          // IPC gives us untyped arguments. The cast holds because the only
-          // caller is the renderer's api, typed from this same Contract.
+          // The cast holds because the only caller is the renderer's api,
+          // built from this same Contract.
           return (implementation as (...called: unknown[]) => unknown)(...args);
         }
       );

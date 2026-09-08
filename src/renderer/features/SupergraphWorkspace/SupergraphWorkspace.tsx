@@ -1,20 +1,23 @@
 import ErrorModal from "@/renderer/features/ErrorModal";
 import SubgraphTable from "@/renderer/features/SubgraphTable";
+import SupergraphError from "@/renderer/features/SupergraphWorkspace/components/SupergraphError";
 import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.module.scss";
-import { useSubgraphErrors } from "@/renderer/features/SupergraphWorkspace/useSubgraphErrors";
+import { useErrorModal } from "@/renderer/features/SupergraphWorkspace/useErrorModal";
 import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
+
+const SUPERGRAPH_TITLE = "Supergraph";
 
 type SupergraphWorkspaceProps = {
   routerPort: number;
 };
 
-/** Everything below the header: the subgraph table and the errors behind it. */
+/** Everything below the header. */
 export default function SupergraphWorkspace({
   routerPort,
 }: SupergraphWorkspaceProps) {
   const subgraphs = useSubgraphs(routerPort);
-  const errors = useSubgraphErrors();
+  const modal = useErrorModal();
 
   if (subgraphs.loading) {
     return (
@@ -26,9 +29,14 @@ export default function SupergraphWorkspace({
 
   return (
     <>
+      <SupergraphError
+        diagnoses={subgraphs.supergraphErrors}
+        onShowErrors={function showSupergraphErrors() {
+          modal.show(SUPERGRAPH_TITLE, subgraphs.supergraphErrors);
+        }}
+      />
       <SubgraphTable
         rows={subgraphs.rows}
-        error={subgraphs.error}
         search={subgraphs.search}
         sort={subgraphs.sort}
         portErrors={subgraphs.portErrors}
@@ -38,29 +46,27 @@ export default function SupergraphWorkspace({
           const row = subgraphs.rows.find(function named(each) {
             return each.name === name;
           });
-          subgraphs.setOverride(name, local, row?.port ?? null);
+          subgraphs.updateOverride(name, local, row?.port ?? null);
         }}
         onPortChange={function setPort(name, port) {
-          subgraphs.setOverride(name, true, port);
+          subgraphs.updateOverride(name, true, port);
         }}
         onShowErrors={function showErrors(name) {
           const row = subgraphs.rows.find(function named(each) {
             return each.name === name;
           });
-          errors.show(name, row?.routingUrl ?? "");
+          modal.show(
+            `${name} — ${row?.routingUrl ?? ""}`,
+            subgraphs.errors[name] ?? []
+          );
         }}
       />
       <ErrorModal
-        key={errors.shown.subgraph}
-        open={errors.open}
-        subgraph={errors.shown.subgraph}
-        url={errors.shown.url}
-        diagnoses={errors.shown.diagnoses}
-        onCopy={function copy(command: string) {
-          void navigator.clipboard.writeText(command);
-        }}
-        onRetry={subgraphs.reload}
-        onClose={errors.close}
+        key={modal.shown.title}
+        open={modal.open}
+        title={modal.shown.title}
+        diagnoses={modal.shown.diagnoses}
+        onClose={modal.close}
       />
     </>
   );

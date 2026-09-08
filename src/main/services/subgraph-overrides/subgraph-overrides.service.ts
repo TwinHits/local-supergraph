@@ -9,7 +9,7 @@ export const subgraphOverrides = {
   overrides(): OverrideMap {
     return overrides;
   },
-  setOverride(name: string, override: Override): OverrideMap {
+  updateOverride(name: string, override: Override): OverrideMap {
     overrides[name] = override;
     return overrides;
   },

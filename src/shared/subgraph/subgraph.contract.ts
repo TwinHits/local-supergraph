@@ -4,9 +4,9 @@ import {
   type OverrideMap,
 } from "@/shared/subgraph/subgraph.types";
 
-/** What the renderer may ask about the graph and its local overrides. */
+/** What the renderer may ask about the subgraphs and their local overrides. */
 export type SubgraphContract = {
   overrides(): OverrideMap;
-  setOverride(name: string, override: Override): OverrideMap;
-  health(): HealthMap;
+  updateOverride(name: string, override: Override): OverrideMap;
+  checkHealth(): HealthMap;
 };

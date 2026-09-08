@@ -1,6 +1,10 @@
-import { type Diagnosis } from "@/shared/errors/errors.types";
+import {
+  type Diagnosis,
+  type SubgraphErrorMap,
+} from "@/shared/errors/errors.types";
 
-/** What the renderer may ask about a subgraph's failure. */
+/** What the renderer may ask about a failure. */
 export type ErrorsContract = {
-  diagnose(subgraph: string): Diagnosis[];
+  subgraphErrors(): SubgraphErrorMap;
+  supergraphErrors(): Diagnosis[];
 };

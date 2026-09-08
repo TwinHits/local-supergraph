@@ -27,17 +27,11 @@ export type Override = {
   port: number | null;
 };
 
-/** One subgraph as Studio describes it. */
-export type Subgraph = {
-  name: string;
-  routingUrl: string;
-};
-
 export type OverrideMap = Record<string, Override>;
 
 export type HealthMap = Record<string, Reachability>;
 
-/** Everything the table needs for one line, after the sources are merged. */
+/** Everything the table needs for one line. */
 export type Row = {
   name: string;
   routingUrl: string;

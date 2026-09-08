@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import App from "@/renderer/App";
 
@@ -19,20 +19,19 @@ const stub = vi.hoisted(function fixtures() {
         summary: "Nothing is listening on that port",
         cause: "The service is not running.",
         resolution: ["Start the service"],
-        command: null,
-        raw: "",
+        raw: null,
       },
       {
         key: "REMOTE_UNREACHABLE",
         summary: "The deployed URL did not answer",
         cause: "VPN is down.",
         resolution: ["Check the VPN"],
-        command: null,
-        raw: "",
+        raw: null,
       },
     ],
+    supergraphErrors: [] as unknown[],
     settings: { routerPort: 4041 },
-    setOverride: vi.fn(function noop() {
+    updateOverride: vi.fn(function noop() {
       return Promise.resolve({ starships: { local: true, port: 4002 } });
     }),
   };
@@ -51,32 +50,27 @@ vi.mock("@/renderer/api", function stubBridge() {
       },
       apollo: {
         listSubgraphs() {
-          return Promise.resolve({
-            subgraphs: stub.subgraphs,
-            failure: "none",
-            message: "",
-          });
+          return Promise.resolve(stub.subgraphs);
         },
         reloadSubgraphs() {
-          return Promise.resolve({
-            subgraphs: stub.subgraphs,
-            failure: "none",
-            message: "",
-          });
+          return Promise.resolve(stub.subgraphs);
         },
       },
       subgraph: {
         overrides() {
           return Promise.resolve(stub.overrides);
         },
-        health() {
+        checkHealth() {
           return Promise.resolve(stub.health);
         },
-        setOverride: stub.setOverride,
+        updateOverride: stub.updateOverride,
       },
       errors: {
-        diagnose() {
-          return Promise.resolve(stub.diagnoses);
+        subgraphErrors() {
+          return Promise.resolve({ starships: stub.diagnoses });
+        },
+        supergraphErrors() {
+          return Promise.resolve(stub.supergraphErrors);
         },
       },
       settings: {
@@ -89,7 +83,7 @@ vi.mock("@/renderer/api", function stubBridge() {
         currentVariant() {
           return Promise.resolve("current");
         },
-        selectVariant() {
+        updateVariant() {
           return Promise.resolve("staging");
         },
       },
@@ -152,7 +146,7 @@ test("the toggle reports a subgraph going local", async () => {
 
   await userEvent.click(toggle);
 
-  expect(stub.setOverride).toHaveBeenCalledWith("characters", {
+  expect(stub.updateOverride).toHaveBeenCalledWith("characters", {
     local: true,
     port: null,
   });
@@ -161,10 +155,94 @@ test("the toggle reports a subgraph going local", async () => {
 test("clicking a failed status opens its errors", async () => {
   render(<App />);
   const status = await screen.findByRole("button", {
-    name: "failed: Not answering",
+    name: "failed: Nothing is listening on that port",
   });
 
   await userEvent.click(status);
 
-  expect(await screen.findByText("1 of 2")).toBeDefined();
+  expect(
+    await screen.findByText("Nothing is listening on that port")
+  ).toBeDefined();
+});
+
+afterEach(function forgetSupergraphErrors() {
+  stub.supergraphErrors = [];
+});
+
+test("a supergraph the registry would not answer for says so above the table", async () => {
+  stub.supergraphErrors = [
+    {
+      key: "APOLLO_KEY_INVALID",
+      summary: "Apollo rejected the key",
+      cause: "APOLLO_KEY is invalid or has expired.",
+      resolution: ["Regenerate the key"],
+      raw: "401 Unauthorized",
+    },
+  ];
+
+  render(<App />);
+
+  const actual = await screen.findByText(
+    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+  );
+
+  expect(actual).toBeDefined();
+});
+
+test("the supergraph's failure opens the same modal the rows use", async () => {
+  stub.supergraphErrors = [
+    {
+      key: "APOLLO_KEY_INVALID",
+      summary: "Apollo rejected the key",
+      cause: "APOLLO_KEY is invalid or has expired.",
+      resolution: ["Regenerate the key"],
+      raw: "401 Unauthorized",
+    },
+    {
+      key: "GRAPH_NOT_FOUND",
+      summary: "The key cannot see that graph",
+      cause: "The graph or variant does not exist.",
+      resolution: ["Check the variant"],
+      raw: null,
+    },
+  ];
+  render(<App />);
+  const notice = await screen.findByText(
+    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+  );
+
+  await userEvent.click(notice);
+
+  expect(await screen.findByText("Regenerate the key")).toBeDefined();
+});
+
+test("the notice steps through the supergraph's other failures", async () => {
+  stub.supergraphErrors = [
+    {
+      key: "APOLLO_KEY_INVALID",
+      summary: "Apollo rejected the key",
+      cause: "APOLLO_KEY is invalid or has expired.",
+      resolution: ["Regenerate the key"],
+      raw: "401 Unauthorized",
+    },
+    {
+      key: "GRAPH_NOT_FOUND",
+      summary: "The key cannot see that graph",
+      cause: "The graph or variant does not exist.",
+      resolution: ["Check the variant"],
+      raw: null,
+    },
+  ];
+  render(<App />);
+  await screen.findByText(
+    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+  );
+
+  await userEvent.click(screen.getByRole("button", { name: "Next error" }));
+
+  expect(
+    screen.getByText(
+      "The key cannot see that graph: The graph or variant does not exist."
+    )
+  ).toBeDefined();
 });

@@ -7,22 +7,23 @@ type Channel = {
   [Namespace in keyof Contract]: ChannelsOf<Namespace>;
 }[keyof Contract];
 
-/** The runtime half of the contract: contextBridge copies real keys, so it cannot read a type. */
+/** The channel names, listed because contextBridge cannot read a type. */
 export const CHANNELS = [
   "apollo.listSubgraphs",
   "apollo.reloadSubgraphs",
   "environment.graphName",
   "environment.variants",
-  "errors.diagnose",
+  "errors.subgraphErrors",
+  "errors.supergraphErrors",
   "settings.read",
   "settings.update",
   "settings.routerAddress",
   "settings.currentVariant",
-  "settings.selectVariant",
+  "settings.updateVariant",
   "settings.localAddress",
   "subgraph.overrides",
-  "subgraph.setOverride",
-  "subgraph.health",
+  "subgraph.updateOverride",
+  "subgraph.checkHealth",
   "windowControls.minimize",
   "windowControls.toggleMaximize",
   "windowControls.close",
@@ -36,7 +37,7 @@ export const ALL_CHANNELS_LISTED: Unlisted extends never ? true : never = true;
 
 export const BRIDGE_KEY = "bridge";
 
-/** Names the IPC channel one contract method travels on. */
-export function channelName(namespace: string, method: string): string {
+/** The channel name for one contract method. */
+export function buildChannelName(namespace: string, method: string): string {
   return `${namespace}.${method}`;
 }

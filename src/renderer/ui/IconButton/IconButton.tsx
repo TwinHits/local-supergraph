@@ -9,6 +9,7 @@ const VARIANTS: Record<IconButtonVariant, string> = {
   [IconButtonVariant.Default]: "",
   [IconButtonVariant.Muted]: styles["iconButton--muted"],
   [IconButtonVariant.Running]: styles["iconButton--running"],
+  [IconButtonVariant.Inline]: styles["iconButton--inline"],
 };
 
 type IconButtonProps = {

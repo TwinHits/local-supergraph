@@ -2,30 +2,30 @@ import { JSON_FORMAT } from "@/main/services/apollo/apollo.constants";
 import { parseSubgraphList } from "@/main/services/apollo/apollo.utils";
 import { EnvironmentVariable } from "@/main/services/environment/environment.constants";
 import { environment } from "@/main/services/environment/environment.service";
+import {
+  clearSupergraphFailure,
+  reportSupergraphFailure,
+} from "@/main/services/errors/errors.service";
 import { runRover } from "@/main/services/rover/rover.service";
 import { settings } from "@/main/services/settings/settings.service";
 import { type ApolloContract } from "@/shared/apollo/apollo.contract";
-import {
-  ApolloFailure,
-  type SubgraphListing,
-} from "@/shared/apollo/apollo.types";
+import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import { type Awaitable } from "@/shared/contract/contract.types";
+import { ErrorKey } from "@/shared/errors/errors.types";
 
-const cache = new Map<string, SubgraphListing>();
+const cache = new Map<string, RegisteredSubgraph[]>();
 
-function unset(message: string): SubgraphListing {
-  return { subgraphs: [], failure: ApolloFailure.UnknownGraph, message };
-}
-
-/** Asks the registry for one variant. Every call costs a round trip. */
-async function getSubgraphsForVariant(
+/** Asks the registry which subgraphs a variant has. */
+async function readSubgraphsForVariant(
   variant: string
-): Promise<SubgraphListing> {
+): Promise<RegisteredSubgraph[]> {
   const graphName = environment.graphName();
   if (graphName === "" || variant === "") {
-    return unset(
+    reportSupergraphFailure(
+      [ErrorKey.GraphRefUnset],
       `${EnvironmentVariable.ApolloGraphRef} or ${EnvironmentVariable.SupergraphVariants} is not set.`
     );
+    return [];
   }
 
   const result = await runRover([
@@ -36,34 +36,40 @@ async function getSubgraphsForVariant(
   ]);
 
   if (!result.found) {
-    return {
-      subgraphs: [],
-      failure: ApolloFailure.Unreachable,
-      message: "rover is not installed.",
-    };
+    reportSupergraphFailure([ErrorKey.RoverMissing], "rover is not installed.");
+    return [];
   }
 
-  return parseSubgraphList(result.stdout);
+  const listing = parseSubgraphList(result.stdout);
+  if (listing.failed) {
+    reportSupergraphFailure(listing.keys, listing.raw);
+    return [];
+  }
+
+  clearSupergraphFailure();
+  return listing.subgraphs;
 }
 
-/** Fills the cache for every offered variant, so switching is instant. */
-export function prefetchVariants(): void {
+/** Reads every variant before anything asks for one. */
+export function cacheAllVariants(): void {
   for (const variant of environment.variants()) {
-    void getSubgraphsForVariant(variant).then(function store(listing) {
-      cache.set(variant, listing);
+    void readSubgraphsForVariant(variant).then(function store(subgraphs) {
+      cache.set(variant, subgraphs);
     });
   }
 }
 
 /** Reads a variant from the registry and caches what came back. */
-async function reread(variant: string): Promise<SubgraphListing> {
-  const listing = await getSubgraphsForVariant(variant);
-  cache.set(variant, listing);
-  return listing;
+async function refreshSubgraphs(
+  variant: string
+): Promise<RegisteredSubgraph[]> {
+  const subgraphs = await readSubgraphsForVariant(variant);
+  cache.set(variant, subgraphs);
+  return subgraphs;
 }
 
 export const apollo: Awaitable<ApolloContract> = {
-  async listSubgraphs(): Promise<SubgraphListing> {
+  async listSubgraphs(): Promise<RegisteredSubgraph[]> {
     const variant = settings.currentVariant();
     const cached = cache.get(variant);
 
@@ -71,10 +77,10 @@ export const apollo: Awaitable<ApolloContract> = {
       return cached;
     }
 
-    return reread(variant);
+    return refreshSubgraphs(variant);
   },
 
-  async reloadSubgraphs(): Promise<SubgraphListing> {
-    return reread(settings.currentVariant());
+  async reloadSubgraphs(): Promise<RegisteredSubgraph[]> {
+    return refreshSubgraphs(settings.currentVariant());
   },
 };

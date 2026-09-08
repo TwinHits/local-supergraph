@@ -2,13 +2,13 @@ import CollapsiblePanel from "@/renderer/ui/CollapsiblePanel";
 import styles from "@/renderer/ui/RawOutput/RawOutput.module.scss";
 
 type RawOutputProps = {
-  raw: string;
+  raw: string | null;
   startOpen: boolean;
 };
 
-/** The unparsed error text. Collapsed for a known error, shown for an unknown one. */
+/** Unparsed output the caller can show or collapse. */
 export default function RawOutput({ raw, startOpen }: RawOutputProps) {
-  if (raw === "") {
+  if (raw === null) {
     return null;
   }
   if (startOpen) {

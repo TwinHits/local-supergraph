@@ -2,11 +2,10 @@ import { expect, test } from "vitest";
 
 import {
   canGoBack,
+  getNextIndex,
+  getPreviousIndex,
   hasArrows,
-  nextIndex,
-  position,
-  previousIndex,
-} from "@/renderer/features/ErrorModal/errorModal.utils";
+} from "@/renderer/utils/pager.utils";
 
 test("one error shows no arrows", () => {
   expect(hasArrows(1)).toBe(false);
@@ -25,21 +24,17 @@ test("back is enabled once past the first error", () => {
 });
 
 test("next steps forward", () => {
-  expect(nextIndex(0, 4)).toBe(1);
+  expect(getNextIndex(0, 4)).toBe(1);
 });
 
 test("next wraps from the last error to the first", () => {
-  expect(nextIndex(3, 4)).toBe(0);
+  expect(getNextIndex(3, 4)).toBe(0);
 });
 
 test("back steps backward", () => {
-  expect(previousIndex(2)).toBe(1);
+  expect(getPreviousIndex(2)).toBe(1);
 });
 
 test("back stays put on the first error", () => {
-  expect(previousIndex(0)).toBe(0);
-});
-
-test("the counter reads one-based", () => {
-  expect(position(1, 4)).toBe("2 of 4");
+  expect(getPreviousIndex(0)).toBe(0);
 });

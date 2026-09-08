@@ -1,3 +1,8 @@
+import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
+import {
+  type Diagnosis,
+  type SubgraphErrorMap,
+} from "@/shared/errors/errors.types";
 import {
   Composition,
   type HealthMap,
@@ -6,8 +11,12 @@ import {
   type Row,
   RowStatus,
   SortColumn,
-  type Subgraph,
 } from "@/shared/subgraph/subgraph.types";
+
+/** Writes one failure as a single line. */
+export function buildDiagnosisMessage(diagnosis: Diagnosis): string {
+  return `${diagnosis.summary}: ${diagnosis.cause}`;
+}
 
 type Signals = {
   local: boolean;
@@ -16,7 +25,7 @@ type Signals = {
 };
 
 /** Turns a reported reachability into a row status. */
-function fromReachability(reachability: Reachability): RowStatus {
+function toReachabilityStatus(reachability: Reachability): RowStatus {
   if (reachability === Reachability.Reachable) {
     return RowStatus.Healthy;
   }
@@ -27,7 +36,7 @@ function fromReachability(reachability: Reachability): RowStatus {
 }
 
 /** Turns a reported composition into a row status. */
-function fromComposition(composition: Composition): RowStatus {
+function toCompositionStatus(composition: Composition): RowStatus {
   if (composition === Composition.Composed) {
     return RowStatus.Healthy;
   }
@@ -37,31 +46,29 @@ function fromComposition(composition: Composition): RowStatus {
   return RowStatus.Pending;
 }
 
-/**
- * Shows whichever signal is closest to the developer's machine (§2.5): a local
- * port they own, then composition, then a remote URL they cannot fix.
- */
-export function rowStatus(signals: Signals): RowStatus {
+/** Picks the signal closest to the developer's own machine. */
+export function buildRowStatus(signals: Signals): RowStatus {
   if (signals.local) {
-    const local = fromReachability(signals.reachability);
+    const local = toReachabilityStatus(signals.reachability);
     if (local !== RowStatus.Pending) {
       return local;
     }
   }
 
-  const composed = fromComposition(signals.composition);
+  const composed = toCompositionStatus(signals.composition);
   if (composed !== RowStatus.Pending) {
     return composed;
   }
 
-  return fromReachability(signals.reachability);
+  return toReachabilityStatus(signals.reachability);
 }
 
 type Sources = {
-  subgraphs: Subgraph[];
+  subgraphs: RegisteredSubgraph[];
   overrides: OverrideMap;
   health: HealthMap;
   composition: Record<string, Composition>;
+  errors: SubgraphErrorMap;
 };
 
 const REASONS: Record<RowStatus, string> = {
@@ -70,12 +77,21 @@ const REASONS: Record<RowStatus, string> = {
   [RowStatus.Pending]: "No answer yet",
 };
 
-/** Merges the four sources into one line per subgraph (§2.7). */
-export function subgraphRows(sources: Sources): Row[] {
+/** The row's top failure, or the result of its probe when there is none. */
+function buildRowReason(status: RowStatus, diagnoses: Diagnosis[]): string {
+  const top = diagnoses[0];
+  if (top === undefined) {
+    return REASONS[status];
+  }
+  return top.summary;
+}
+
+/** Merges the sources into one line per subgraph. */
+export function buildSubgraphRows(sources: Sources): Row[] {
   return sources.subgraphs.map(function toRow(subgraph) {
     const override = sources.overrides[subgraph.name];
     const local = override !== undefined && override.local;
-    const status = rowStatus({
+    const status = buildRowStatus({
       local,
       reachability: sources.health[subgraph.name] ?? Reachability.Unknown,
       composition: sources.composition[subgraph.name] ?? Composition.NotRunning,
@@ -87,7 +103,7 @@ export function subgraphRows(sources: Sources): Row[] {
       local,
       port: override === undefined ? null : override.port,
       status,
-      reason: REASONS[status],
+      reason: buildRowReason(status, sources.errors[subgraph.name] ?? []),
     };
   });
 }
@@ -112,8 +128,8 @@ export function filterRows(rows: Row[], search: string): Row[] {
   });
 }
 
-/** Compares two rows on one column, broken tie by name. */
-function compare(left: Row, right: Row, column: SortColumn): number {
+/** Compares two rows on one column, breaking ties by name. */
+function compareRows(left: Row, right: Row, column: SortColumn): number {
   if (column === SortColumn.Status) {
     const gap = STATUS_ORDER[left.status] - STATUS_ORDER[right.status];
     return gap === 0 ? left.name.localeCompare(right.name) : gap;
@@ -125,15 +141,15 @@ function compare(left: Row, right: Row, column: SortColumn): number {
   return left.name.localeCompare(right.name);
 }
 
-/** Sorts a copy of the rows. Failed first, so the broken ones are on top. */
+/** Sorts a copy of the rows, failed ones first. */
 export function sortRows(rows: Row[], column: SortColumn): Row[] {
   return [...rows].sort(function byColumn(left, right) {
-    return compare(left, right, column);
+    return compareRows(left, right, column);
   });
 }
 
-/** The rows the table shows: filtered, then sorted. */
-export function tableView(
+/** Filters the rows and then sorts them. */
+export function buildTableView(
   rows: Row[],
   search: string,
   column: SortColumn
@@ -144,17 +160,15 @@ export function tableView(
 const LOWEST_PORT = 1;
 const HIGHEST_PORT = 65535;
 
-/** True when a number is a port a service could actually bind. */
+/** True when a number is a port a service could bind. */
 export function isValidPort(port: number): boolean {
   return Number.isInteger(port) && port >= LOWEST_PORT && port <= HIGHEST_PORT;
 }
 
 /**
- * The message shown under a port input, or an empty string when the port is
- * usable. Collisions matter as much as range: two rows on one port compose,
- * then one of them answers for both.
+ * The message under a port input, or an empty string when the port is usable.
  */
-export function portMessage(
+export function buildPortMessage(
   port: number | null,
   takenPorts: number[],
   routerPort: number

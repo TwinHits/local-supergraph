@@ -1,7 +1,7 @@
-import { type SubgraphListing } from "@/shared/apollo/apollo.types";
+import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 
 /** What the renderer may ask about the graph in the registry. */
 export type ApolloContract = {
-  listSubgraphs(): SubgraphListing;
-  reloadSubgraphs(): SubgraphListing;
+  listSubgraphs(): RegisteredSubgraph[];
+  reloadSubgraphs(): RegisteredSubgraph[];
 };

@@ -1,14 +1,16 @@
 import { expect, test } from "vitest";
 
 import {
+  buildDiagnosisMessage,
+  buildPortMessage,
+  buildRowStatus,
+  buildSubgraphRows,
+  buildTableView,
   filterRows,
   isValidPort,
-  portMessage,
-  rowStatus,
   sortRows,
-  subgraphRows,
-  tableView,
 } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 import {
   Composition,
   Reachability,
@@ -18,7 +20,7 @@ import {
 } from "@/shared/subgraph/subgraph.types";
 
 test("a local subgraph that answers is healthy", () => {
-  const actual = rowStatus({
+  const actual = buildRowStatus({
     local: true,
     reachability: Reachability.Reachable,
     composition: Composition.NotRunning,
@@ -28,7 +30,7 @@ test("a local subgraph that answers is healthy", () => {
 });
 
 test("a local subgraph that refuses beats a composed graph", () => {
-  const actual = rowStatus({
+  const actual = buildRowStatus({
     local: true,
     reachability: Reachability.Unreachable,
     composition: Composition.Composed,
@@ -38,7 +40,7 @@ test("a local subgraph that refuses beats a composed graph", () => {
 });
 
 test("composition beats a remote probe", () => {
-  const actual = rowStatus({
+  const actual = buildRowStatus({
     local: false,
     reachability: Reachability.Reachable,
     composition: Composition.Failed,
@@ -48,7 +50,7 @@ test("composition beats a remote probe", () => {
 });
 
 test("a remote probe answers when nothing nearer has", () => {
-  const actual = rowStatus({
+  const actual = buildRowStatus({
     local: false,
     reachability: Reachability.Unreachable,
     composition: Composition.NotRunning,
@@ -58,7 +60,7 @@ test("a remote probe answers when nothing nearer has", () => {
 });
 
 test("nothing reported yet is pending", () => {
-  const actual = rowStatus({
+  const actual = buildRowStatus({
     local: false,
     reachability: Reachability.Unknown,
     composition: Composition.NotRunning,
@@ -73,11 +75,12 @@ const subgraphs = [
 ];
 
 test("a subgraph with no override is remote and portless", () => {
-  const actual = subgraphRows({
+  const actual = buildSubgraphRows({
     subgraphs,
     overrides: {},
     health: {},
     composition: {},
+    errors: {},
   });
 
   expect(actual[0]).toEqual({
@@ -91,11 +94,12 @@ test("a subgraph with no override is remote and portless", () => {
 });
 
 test("an override makes the row local and carries its port", () => {
-  const actual = subgraphRows({
+  const actual = buildSubgraphRows({
     subgraphs,
     overrides: { starships: { local: true, port: 4002 } },
     health: { starships: Reachability.Reachable },
     composition: {},
+    errors: {},
   });
 
   expect(actual[1]).toEqual({
@@ -109,22 +113,24 @@ test("an override makes the row local and carries its port", () => {
 });
 
 test("a failed composition shows on a remote row", () => {
-  const actual = subgraphRows({
+  const actual = buildSubgraphRows({
     subgraphs,
     overrides: {},
     health: { characters: Reachability.Reachable },
     composition: { characters: Composition.Failed },
+    errors: {},
   });
 
   expect(actual[0].status).toBe(RowStatus.Failed);
 });
 
 test("returns one row per subgraph", () => {
-  const actual = subgraphRows({
+  const actual = buildSubgraphRows({
     subgraphs,
     overrides: {},
     health: {},
     composition: {},
+    errors: {},
   });
 
   expect(actual.length).toBe(subgraphs.length);
@@ -204,7 +210,7 @@ test("sorting leaves the given rows alone", () => {
 });
 
 test("the view filters before it sorts", () => {
-  const actual = tableView(rows, "s", SortColumn.Name);
+  const actual = buildTableView(rows, "s", SortColumn.Name);
 
   expect(
     actual.map(function name(each) {
@@ -228,31 +234,79 @@ test("rejects a fraction", () => {
 });
 
 test("asks for a port when there is none", () => {
-  const actual = portMessage(null, [], ROUTER_PORT);
+  const actual = buildPortMessage(null, [], ROUTER_PORT);
 
   expect(actual).toBe("Pick a port");
 });
 
 test("names the range when the port is out of it", () => {
-  const actual = portMessage(0, [], ROUTER_PORT);
+  const actual = buildPortMessage(0, [], ROUTER_PORT);
 
   expect(actual).toBe("Ports run 1 to 65535");
 });
 
 test("warns when the router already holds the port", () => {
-  const actual = portMessage(ROUTER_PORT, [], ROUTER_PORT);
+  const actual = buildPortMessage(ROUTER_PORT, [], ROUTER_PORT);
 
   expect(actual).toBe("The router is on this port");
 });
 
 test("warns when another subgraph holds the port", () => {
-  const actual = portMessage(4001, [4001], ROUTER_PORT);
+  const actual = buildPortMessage(4001, [4001], ROUTER_PORT);
 
   expect(actual).toBe("Another subgraph is on this port");
 });
 
 test("says nothing when the port is usable", () => {
-  const actual = portMessage(4002, [4001], ROUTER_PORT);
+  const actual = buildPortMessage(4002, [4001], ROUTER_PORT);
 
   expect(actual).toBe("");
+});
+
+const KEY_REJECTED: Diagnosis = {
+  key: ErrorKey.ApolloKeyInvalid,
+  summary: "Apollo rejected the key",
+  cause: "APOLLO_KEY is invalid or has expired.",
+  resolution: ["Regenerate the key"],
+  raw: "401 Unauthorized",
+};
+
+test("a failure reads as its summary and its cause", () => {
+  const actual = buildDiagnosisMessage(KEY_REJECTED);
+
+  expect(actual).toBe(
+    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+  );
+});
+
+test("a failing row says what its top error was", () => {
+  const actual = buildSubgraphRows({
+    subgraphs,
+    overrides: {},
+    health: { characters: Reachability.Unreachable },
+    composition: {},
+    errors: {
+      characters: [
+        {
+          ...KEY_REJECTED,
+          key: ErrorKey.RemoteUnreachable,
+          summary: "The deployed URL did not answer",
+        },
+      ],
+    },
+  });
+
+  expect(actual[0].reason).toBe("The deployed URL did not answer");
+});
+
+test("a row nothing was reported about falls back to how its probe went", () => {
+  const actual = buildSubgraphRows({
+    subgraphs,
+    overrides: {},
+    health: { characters: Reachability.Reachable },
+    composition: {},
+    errors: {},
+  });
+
+  expect(actual[0].reason).toBe("Answering");
 });

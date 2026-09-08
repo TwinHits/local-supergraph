@@ -1,7 +1,6 @@
-import ChevronLeftGlyph from "@mui/icons-material/ChevronLeft";
-import ChevronRightGlyph from "@mui/icons-material/ChevronRight";
+import ArrowLeftGlyph from "@mui/icons-material/ArrowLeft";
+import ArrowRightGlyph from "@mui/icons-material/ArrowRight";
 import CloseGlyph from "@mui/icons-material/Close";
-import ContentCopyGlyph from "@mui/icons-material/ContentCopy";
 import CropSquareGlyph from "@mui/icons-material/CropSquare";
 import FilterNoneGlyph from "@mui/icons-material/FilterNone";
 import MinimizeGlyph from "@mui/icons-material/Minimize";
@@ -14,14 +13,10 @@ import { IconName } from "@/renderer/ui/IconGlyph/IconGlyph.types";
 
 export type Glyph = ComponentType<{ fontSize: "inherit" }>;
 
-/**
- * The only place an icon library is named. Switching libraries is a change to
- * the right-hand side of this map and nothing else.
- */
+/** The only place an icon library is named. */
 export const GLYPHS: Record<IconName, Glyph> = {
-  [IconName.Back]: ChevronLeftGlyph,
-  [IconName.Forward]: ChevronRightGlyph,
-  [IconName.Copy]: ContentCopyGlyph,
+  [IconName.Back]: ArrowLeftGlyph,
+  [IconName.Forward]: ArrowRightGlyph,
   [IconName.Settings]: SettingsGlyph,
   [IconName.Minimize]: MinimizeGlyph,
   [IconName.Maximize]: CropSquareGlyph,

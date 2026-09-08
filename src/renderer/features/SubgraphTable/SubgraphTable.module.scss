@@ -1,13 +1,6 @@
-@use "@/renderer/styles/colors.module.scss" as colors;
-
 .subgraphTable__controls {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 0.5rem 0;
-}
-
-.subgraphTable__error {
-  margin: 0 0 1rem;
-  color: colors.$failed;
 }

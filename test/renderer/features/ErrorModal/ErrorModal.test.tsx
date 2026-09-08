@@ -11,8 +11,7 @@ function diagnosis(key: ErrorKey, summary: string): Diagnosis {
     summary,
     cause: `${summary} cause`,
     resolution: [`${summary} fix`],
-    command: null,
-    raw: "",
+    raw: null,
   };
 }
 
@@ -26,11 +25,8 @@ function show(diagnoses: Diagnosis[]) {
   render(
     <ErrorModal
       open
-      subgraph="droids"
-      url="https://droids.svc/graphql"
+      title="droids — https://droids.svc/graphql"
       diagnoses={diagnoses}
-      onCopy={vi.fn()}
-      onRetry={vi.fn()}
       onClose={vi.fn()}
     />
   );
@@ -40,12 +36,6 @@ test("shows the highest-priority error first", () => {
   show(three);
 
   expect(screen.getByText("First")).toBeDefined();
-});
-
-test("counts the errors", () => {
-  show(three);
-
-  expect(screen.getByText("1 of 3")).toBeDefined();
 });
 
 test("back is disabled on the first error", () => {
@@ -92,12 +82,11 @@ test("next on the last error wraps to the first", async () => {
 
   await userEvent.click(screen.getByRole("button", { name: "Next error" }));
 
-  expect(screen.getByText("1 of 3")).toBeDefined();
+  expect(screen.getByText("First")).toBeDefined();
 });
 
-test("a single error shows no arrows and no counter", () => {
+test("a single error shows no arrows", () => {
   show([three[0]]);
 
   expect(screen.queryByRole("button", { name: "Next error" })).toBeNull();
-  expect(screen.queryByText("1 of 1")).toBeNull();
 });
