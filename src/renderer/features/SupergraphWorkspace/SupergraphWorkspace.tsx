@@ -45,7 +45,6 @@ export default function SupergraphWorkspace({
         rows={subgraphs.rows}
         search={subgraphs.search}
         sort={subgraphs.sort}
-        portErrors={subgraphs.portErrors}
         onSearchChange={subgraphs.setSearch}
         onSortChange={subgraphs.setSort}
         onLocalChange={function setLocal(name, local) {

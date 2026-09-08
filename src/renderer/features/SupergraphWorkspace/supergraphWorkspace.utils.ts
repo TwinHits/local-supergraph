@@ -1,6 +1,7 @@
 import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import {
   type Diagnosis,
+  ErrorKey,
   type SubgraphErrorMap,
 } from "@/shared/errors/errors.types";
 import {
@@ -170,25 +171,95 @@ export function isValidPort(port: number): boolean {
   return Number.isInteger(port) && port >= LOWEST_PORT && port <= HIGHEST_PORT;
 }
 
-/**
- * The message under a port input, or an empty string when the port is usable.
- */
-export function buildPortMessage(
+/** The failure a local row's port has, or null when the port is usable. */
+export function buildPortDiagnosis(
   port: number | null,
   takenPorts: number[],
   routerPort: number
-): string {
+): Diagnosis | null {
   if (port === null) {
-    return "Pick a port";
+    return {
+      key: ErrorKey.PortInvalid,
+      summary: "No port is set for this subgraph",
+      cause: "Running it locally needs a port to listen on.",
+      resolution: ["Enter a port for this subgraph"],
+      raw: null,
+    };
   }
   if (!isValidPort(port)) {
-    return `Ports run ${LOWEST_PORT} to ${HIGHEST_PORT}`;
+    return {
+      key: ErrorKey.PortInvalid,
+      summary: "That port is not valid",
+      cause: `Ports run ${LOWEST_PORT} to ${HIGHEST_PORT}.`,
+      resolution: ["Enter a port in that range"],
+      raw: null,
+    };
   }
   if (port === routerPort) {
-    return "The router is on this port";
+    return {
+      key: ErrorKey.PortInvalid,
+      summary: "That port is already used by the router",
+      cause: "The router and this subgraph can't share a port.",
+      resolution: ["Pick a different port"],
+      raw: null,
+    };
   }
   if (takenPorts.includes(port)) {
-    return "Another subgraph is on this port";
+    return {
+      key: ErrorKey.PortInvalid,
+      summary: "That port is already used by another local subgraph",
+      cause: "Two local subgraphs can't share a port.",
+      resolution: ["Pick a different port"],
+      raw: null,
+    };
   }
-  return "";
+  return null;
+}
+
+/** Collects the ports every local row is asking for. */
+function collectClaimedPorts(rows: Row[]): number[] {
+  return rows
+    .filter(function isLocal(row) {
+      return row.local && row.port !== null;
+    })
+    .map(function toPort(row) {
+      return row.port ?? 0;
+    });
+}
+
+type PortValidatedRows = {
+  rows: Row[];
+  errors: SubgraphErrorMap;
+};
+
+/** Fails local rows whose port cannot be used, and files why. */
+export function applyPortDiagnoses(
+  rows: Row[],
+  errors: SubgraphErrorMap,
+  routerPort: number
+): PortValidatedRows {
+  const claimed = collectClaimedPorts(rows);
+  const nextErrors: SubgraphErrorMap = { ...errors };
+
+  const nextRows = rows.map(function checkPort(row) {
+    if (!row.local) {
+      return row;
+    }
+
+    const others = [...claimed];
+    const index = others.indexOf(row.port ?? 0);
+    if (index !== -1) {
+      others.splice(index, 1);
+    }
+
+    const diagnosis = buildPortDiagnosis(row.port, others, routerPort);
+    if (diagnosis === null) {
+      return row;
+    }
+
+    nextErrors[row.name] = [diagnosis, ...(errors[row.name] ?? [])];
+    return { ...row, status: RowStatus.Failed, reason: diagnosis.summary };
+  });
+
+  return { rows: nextRows, errors: nextErrors };
 }

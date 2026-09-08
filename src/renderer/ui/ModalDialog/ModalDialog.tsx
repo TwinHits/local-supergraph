@@ -1,6 +1,8 @@
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { type ReactNode } from "react";
 
+import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
+import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/ModalDialog/ModalDialog.module.scss";
 import { ModalSeverity } from "@/renderer/ui/ModalDialog/ModalDialog.types";
 
@@ -42,9 +44,22 @@ export default function ModalDialog({
       }}
     >
       <DialogTitle
-        className={severity === undefined ? undefined : TITLE_CLASSES[severity]}
+        className={[
+          styles.modalDialog__title,
+          severity === undefined ? "" : TITLE_CLASSES[severity],
+        ]
+          .join(" ")
+          .trim()}
       >
         {title}
+        <IconButton
+          label="Close"
+          tooltip="Close"
+          variant={IconButtonVariant.Inline}
+          onClick={onClose}
+        >
+          <IconGlyph name={IconName.Close} />
+        </IconButton>
       </DialogTitle>
       <DialogContent>{children}</DialogContent>
     </Dialog>

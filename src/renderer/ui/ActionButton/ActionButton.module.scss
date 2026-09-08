@@ -1,0 +1,6 @@
+// The element qualifier beats MUI's own same-specificity Button rule.
+button.actionButton--small {
+  min-height: unset;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.75rem;
+}

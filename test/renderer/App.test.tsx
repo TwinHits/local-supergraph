@@ -126,9 +126,9 @@ test("shows the routing url for a remote subgraph", async () => {
 test("shows a port input instead of a url for a local subgraph", async () => {
   render(<App />);
 
-  const actual = await screen.findByLabelText("starships port");
+  const actual = await screen.findByDisplayValue("4002");
 
-  expect((actual as HTMLInputElement).value).toBe("4002");
+  expect(actual).toBeDefined();
 });
 
 test("search filters the rows", async () => {

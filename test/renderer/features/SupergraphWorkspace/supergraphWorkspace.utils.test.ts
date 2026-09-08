@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 
 import {
   buildDiagnosisMessage,
-  buildPortMessage,
+  buildPortDiagnosis,
   buildRowStatus,
   buildSubgraphRows,
   buildTableView,
@@ -234,33 +234,35 @@ test("rejects a fraction", () => {
 });
 
 test("asks for a port when there is none", () => {
-  const actual = buildPortMessage(null, [], ROUTER_PORT);
+  const actual = buildPortDiagnosis(null, [], ROUTER_PORT);
 
-  expect(actual).toBe("Pick a port");
+  expect(actual?.summary).toBe("No port is set for this subgraph");
 });
 
 test("names the range when the port is out of it", () => {
-  const actual = buildPortMessage(0, [], ROUTER_PORT);
+  const actual = buildPortDiagnosis(0, [], ROUTER_PORT);
 
-  expect(actual).toBe("Ports run 1 to 65535");
+  expect(actual?.summary).toBe("That port is not valid");
 });
 
 test("warns when the router already holds the port", () => {
-  const actual = buildPortMessage(ROUTER_PORT, [], ROUTER_PORT);
+  const actual = buildPortDiagnosis(ROUTER_PORT, [], ROUTER_PORT);
 
-  expect(actual).toBe("The router is on this port");
+  expect(actual?.summary).toBe("That port is already used by the router");
 });
 
 test("warns when another subgraph holds the port", () => {
-  const actual = buildPortMessage(4001, [4001], ROUTER_PORT);
+  const actual = buildPortDiagnosis(4001, [4001], ROUTER_PORT);
 
-  expect(actual).toBe("Another subgraph is on this port");
+  expect(actual?.summary).toBe(
+    "That port is already used by another local subgraph"
+  );
 });
 
 test("says nothing when the port is usable", () => {
-  const actual = buildPortMessage(4002, [4001], ROUTER_PORT);
+  const actual = buildPortDiagnosis(4002, [4001], ROUTER_PORT);
 
-  expect(actual).toBe("");
+  expect(actual).toBeNull();
 });
 
 const KEY_REJECTED: Diagnosis = {

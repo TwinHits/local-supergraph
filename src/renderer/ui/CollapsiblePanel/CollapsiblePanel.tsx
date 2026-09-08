@@ -17,6 +17,7 @@ export default function CollapsiblePanel({
 
   return (
     <div>
+      <Collapse in={open}>{children}</Collapse>
       <ActionButton
         onClick={function toggle() {
           setOpen(!open);
@@ -24,7 +25,6 @@ export default function CollapsiblePanel({
       >
         {label}
       </ActionButton>
-      <Collapse in={open}>{children}</Collapse>
     </div>
   );
 }

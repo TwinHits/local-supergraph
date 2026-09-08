@@ -9,7 +9,6 @@ type SubgraphTableProps = {
   rows: Row[];
   search: string;
   sort: SortColumn;
-  portErrors: Record<string, string>;
   onSearchChange: (search: string) => void;
   onSortChange: (column: SortColumn) => void;
   onLocalChange: (name: string, local: boolean) => void;
@@ -41,7 +40,6 @@ export default function SubgraphTable({
   rows,
   search,
   sort,
-  portErrors,
   onSearchChange,
   onSortChange,
   onLocalChange,
@@ -71,7 +69,6 @@ export default function SubgraphTable({
             <SubgraphRow
               key={row.name}
               row={row}
-              portError={portErrors[row.name] ?? ""}
               onLocalChange={function setLocal(local) {
                 onLocalChange(row.name, local);
               }}

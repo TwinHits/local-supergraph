@@ -5,6 +5,7 @@ export enum ErrorKey {
   GraphNotFound = "GRAPH_NOT_FOUND",
   AwsSsoExpired = "AWS_SSO_EXPIRED",
   PortInUse = "PORT_IN_USE",
+  PortInvalid = "PORT_INVALID",
   CompositionFailed = "COMPOSITION_FAILED",
   ComposedButUnreachable = "COMPOSED_BUT_UNREACHABLE",
   LocalRefused = "LOCAL_REFUSED",

@@ -1,6 +1,7 @@
 import styles from "@/renderer/features/SettingsModal/SettingsModal.module.scss";
 import ModalDialog from "@/renderer/ui/ModalDialog";
 import NumberField from "@/renderer/ui/NumberField";
+import { TextFieldSize } from "@/renderer/ui/TextField";
 import { type Settings } from "@/shared/settings/settings.types";
 
 type SettingsModalProps = {
@@ -23,6 +24,7 @@ export default function SettingsModal({
         <NumberField
           value={settings.routerPort}
           label="Router port"
+          size={TextFieldSize.Medium}
           onChange={function setPort(routerPort) {
             onChange({ routerPort: routerPort ?? 0 });
           }}

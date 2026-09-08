@@ -1,0 +1,5 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+tr.tableRow--highlighted {
+  background: rgba(colors.$local, 0.12);
+}

@@ -64,11 +64,7 @@ async function checkVariant(variant: string): Promise<VariantCheck> {
   return { subgraphs: listing.subgraphs, failed: false, keys: [], raw: null };
 }
 
-/**
- * Reads every variant before anything asks for one, and reports once every
- * variant has answered, because a variant that fails after another already
- * cleared the supergraph error must not be silently overwritten.
- */
+/** Reads every variant before anything asks for one. */
 export function cacheAllVariants(): void {
   const variants = environment.variants();
   startupCheck = Promise.all(variants.map(checkVariant)).then(

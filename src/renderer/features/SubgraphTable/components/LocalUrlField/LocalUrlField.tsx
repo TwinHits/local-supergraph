@@ -3,21 +3,17 @@ import NumberField from "@/renderer/ui/NumberField";
 import TextLabel from "@/renderer/ui/TextLabel";
 
 type LocalUrlFieldProps = {
-  name: string;
   local: boolean;
   routingUrl: string;
   port: number | null;
-  portError: string;
   onPortChange: (port: number | null) => void;
 };
 
 /** Shows the routing URL when a subgraph is remote and a port when it is local. */
 export default function LocalUrlField({
-  name,
   local,
   routingUrl,
   port,
-  portError,
   onPortChange,
 }: LocalUrlFieldProps) {
   if (!local) {
@@ -28,12 +24,7 @@ export default function LocalUrlField({
     <span className={styles.localUrlField}>
       <TextLabel muted>localhost:</TextLabel>
       <span className={styles.localUrlField__port}>
-        <NumberField
-          value={port}
-          label={`${name} port`}
-          error={portError}
-          onChange={onPortChange}
-        />
+        <NumberField value={port} onChange={onPortChange} />
       </span>
     </span>
   );

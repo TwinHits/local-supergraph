@@ -24,7 +24,6 @@ export default function RefreshButton({
     }
   }
 
-  // Only stops at an iteration boundary, so the rotation never cuts off mid-turn.
   return (
     <IconButton
       label="Refresh subgraphs"

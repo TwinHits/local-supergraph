@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/renderer/api";
 import {
-  buildPortMessage,
+  applyPortDiagnoses,
   buildSubgraphRows,
   buildTableView,
 } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
@@ -15,7 +15,6 @@ import {
   Composition,
   type HealthMap,
   type OverrideMap,
-  type Row,
   SortColumn,
 } from "@/shared/subgraph/subgraph.types";
 
@@ -59,35 +58,6 @@ function isSameListing(current: Snapshot, next: Snapshot): boolean {
       );
     })
   );
-}
-
-/** Collects the ports every local row is asking for. */
-function collectClaimedPorts(rows: Row[]): number[] {
-  return rows
-    .filter(function isLocal(row) {
-      return row.local && row.port !== null;
-    })
-    .map(function toPort(row) {
-      return row.port ?? 0;
-    });
-}
-
-/** Builds the message under each local row's port input. */
-function buildPortErrors(
-  rows: Row[],
-  routerPort: number
-): Record<string, string> {
-  const ports = collectClaimedPorts(rows);
-  const errors: Record<string, string> = {};
-  for (const row of rows) {
-    if (!row.local) {
-      continue;
-    }
-    const others = [...ports];
-    others.splice(others.indexOf(row.port ?? 0), 1);
-    errors[row.name] = buildPortMessage(row.port, others, routerPort);
-  }
-  return errors;
 }
 
 /** Holds the table's state and talks to main. */
@@ -167,11 +137,11 @@ export function useSubgraphs(routerPort: number) {
   }, []);
 
   const all = buildSubgraphRows({ ...snapshot, composition: NO_COMPOSITION });
+  const validated = applyPortDiagnoses(all, snapshot.errors, routerPort);
 
   return {
-    rows: buildTableView(all, search, sort),
-    portErrors: buildPortErrors(all, routerPort),
-    errors: snapshot.errors,
+    rows: buildTableView(validated.rows, search, sort),
+    errors: validated.errors,
     supergraphErrors: snapshot.supergraphErrors,
     loading,
     refreshing,

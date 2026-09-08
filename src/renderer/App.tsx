@@ -32,11 +32,13 @@ export default function App() {
           }}
         />
       </Header>
-      <SupergraphWorkspace
-        key={graph.variant}
-        routerPort={settings.settings.routerPort}
-        variant={graph.variant}
-      />
+      <div className={styles.app__content}>
+        <SupergraphWorkspace
+          key={graph.variant}
+          routerPort={settings.settings.routerPort}
+          variant={graph.variant}
+        />
+      </div>
       <SettingsModal
         open={settings.open}
         settings={settings.settings}

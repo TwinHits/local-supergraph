@@ -46,6 +46,12 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
     cause: "Another process is already using it.",
     resolution: ["Find the process, then pick another port or stop it"],
   },
+  [ErrorKey.PortInvalid]: {
+    key: ErrorKey.PortInvalid,
+    summary: "That port cannot be used",
+    cause: "The port is missing, out of range, or already claimed.",
+    resolution: ["Pick a different port"],
+  },
   [ErrorKey.CompositionFailed]: {
     key: ErrorKey.CompositionFailed,
     summary: "Rover rejected the schema",
@@ -70,8 +76,8 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.RemoteUnreachable]: {
     key: ErrorKey.RemoteUnreachable,
     summary: "The deployed URL did not answer",
-    cause: "The VPN or the environment is down.",
-    resolution: ["Check the VPN", "Check the environment status page"],
+    cause: "You're not connected to the VPN, or the environment is down.",
+    resolution: ["Connect to the VPN", "Check the environment status page"],
   },
   [ErrorKey.Unknown]: {
     key: ErrorKey.Unknown,
@@ -97,6 +103,7 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
     /token has expired/i,
   ],
   [ErrorKey.PortInUse]: [/\bEADDRINUSE\b/],
+  [ErrorKey.PortInvalid]: [],
   [ErrorKey.CompositionFailed]: [/composition (failed|error)/i],
   [ErrorKey.ComposedButUnreachable]: [],
   [ErrorKey.LocalRefused]: [],
@@ -112,6 +119,7 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.GraphNotFound,
   ErrorKey.AwsSsoExpired,
   ErrorKey.PortInUse,
+  ErrorKey.PortInvalid,
   ErrorKey.CompositionFailed,
   ErrorKey.ComposedButUnreachable,
   ErrorKey.LocalRefused,

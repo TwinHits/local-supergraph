@@ -12,11 +12,17 @@ export default function RawOutput({ raw, startOpen }: RawOutputProps) {
     return null;
   }
   if (startOpen) {
-    return <pre className={styles.rawOutput}>{raw}</pre>;
+    return (
+      <div className={styles.rawOutput__wrapper}>
+        <pre className={styles.rawOutput}>{raw}</pre>
+      </div>
+    );
   }
   return (
     <CollapsiblePanel label="More info">
-      <pre className={styles.rawOutput}>{raw}</pre>
+      <div className={styles.rawOutput__wrapper}>
+        <pre className={styles.rawOutput}>{raw}</pre>
+      </div>
     </CollapsiblePanel>
   );
 }
