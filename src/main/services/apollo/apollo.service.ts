@@ -71,23 +71,23 @@ async function checkVariant(variant: string): Promise<VariantCheck> {
  */
 export function cacheAllVariants(): void {
   const variants = environment.variants();
-  startupCheck = Promise.all(variants.map(checkVariant)).then(function summarize(
-    checks
-  ) {
-    checks.forEach(function store(check, index) {
-      cache.set(variants[index], check.subgraphs);
-    });
+  startupCheck = Promise.all(variants.map(checkVariant)).then(
+    function summarize(checks) {
+      checks.forEach(function store(check, index) {
+        cache.set(variants[index], check.subgraphs);
+      });
 
-    const failure = checks.find(function isFailed(check) {
-      return check.failed;
-    });
+      const failure = checks.find(function isFailed(check) {
+        return check.failed;
+      });
 
-    if (failure === undefined) {
-      clearSupergraphFailure();
-    } else {
-      reportSupergraphFailure(failure.keys, failure.raw);
+      if (failure === undefined) {
+        clearSupergraphFailure();
+      } else {
+        reportSupergraphFailure(failure.keys, failure.raw);
+      }
     }
-  });
+  );
 }
 
 /** Reads a variant from the registry and caches what came back. */
