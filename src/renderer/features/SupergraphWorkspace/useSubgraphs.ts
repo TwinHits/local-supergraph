@@ -94,16 +94,17 @@ function buildPortErrors(
 export function useSubgraphs(routerPort: number) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortColumn>(SortColumn.Status);
 
   const load = useCallback(function read() {
-    void Promise.all([
+    const primary = Promise.all([
       api.apollo.listSubgraphs(),
       api.subgraph.overrides(),
       api.subgraph.checkHealth(),
     ]).then(function store([subgraphs, overrides, health]) {
-      void Promise.all([
+      return Promise.all([
         api.errors.subgraphErrors(),
         api.errors.supergraphErrors(),
       ]).then(function withErrors([errors, supergraph]) {
@@ -119,23 +120,37 @@ export function useSubgraphs(routerPort: number) {
     });
 
     // Only replace the cached answer when the registry has moved since.
-    void api.apollo.reloadSubgraphs().then(function reloaded(subgraphs) {
-      void api.errors
-        .supergraphErrors()
-        .then(function withSupergraph(supergraph) {
-          setSnapshot(function keepUnlessChanged(current) {
-            const next = {
-              ...current,
-              subgraphs,
-              supergraphErrors: supergraph,
-            };
-            return isSameListing(current, next) ? current : next;
+    const secondary = api.apollo
+      .reloadSubgraphs()
+      .then(function reloaded(subgraphs) {
+        return api.errors
+          .supergraphErrors()
+          .then(function withSupergraph(supergraph) {
+            setSnapshot(function keepUnlessChanged(current) {
+              const next = {
+                ...current,
+                subgraphs,
+                supergraphErrors: supergraph,
+              };
+              return isSameListing(current, next) ? current : next;
+            });
           });
-        });
+      });
+
+    void Promise.all([primary, secondary]).then(function finish() {
+      setRefreshing(false);
     });
   }, []);
 
   useEffect(load, [load]);
+
+  const refresh = useCallback(
+    function trigger() {
+      setRefreshing(true);
+      load();
+    },
+    [load]
+  );
 
   const updateOverride = useCallback(function write(
     name: string,
@@ -159,11 +174,12 @@ export function useSubgraphs(routerPort: number) {
     errors: snapshot.errors,
     supergraphErrors: snapshot.supergraphErrors,
     loading,
+    refreshing,
     search,
     sort,
     setSearch,
     setSort,
     updateOverride,
-    reload: load,
+    reload: refresh,
   };
 }

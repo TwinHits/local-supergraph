@@ -1,0 +1,14 @@
+@keyframes refreshButton__spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.refreshButton__icon {
+  display: inline-flex;
+}
+
+.refreshButton__icon--spinning {
+  display: inline-flex;
+  animation: refreshButton__spin 1s linear infinite;
+}

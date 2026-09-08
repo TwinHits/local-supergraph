@@ -9,4 +9,5 @@ export enum IconName {
   Close = "close",
   Start = "start",
   Stop = "stop",
+  Refresh = "refresh",
 }

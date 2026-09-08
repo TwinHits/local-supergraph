@@ -60,6 +60,8 @@ export default function SupergraphWorkspace({
             subgraphs.errors[name] ?? []
           );
         }}
+        onRefresh={subgraphs.reload}
+        refreshing={subgraphs.refreshing}
       />
       <ErrorModal
         key={modal.shown.title}

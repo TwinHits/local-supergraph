@@ -1,3 +1,4 @@
+import RefreshButton from "@/renderer/features/SubgraphTable/components/RefreshButton";
 import SubgraphRow from "@/renderer/features/SubgraphTable/components/SubgraphRow";
 import styles from "@/renderer/features/SubgraphTable/SubgraphTable.module.scss";
 import DataTable, { type Column } from "@/renderer/ui/DataTable";
@@ -14,6 +15,8 @@ type SubgraphTableProps = {
   onLocalChange: (name: string, local: boolean) => void;
   onPortChange: (name: string, port: number | null) => void;
   onShowErrors: (name: string) => void;
+  onRefresh: () => void;
+  refreshing: boolean;
 };
 
 /** Reads a sortable column out of the table's plain key. */
@@ -44,11 +47,14 @@ export default function SubgraphTable({
   onLocalChange,
   onPortChange,
   onShowErrors,
+  onRefresh,
+  refreshing,
 }: SubgraphTableProps) {
   return (
     <div>
       <div className={styles.subgraphTable__controls}>
         <SearchField value={search} onChange={onSearchChange} />
+        <RefreshButton refreshing={refreshing} onClick={onRefresh} />
       </div>
       <DataTable
         columns={COLUMNS}
