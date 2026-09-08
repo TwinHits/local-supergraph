@@ -6,7 +6,7 @@ type Signature = Omit<Diagnosis, "raw">;
 export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.RoverMissing]: {
     key: ErrorKey.RoverMissing,
-    summary: "A dyson sphere is blocking the registry",
+    summary: "rover is not installed",
     cause:
       "Rover reached the graph but the answer never came back, and every retry since has timed out the same way, so the variant cannot be composed until whatever is in the way moves along or someone restarts it soon.",
     resolution: ["Install rover, then reopen the app so it picks up your PATH"],
