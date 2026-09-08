@@ -7,20 +7,19 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.RoverMissing]: {
     key: ErrorKey.RoverMissing,
     summary: "rover is not installed",
-    cause:
-      "Rover reached the graph but the answer never came back, and every retry since has timed out the same way, so the variant cannot be composed until whatever is in the way moves along or someone restarts it soon.",
+    cause: "Rover isn't installed, or isn't on your PATH.",
     resolution: ["Install rover, then reopen the app so it picks up your PATH"],
   },
   [ErrorKey.GraphRefUnset]: {
     key: ErrorKey.GraphRefUnset,
     summary: "The graph ref or variant is not set",
-    cause: "APOLLO_GRAPH_REF or SUPERGRAPH_VARIANTS is missing from .env.",
-    resolution: ["Fill both in .env", "Reopen the app"],
+    cause: "APOLLO_GRAPH_REF or SUPERGRAPH_VARIANTS isn't set in .env.",
+    resolution: ["Fill in both values in .env", "Reopen the app"],
   },
   [ErrorKey.ApolloKeyInvalid]: {
     key: ErrorKey.ApolloKeyInvalid,
     summary: "The Apollo API key was rejected",
-    cause: "The key is missing, expired, or lacks access to the graph.",
+    cause: "The key is missing, expired, or doesn't have access to the graph.",
     resolution: [
       "Regenerate the key at studio.apollographql.com",
       "Paste it into .env",
@@ -29,29 +28,28 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.GraphNotFound]: {
     key: ErrorKey.GraphNotFound,
     summary: "The key cannot see that graph",
-    cause:
-      "The graph or variant does not exist, or the key has no access to it.",
+    cause: "The graph or variant doesn't exist, or the key can't access it.",
     resolution: [
-      "Check APOLLO_GRAPH_REF names a real graph and variant",
-      "Check the key belongs to the same organization",
+      "Check that APOLLO_GRAPH_REF points to a real graph and variant",
+      "Check that the key belongs to the same organization",
     ],
   },
   [ErrorKey.AwsSsoExpired]: {
     key: ErrorKey.AwsSsoExpired,
     summary: "AWS credentials are stale",
-    cause: "The SSO session expired, so the subgraph cannot boot.",
+    cause: "Your SSO session expired, so the subgraph can't start.",
     resolution: ["Sign in again, then restart the subgraph"],
   },
   [ErrorKey.PortInUse]: {
     key: ErrorKey.PortInUse,
     summary: "Something already holds the port",
-    cause: "Another process is bound to it.",
+    cause: "Another process is already using it.",
     resolution: ["Find the process, then pick another port or stop it"],
   },
   [ErrorKey.CompositionFailed]: {
     key: ErrorKey.CompositionFailed,
     summary: "Rover rejected the schema",
-    cause: "The local schema has diverged from the published one.",
+    cause: "The local schema is different from the published one.",
     resolution: [
       "Read rover's error below",
       "Run a schema check before publishing",
@@ -60,26 +58,26 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.ComposedButUnreachable]: {
     key: ErrorKey.ComposedButUnreachable,
     summary: "Composed, but the service is down",
-    cause: "Rover accepted the published schema and the probe still fails.",
+    cause: "Rover composed the schema, but the service still isn't answering.",
     resolution: ["Start the local service"],
   },
   [ErrorKey.LocalRefused]: {
     key: ErrorKey.LocalRefused,
     summary: "Nothing is listening on that port",
-    cause: "The service is not running, or it is on a different port.",
+    cause: "The service isn't running, or it's on a different port.",
     resolution: ["Start the service", "Check the port matches"],
   },
   [ErrorKey.RemoteUnreachable]: {
     key: ErrorKey.RemoteUnreachable,
     summary: "The deployed URL did not answer",
-    cause: "VPN is down, or the environment is.",
+    cause: "The VPN or the environment is down.",
     resolution: ["Check the VPN", "Check the environment status page"],
   },
   [ErrorKey.Unknown]: {
     key: ErrorKey.Unknown,
     summary: "This error is not recognized",
-    cause: "No signature matched.",
-    resolution: ["Ask in the team Confluence page"],
+    cause: "The app doesn't have a known explanation for this one.",
+    resolution: ["Ask on the team's Confluence page"],
   },
 };
 
