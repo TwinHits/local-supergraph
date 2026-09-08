@@ -30,6 +30,9 @@ export default function StatusIndicator({
   );
 
   if (onClick === undefined) {
+    if (status === RowStatus.Healthy) {
+      return shape;
+    }
     return <HoverTooltip title={reason}>{shape}</HoverTooltip>;
   }
 

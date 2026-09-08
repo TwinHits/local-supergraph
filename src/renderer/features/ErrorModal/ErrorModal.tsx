@@ -9,6 +9,14 @@ import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
 const MODAL_TITLE = "Error";
 
+const FALLBACK_DIAGNOSIS: Diagnosis = {
+  key: ErrorKey.Unknown,
+  summary: "This error is not recognized",
+  cause: "The app doesn't have a known explanation for this one.",
+  resolution: ["Ask on the team's Confluence page"],
+  raw: null,
+};
+
 type ErrorModalProps = {
   open: boolean;
   subject: string;
@@ -24,7 +32,8 @@ export default function ErrorModal({
   onClose,
 }: ErrorModalProps) {
   const [index, setIndex] = useState(0);
-  const diagnosis = diagnoses[index];
+  const shown = diagnoses.length === 0 ? [FALLBACK_DIAGNOSIS] : diagnoses;
+  const diagnosis = shown[index];
 
   return (
     <ModalDialog
@@ -33,22 +42,20 @@ export default function ErrorModal({
       severity={ModalSeverity.Error}
       onClose={onClose}
     >
-      {diagnosis === undefined ? null : (
-        <ErrorDetails subject={subject} diagnosis={diagnosis} />
-      )}
+      <ErrorDetails subject={subject} diagnosis={diagnosis} />
       <div className={styles.errorModal__footer}>
-        {diagnosis === undefined ? null : (
-          <RawOutput
-            raw={diagnosis.raw}
-            startOpen={diagnosis.key === ErrorKey.Unknown}
-          />
-        )}
-        <PagerArrows
-          index={index}
-          count={diagnoses.length}
-          subject="error"
-          onChange={setIndex}
+        <RawOutput
+          raw={diagnosis.raw}
+          startOpen={diagnosis.key === ErrorKey.Unknown}
         />
+        <div className={styles.errorModal__pager}>
+          <PagerArrows
+            index={index}
+            count={shown.length}
+            subject="error"
+            onChange={setIndex}
+          />
+        </div>
       </div>
     </ModalDialog>
   );

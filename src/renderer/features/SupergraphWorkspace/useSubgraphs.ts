@@ -15,6 +15,7 @@ import {
   Composition,
   type HealthMap,
   type OverrideMap,
+  Reachability,
   SortColumn,
 } from "@/shared/subgraph/subgraph.types";
 
@@ -127,11 +128,30 @@ export function useSubgraphs(routerPort: number) {
     local: boolean,
     port: number | null
   ) {
+    setSnapshot(function resetHealth(current) {
+      return {
+        ...current,
+        health: { ...current.health, [name]: Reachability.Unknown },
+      };
+    });
+
     void api.subgraph
       .updateOverride(name, { local, port })
       .then(function store(overrides) {
         setSnapshot(function merge(current) {
           return { ...current, overrides };
+        });
+        return api.subgraph.checkHealth();
+      })
+      .then(function withHealth(health) {
+        setSnapshot(function mergeHealth(current) {
+          return { ...current, health };
+        });
+        return api.errors.subgraphErrors();
+      })
+      .then(function withErrors(errors) {
+        setSnapshot(function mergeErrors(current) {
+          return { ...current, errors };
         });
       });
   }, []);
