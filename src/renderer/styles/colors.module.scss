@@ -9,6 +9,7 @@ $grey-100: #cfcfd4;
 $green-300: #4ade80;
 $red-500: #f0463c;
 $red-700: #a32217;
+$red-800: #821b12;
 
 $surface: $ink-900;
 $surface-raised: $ink-800;
@@ -21,6 +22,7 @@ $text-primary: $grey-100;
 $healthy: $green-300;
 $failed: $red-500;
 $failed-fill: $red-700;
+$failed-fill-dark: $red-800;
 
 :export {
   textPrimary: $text-primary;

@@ -2,22 +2,24 @@ import { useState } from "react";
 
 import ErrorDetails from "@/renderer/features/ErrorModal/components/ErrorDetails";
 import styles from "@/renderer/features/ErrorModal/ErrorModal.module.scss";
-import ModalDialog from "@/renderer/ui/ModalDialog";
+import ModalDialog, { ModalSeverity } from "@/renderer/ui/ModalDialog";
 import PagerArrows from "@/renderer/ui/PagerArrows";
 import RawOutput from "@/renderer/ui/RawOutput";
 import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
+const MODAL_TITLE = "Error";
+
 type ErrorModalProps = {
   open: boolean;
-  title: string;
+  subject: string;
   diagnoses: Diagnosis[];
   onClose: () => void;
 };
 
-/** Steps through a subject's errors one at a time. */
+/** Steps through one subject's errors one at a time. */
 export default function ErrorModal({
   open,
-  title,
+  subject,
   diagnoses,
   onClose,
 }: ErrorModalProps) {
@@ -25,8 +27,15 @@ export default function ErrorModal({
   const diagnosis = diagnoses[index];
 
   return (
-    <ModalDialog open={open} title={title} onClose={onClose}>
-      {diagnosis === undefined ? null : <ErrorDetails diagnosis={diagnosis} />}
+    <ModalDialog
+      open={open}
+      title={MODAL_TITLE}
+      severity={ModalSeverity.Error}
+      onClose={onClose}
+    >
+      {diagnosis === undefined ? null : (
+        <ErrorDetails subject={subject} diagnosis={diagnosis} />
+      )}
       <div className={styles.errorModal__footer}>
         {diagnosis === undefined ? null : (
           <RawOutput

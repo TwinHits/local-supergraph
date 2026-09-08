@@ -35,6 +35,7 @@ export default function App() {
       <SupergraphWorkspace
         key={graph.variant}
         routerPort={settings.settings.routerPort}
+        variant={graph.variant}
       />
       <SettingsModal
         open={settings.open}

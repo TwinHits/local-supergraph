@@ -25,7 +25,7 @@ function show(diagnoses: Diagnosis[]) {
   render(
     <ErrorModal
       open
-      title="droids — https://droids.svc/graphql"
+      subject="droids — develop"
       diagnoses={diagnoses}
       onClose={vi.fn()}
     />

@@ -3,11 +3,11 @@ import { useCallback, useState } from "react";
 import { type Diagnosis } from "@/shared/errors/errors.types";
 
 type Shown = {
-  title: string;
+  subject: string;
   diagnoses: Diagnosis[];
 };
 
-const CLOSED: Shown = { title: "", diagnoses: [] };
+const CLOSED: Shown = { subject: "", diagnoses: [] };
 
 /** Holds whichever failures are on screen. */
 export function useErrorModal() {
@@ -15,10 +15,10 @@ export function useErrorModal() {
   const [shown, setShown] = useState<Shown>(CLOSED);
 
   const show = useCallback(function reveal(
-    title: string,
+    subject: string,
     diagnoses: Diagnosis[]
   ) {
-    setShown({ title, diagnoses });
+    setShown({ subject, diagnoses });
     setOpen(true);
   }, []);
 

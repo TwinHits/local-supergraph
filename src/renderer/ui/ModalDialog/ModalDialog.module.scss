@@ -1,0 +1,23 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+// The element qualifier beats MUI's own same-specificity Paper rule,
+// whichever order the stylesheets end up loading in.
+div.modalDialog__paper--error {
+  color: colors.$text-primary;
+  background: colors.$failed-fill-dark;
+}
+
+// Typography components set their own color, so descendants need this to
+// follow the paper's color instead, with a dimmer copy for muted text.
+.modalDialog__paper--error :global(.MuiTypography-root) {
+  color: inherit;
+}
+
+.modalDialog__paper--error :global(.MuiTypography-colorTextSecondary) {
+  opacity: 0.75;
+}
+
+h2.modalDialog__title--error {
+  color: colors.$text-primary;
+  background: colors.$failed-fill;
+}
