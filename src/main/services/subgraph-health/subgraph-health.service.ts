@@ -56,9 +56,18 @@ function isTarget(target: Target | null): target is Target {
   return target !== null;
 }
 
-/** Probes one target and records what came back. */
+/**
+ * Probes one target and records what came back, retrying once on failure.
+ * Electron's network service is still warming up (DNS, proxy/VPN routing)
+ * for the app's very first fetch, so that attempt alone can time out even
+ * though the target is reachable.
+ * https://issues.chromium.org/issues/40958286
+ */
 async function checkTarget(target: Target): Promise<Reachability> {
-  const result = await checkEndpoint(target.url);
+  let result = await checkEndpoint(target.url);
+  if (!result.reachable) {
+    result = await checkEndpoint(target.url);
+  }
   if (result.reachable) {
     clearSubgraphFailure(target.name);
     return Reachability.Reachable;
