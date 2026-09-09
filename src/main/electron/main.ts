@@ -10,6 +10,15 @@ import { registerBridge } from "./bridge";
 
 const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");
+const DOCK_ICON = join(__dirname, "..", "assets", "logo.png");
+
+/** Sets the Dock icon, where the platform has a Dock. */
+function setDockIcon(): void {
+  if (app.dock === undefined) {
+    return;
+  }
+  app.dock.setIcon(DOCK_ICON);
+}
 
 /** Opens the app's only window. */
 function createWindow(): void {
@@ -53,5 +62,8 @@ function quitApp(): void {
 
 registerBridge();
 startServices();
-void app.whenReady().then(createWindow);
+void app.whenReady().then(function ready() {
+  setDockIcon();
+  createWindow();
+});
 app.on("window-all-closed", quitApp);
