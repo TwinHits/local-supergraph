@@ -30,6 +30,10 @@ button.iconButton--running {
   color: colors.$healthy;
 }
 
+button.iconButton--pending {
+  color: colors.$pending;
+}
+
 button.iconButton--muted {
   color: colors.$text-muted;
 
