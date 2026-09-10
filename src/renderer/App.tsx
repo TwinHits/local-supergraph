@@ -1,8 +1,7 @@
-import { useState } from "react";
-
 import styles from "@/renderer/App.module.scss";
 import Header from "@/renderer/features/Header";
-import LaunchControl, { RouterState } from "@/renderer/features/LaunchControl";
+import LaunchControl from "@/renderer/features/LaunchControl";
+import { useLaunchControl } from "@/renderer/features/LaunchControl/useLaunchControl";
 import SettingsModal from "@/renderer/features/SettingsModal";
 import SupergraphWorkspace from "@/renderer/features/SupergraphWorkspace";
 import { useGraph } from "@/renderer/hooks/useGraph";
@@ -11,7 +10,7 @@ import { useSettings } from "@/renderer/hooks/useSettings";
 export default function App() {
   const graph = useGraph();
   const settings = useSettings();
-  const [router, setRouter] = useState(RouterState.Stopped);
+  const launch = useLaunchControl();
 
   return (
     <div className={styles.app}>
@@ -23,13 +22,9 @@ export default function App() {
         onOpenSettings={settings.show}
       >
         <LaunchControl
-          state={router}
-          onStart={function start() {
-            setRouter(RouterState.Running);
-          }}
-          onStop={function stop() {
-            setRouter(RouterState.Stopped);
-          }}
+          state={launch.state}
+          onStart={launch.start}
+          onStop={launch.stop}
         />
       </Header>
       <div className={styles.app__content}>

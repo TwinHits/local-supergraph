@@ -7,6 +7,7 @@ import { errors } from "@/main/services/errors/errors.service";
 import { settings } from "@/main/services/settings/settings.service";
 import { subgraphHealth } from "@/main/services/subgraph-health/subgraph-health.service";
 import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-overrides.service";
+import { supergraph } from "@/main/services/supergraph/supergraph.service";
 import { windowControls } from "@/main/services/window/window.service";
 import { buildChannelName } from "@/shared/contract/contract.constants";
 import {
@@ -28,6 +29,7 @@ const handlers = {
   errors,
   settings,
   subgraph,
+  supergraph,
   windowControls,
 } satisfies Implementation;
 

@@ -14,7 +14,7 @@ const FALLBACK_DIAGNOSIS: Diagnosis = {
   key: ErrorKey.Unknown,
   summary: "This error is not recognized",
   cause: "The app doesn't have a known explanation for this one.",
-  resolution: ["Ask on the team's Confluence page"],
+  resolution: ["No known fix for this error"],
   raw: null,
 };
 

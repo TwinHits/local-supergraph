@@ -3,6 +3,7 @@ import { type EnvironmentContract } from "@/shared/environment/environment.contr
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
+import { type SupergraphContract } from "@/shared/supergraph/supergraph.contract";
 import { type WindowContract } from "@/shared/window/window.contract";
 
 /** Every domain the renderer can call. */
@@ -12,6 +13,7 @@ export type Contract = {
   errors: ErrorsContract;
   settings: SettingsContract;
   subgraph: SubgraphContract;
+  supergraph: SupergraphContract;
   windowControls: WindowContract;
 };
 

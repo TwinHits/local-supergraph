@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { app, BrowserWindow } from "electron";
 
 import { startServices } from "@/main/services/startup/startup.service";
+import { supergraph } from "@/main/services/supergraph/supergraph.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
+import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 import { registerBridge } from "./bridge";
 
@@ -60,6 +62,20 @@ function quitApp(): void {
   app.quit();
 }
 
+let quitting = false;
+
+/** Stops rover before the app quits, so it doesn't keep running after the window closes. */
+function stopSupergraphBeforeQuit(event: Electron.Event): void {
+  if (quitting || supergraph.status() === SupergraphState.Stopped) {
+    return;
+  }
+  event.preventDefault();
+  quitting = true;
+  void Promise.resolve(supergraph.stop()).then(function quit() {
+    app.quit();
+  });
+}
+
 registerBridge();
 startServices();
 void app.whenReady().then(function ready() {
@@ -67,3 +83,4 @@ void app.whenReady().then(function ready() {
   createWindow();
 });
 app.on("window-all-closed", quitApp);
+app.on("before-quit", stopSupergraphBeforeQuit);

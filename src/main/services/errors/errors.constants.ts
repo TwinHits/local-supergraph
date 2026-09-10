@@ -77,13 +77,13 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
     key: ErrorKey.RemoteUnreachable,
     summary: "The deployed URL did not answer",
     cause: "You're not connected to the VPN, or the environment is down.",
-    resolution: ["Connect to the VPN", "Check the environment status page"],
+    resolution: ["Connect to the VPN"],
   },
   [ErrorKey.Unknown]: {
     key: ErrorKey.Unknown,
     summary: "This error is not recognized",
     cause: "The app doesn't have a known explanation for this one.",
-    resolution: ["Ask on the team's Confluence page"],
+    resolution: ["No known fix for this error"],
   },
 };
 

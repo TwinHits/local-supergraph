@@ -9,3 +9,6 @@ export const PATH_COMMAND = "rover";
 
 /** Node's error code for a command it could not find. */
 export const NOT_FOUND_CODE = "ENOENT";
+
+/** How long to wait after SIGTERM before sending SIGKILL. */
+export const SHUTDOWN_GRACE_MS = 5000;

@@ -1,15 +1,10 @@
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
-
-export enum RouterState {
-  Stopped = "stopped",
-  Starting = "starting",
-  Running = "running",
-}
+import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 type LaunchControlProps = {
-  state: RouterState;
+  state: SupergraphState;
   onStart: () => void;
   onStop: () => void;
 };
@@ -20,11 +15,11 @@ export default function LaunchControl({
   onStart,
   onStop,
 }: LaunchControlProps) {
-  if (state === RouterState.Starting) {
+  if (state === SupergraphState.Starting) {
     return <LoadingSpinner label="Starting supergraph" />;
   }
 
-  if (state === RouterState.Running) {
+  if (state === SupergraphState.Running) {
     return (
       <IconButton
         label="Stop supergraph"
