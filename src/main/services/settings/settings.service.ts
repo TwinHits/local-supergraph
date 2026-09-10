@@ -8,12 +8,16 @@ import {
 } from "@/shared/settings/settings.constants";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type Settings } from "@/shared/settings/settings.types";
-import { type OverrideMap } from "@/shared/subgraph/subgraph.types";
+import {
+  type DisabledSubgraphs,
+  type OverrideMap,
+} from "@/shared/subgraph/subgraph.types";
 
 type PersistedConfig = {
   settings: Settings;
   currentVariant: string;
   subgraphOverrides: Record<string, OverrideMap>;
+  disabledSubgraphs: Record<string, DisabledSubgraphs>;
 };
 
 let configFilePath: string | null = null;
@@ -22,6 +26,7 @@ let doc: PersistedConfig = {
   settings: { ...DEFAULT_SETTINGS },
   currentVariant: "",
   subgraphOverrides: {},
+  disabledSubgraphs: {},
 };
 
 /** Gives the service the file its settings are read from and written to. */
@@ -45,6 +50,7 @@ function load(): void {
     settings: { ...DEFAULT_SETTINGS, ...saved.settings },
     currentVariant: saved.currentVariant ?? "",
     subgraphOverrides: saved.subgraphOverrides ?? {},
+    disabledSubgraphs: saved.disabledSubgraphs ?? {},
   };
 }
 
@@ -66,6 +72,22 @@ export function readOverrides(variant: string): OverrideMap {
 export function writeOverrides(variant: string, overrides: OverrideMap): void {
   load();
   doc.subgraphOverrides = { ...doc.subgraphOverrides, [variant]: overrides };
+  persist();
+}
+
+/** The subgraphs disabled for one variant. */
+export function readDisabledSubgraphs(variant: string): DisabledSubgraphs {
+  load();
+  return doc.disabledSubgraphs[variant] ?? [];
+}
+
+/** Replaces the disabled subgraphs saved for one variant. */
+export function writeDisabledSubgraphs(
+  variant: string,
+  disabled: DisabledSubgraphs
+): void {
+  load();
+  doc.disabledSubgraphs = { ...doc.disabledSubgraphs, [variant]: disabled };
   persist();
 }
 

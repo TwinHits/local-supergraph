@@ -6,15 +6,21 @@ import styles from "@/renderer/ui/DataTable/TableRow.module.scss";
 type TableRowProps = {
   children: ReactNode;
   highlighted?: boolean;
+  faded?: boolean;
 };
 
 /** One line of a DataTable. */
-export default function TableRow({ children, highlighted }: TableRowProps) {
+export default function TableRow({
+  children,
+  highlighted,
+  faded,
+}: TableRowProps) {
   return (
     <MuiTableRow
       className={[
         styles.tableRow,
         highlighted === true ? styles["tableRow--highlighted"] : "",
+        faded === true ? styles["tableRow--faded"] : "",
       ]
         .join(" ")
         .trim()}

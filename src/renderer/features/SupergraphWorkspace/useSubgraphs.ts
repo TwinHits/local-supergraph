@@ -13,6 +13,7 @@ import {
 } from "@/shared/errors/errors.types";
 import {
   Composition,
+  type DisabledSubgraphs,
   type HealthMap,
   type OverrideMap,
   Reachability,
@@ -28,6 +29,7 @@ type Snapshot = {
   health: HealthMap;
   errors: SubgraphErrorMap;
   supergraphErrors: Diagnosis[];
+  disabled: DisabledSubgraphs;
 };
 
 const EMPTY: Snapshot = {
@@ -36,6 +38,7 @@ const EMPTY: Snapshot = {
   health: {},
   errors: {},
   supergraphErrors: [],
+  disabled: [],
 };
 
 /** True when two runs of failures say the same thing. */
@@ -75,7 +78,8 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
       api.apollo.listSubgraphs(),
       api.subgraph.overrides(),
       api.subgraph.checkHealth(),
-    ]).then(function store([subgraphs, overrides, health]) {
+      api.subgraph.disabledSubgraphs(),
+    ]).then(function store([subgraphs, overrides, health, disabled]) {
       return Promise.all([
         api.errors.subgraphErrors(),
         api.errors.supergraphErrors(),
@@ -86,6 +90,7 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
           health,
           errors,
           supergraphErrors: supergraph,
+          disabled,
         });
         setLoading(false);
       });
@@ -185,6 +190,19 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
       });
   }, []);
 
+  const updateEnabled = useCallback(function write(
+    name: string,
+    enabled: boolean
+  ) {
+    void api.subgraph
+      .setSubgraphEnabled(name, enabled)
+      .then(function store(disabled) {
+        setSnapshot(function merge(current) {
+          return { ...current, disabled };
+        });
+      });
+  }, []);
+
   const all = buildSubgraphRows({ ...snapshot, composition: NO_COMPOSITION });
   const validated = applyPortDiagnoses(all, snapshot.errors, routerPort);
 
@@ -199,6 +217,7 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
     setSearch,
     setSort,
     updateOverride,
+    updateEnabled,
     reload: refresh,
   };
 }

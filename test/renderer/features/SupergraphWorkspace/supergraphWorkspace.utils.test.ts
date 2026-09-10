@@ -81,6 +81,7 @@ test("a subgraph with no override is remote and portless", () => {
     health: {},
     composition: {},
     errors: {},
+    disabled: [],
   });
 
   expect(actual[0]).toEqual({
@@ -88,6 +89,7 @@ test("a subgraph with no override is remote and portless", () => {
     routingUrl: "https://characters.svc/graphql",
     local: false,
     port: null,
+    enabled: true,
     status: RowStatus.Pending,
     reason: "No answer yet",
   });
@@ -100,6 +102,7 @@ test("an override makes the row local and carries its port", () => {
     health: { starships: Reachability.Reachable },
     composition: {},
     errors: {},
+    disabled: [],
   });
 
   expect(actual[1]).toEqual({
@@ -107,6 +110,7 @@ test("an override makes the row local and carries its port", () => {
     routingUrl: "https://starships.svc/graphql",
     local: true,
     port: 4002,
+    enabled: true,
     status: RowStatus.Healthy,
     reason: "Answering",
   });
@@ -119,6 +123,7 @@ test("a failed composition shows on a remote row", () => {
     health: { characters: Reachability.Reachable },
     composition: { characters: Composition.Failed },
     errors: {},
+    disabled: [],
   });
 
   expect(actual[0].status).toBe(RowStatus.Failed);
@@ -131,6 +136,7 @@ test("returns one row per subgraph", () => {
     health: {},
     composition: {},
     errors: {},
+    disabled: [],
   });
 
   expect(actual.length).toBe(subgraphs.length);
@@ -142,6 +148,7 @@ function row(name: string, status: RowStatus, local: boolean): Row {
     routingUrl: `https://${name}.svc/graphql`,
     local,
     port: null,
+    enabled: true,
     status,
     reason: "",
   };
@@ -296,6 +303,7 @@ test("a failing row says what its top error was", () => {
         },
       ],
     },
+    disabled: [],
   });
 
   expect(actual[0].reason).toBe("The deployed URL did not answer");
@@ -308,6 +316,7 @@ test("a row nothing was reported about falls back to how its probe went", () => 
     health: { characters: Reachability.Reachable },
     composition: {},
     errors: {},
+    disabled: [],
   });
 
   expect(actual[0].reason).toBe("Answering");

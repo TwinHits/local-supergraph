@@ -1,5 +1,4 @@
 import { apollo } from "@/main/services/apollo/apollo.service";
-import { environment } from "@/main/services/environment/environment.service";
 import {
   clearSupergraphFailure,
   reportSupergraphFailure,
@@ -100,7 +99,8 @@ export const supergraph: Awaitable<SupergraphContract> = {
     const configFilePath = writeSupergraphConfig(
       variant,
       subgraphs,
-      subgraphOverrides.overrides()
+      subgraphOverrides.overrides(),
+      subgraphOverrides.disabledSubgraphs()
     );
 
     const firstAttempt = new Promise<void>(function wait(resolve) {
@@ -112,7 +112,6 @@ export const supergraph: Awaitable<SupergraphContract> = {
     );
 
     const spawned = await startRoverDev(
-      `${environment.graphName()}@${variant}`,
       configFilePath,
       settings.read().routerPort,
       ROVER_LOG_FILE

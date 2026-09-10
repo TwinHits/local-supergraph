@@ -13,6 +13,7 @@ type SubgraphTableProps = {
   onSortChange: (column: SortColumn) => void;
   onLocalChange: (name: string, local: boolean) => void;
   onPortChange: (name: string, port: number | null) => void;
+  onEnabledChange: (name: string, enabled: boolean) => void;
   onShowErrors: (name: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
@@ -33,6 +34,7 @@ const COLUMNS: Column[] = [
   { key: SortColumn.Name, label: "Name", sortable: true },
   { key: "url", label: "URL", sortable: false },
   { key: SortColumn.Local, label: "Local", sortable: true },
+  { key: "enabled", label: "Enabled", sortable: false },
 ];
 
 /** One searchable and sortable row per subgraph. */
@@ -44,6 +46,7 @@ export default function SubgraphTable({
   onSortChange,
   onLocalChange,
   onPortChange,
+  onEnabledChange,
   onShowErrors,
   onRefresh,
   refreshing,
@@ -74,6 +77,9 @@ export default function SubgraphTable({
               }}
               onPortChange={function setPort(port) {
                 onPortChange(row.name, port);
+              }}
+              onEnabledChange={function setEnabled(enabled) {
+                onEnabledChange(row.name, enabled);
               }}
               onShowErrors={function show() {
                 onShowErrors(row.name);

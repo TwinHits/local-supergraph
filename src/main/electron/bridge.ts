@@ -21,6 +21,8 @@ const subgraph: Awaitable<SubgraphContract> = {
   overrides: subgraphOverrides.overrides,
   updateOverride: subgraphOverrides.updateOverride,
   checkHealth: subgraphHealth.checkHealth,
+  disabledSubgraphs: subgraphOverrides.disabledSubgraphs,
+  setSubgraphEnabled: subgraphOverrides.setSubgraphEnabled,
 };
 
 const handlers = {

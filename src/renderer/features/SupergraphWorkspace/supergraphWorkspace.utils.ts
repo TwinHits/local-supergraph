@@ -6,6 +6,7 @@ import {
 } from "@/shared/errors/errors.types";
 import {
   Composition,
+  type DisabledSubgraphs,
   type HealthMap,
   type OverrideMap,
   Reachability,
@@ -70,6 +71,7 @@ type Sources = {
   health: HealthMap;
   composition: Record<string, Composition>;
   errors: SubgraphErrorMap;
+  disabled: DisabledSubgraphs;
 };
 
 const REASONS: Record<RowStatus, string> = {
@@ -103,6 +105,7 @@ export function buildSubgraphRows(sources: Sources): Row[] {
       routingUrl: subgraph.routingUrl,
       local,
       port: override === undefined ? null : override.port,
+      enabled: !sources.disabled.includes(subgraph.name),
       status,
       reason: buildRowReason(status, sources.errors[subgraph.name] ?? []),
     };

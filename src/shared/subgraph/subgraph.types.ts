@@ -31,12 +31,16 @@ export type OverrideMap = Record<string, Override>;
 
 export type HealthMap = Record<string, Reachability>;
 
+/** Names of subgraphs left out of composition. */
+export type DisabledSubgraphs = string[];
+
 /** Everything the table needs for one line. */
 export type Row = {
   name: string;
   routingUrl: string;
   local: boolean;
   port: number | null;
+  enabled: boolean;
   status: RowStatus;
   reason: string;
 };

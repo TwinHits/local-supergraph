@@ -31,8 +31,12 @@ const stub = vi.hoisted(function fixtures() {
     ],
     supergraphErrors: [] as unknown[],
     settings: { routerPort: 4041 },
+    disabled: [] as string[],
     updateOverride: vi.fn(function noop() {
       return Promise.resolve({ starships: { local: true, port: 4002 } });
+    }),
+    setSubgraphEnabled: vi.fn(function noop() {
+      return Promise.resolve([]);
     }),
   };
 });
@@ -64,6 +68,10 @@ vi.mock("@/renderer/api", function stubBridge() {
           return Promise.resolve(stub.health);
         },
         updateOverride: stub.updateOverride,
+        disabledSubgraphs() {
+          return Promise.resolve(stub.disabled);
+        },
+        setSubgraphEnabled: stub.setSubgraphEnabled,
       },
       errors: {
         subgraphErrors() {

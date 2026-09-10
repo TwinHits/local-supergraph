@@ -9,6 +9,7 @@ type SubgraphRowProps = {
   row: Row;
   onLocalChange: (local: boolean) => void;
   onPortChange: (port: number | null) => void;
+  onEnabledChange: (enabled: boolean) => void;
   onShowErrors: () => void;
 };
 
@@ -17,10 +18,11 @@ export default function SubgraphRow({
   row,
   onLocalChange,
   onPortChange,
+  onEnabledChange,
   onShowErrors,
 }: SubgraphRowProps) {
   return (
-    <TableRow highlighted={row.local}>
+    <TableRow highlighted={row.local} faded={!row.enabled}>
       <TableCell>
         <StatusIndicator
           status={row.status}
@@ -44,6 +46,13 @@ export default function SubgraphRow({
           checked={row.local}
           label={`Run ${row.name} locally`}
           onChange={onLocalChange}
+        />
+      </TableCell>
+      <TableCell>
+        <ToggleSwitch
+          checked={row.enabled}
+          label={`Include ${row.name} in the supergraph`}
+          onChange={onEnabledChange}
         />
       </TableCell>
     </TableRow>

@@ -83,7 +83,6 @@ export function roverDevState(): SupergraphState {
  * port.
  */
 export function startRoverDev(
-  graphRef: string,
   configFilePath: string,
   routerPort: number,
   logFilePath: string
@@ -101,8 +100,6 @@ export function startRoverDev(
       findRover(),
       [
         "dev",
-        "--graph-ref",
-        graphRef,
         "--supergraph-config",
         configFilePath,
         "--supergraph-port",

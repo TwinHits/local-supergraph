@@ -24,6 +24,8 @@ export const CHANNELS = [
   "subgraph.overrides",
   "subgraph.updateOverride",
   "subgraph.checkHealth",
+  "subgraph.disabledSubgraphs",
+  "subgraph.setSubgraphEnabled",
   "supergraph.start",
   "supergraph.status",
   "supergraph.stop",

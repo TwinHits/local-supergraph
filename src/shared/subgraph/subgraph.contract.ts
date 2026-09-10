@@ -1,4 +1,5 @@
 import {
+  type DisabledSubgraphs,
   type HealthMap,
   type Override,
   type OverrideMap,
@@ -9,4 +10,6 @@ export type SubgraphContract = {
   overrides(): OverrideMap;
   updateOverride(name: string, override: Override): OverrideMap;
   checkHealth(): HealthMap;
+  disabledSubgraphs(): DisabledSubgraphs;
+  setSubgraphEnabled(name: string, enabled: boolean): DisabledSubgraphs;
 };

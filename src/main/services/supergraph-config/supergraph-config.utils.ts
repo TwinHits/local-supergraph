@@ -3,7 +3,7 @@ export type ConfigEntry = {
   url: string;
 };
 
-/** Renders config entries as the YAML `rover dev` reads for its subgraph overrides. */
+/** Renders config entries as the YAML `rover dev` reads to compose the graph. */
 export function renderConfigYaml(
   entries: ConfigEntry[],
   federationVersion: string

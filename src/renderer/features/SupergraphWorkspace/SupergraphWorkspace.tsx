@@ -56,6 +56,7 @@ export default function SupergraphWorkspace({
         onPortChange={function setPort(name, port) {
           subgraphs.updateOverride(name, true, port);
         }}
+        onEnabledChange={subgraphs.updateEnabled}
         onShowErrors={function showErrors(name) {
           modal.show(name, subgraphs.errors[name] ?? []);
         }}
