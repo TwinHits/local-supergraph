@@ -8,6 +8,7 @@ export enum ErrorKey {
   PortInvalid = "PORT_INVALID",
   CompositionFailed = "COMPOSITION_FAILED",
   ComposedButUnreachable = "COMPOSED_BUT_UNREACHABLE",
+  SubgraphUnauthorized = "SUBGRAPH_UNAUTHORIZED",
   LocalRefused = "LOCAL_REFUSED",
   RemoteUnreachable = "REMOTE_UNREACHABLE",
   Unknown = "UNKNOWN",

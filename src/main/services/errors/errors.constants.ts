@@ -55,17 +55,20 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.CompositionFailed]: {
     key: ErrorKey.CompositionFailed,
     summary: "Rover rejected the schema",
-    cause: "The local schema is different from the published one.",
-    resolution: [
-      "Read rover's error below",
-      "Run a schema check before publishing",
-    ],
+    cause: "The subgraph schemas don't compose together.",
+    resolution: ["Read rover's error below"],
   },
   [ErrorKey.ComposedButUnreachable]: {
     key: ErrorKey.ComposedButUnreachable,
     summary: "Composed, but the service is down",
-    cause: "Rover composed the schema, but the service still isn't answering.",
-    resolution: ["Start the local service"],
+    cause: "Rover composed the schema, but the service isn't answering.",
+    resolution: ["Check why the service isn't answering"],
+  },
+  [ErrorKey.SubgraphUnauthorized]: {
+    key: ErrorKey.SubgraphUnauthorized,
+    summary: "The subgraph rejected the request",
+    cause: "It answered, so this is not a connectivity problem.",
+    resolution: ["Check what credentials this subgraph expects"],
   },
   [ErrorKey.LocalRefused]: {
     key: ErrorKey.LocalRefused,
@@ -110,6 +113,7 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
     /encountered \d+ build error/i,
   ],
   [ErrorKey.ComposedButUnreachable]: [],
+  [ErrorKey.SubgraphUnauthorized]: [/\bHTTP 401\b/, /\bHTTP 403\b/],
   [ErrorKey.LocalRefused]: [],
   [ErrorKey.RemoteUnreachable]: [/\bENOTFOUND\b/, /\bEAI_AGAIN\b/],
   [ErrorKey.Unknown]: [],
@@ -126,6 +130,7 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.PortInvalid,
   ErrorKey.CompositionFailed,
   ErrorKey.ComposedButUnreachable,
+  ErrorKey.SubgraphUnauthorized,
   ErrorKey.LocalRefused,
   ErrorKey.RemoteUnreachable,
   ErrorKey.Unknown,

@@ -9,7 +9,10 @@ import {
   type ProbeResult,
   type Target,
 } from "@/main/services/subgraph-health/subgraph-health.types";
-import { toFailureText } from "@/main/services/subgraph-health/subgraph-health.utils";
+import {
+  looksLikeGraphQL,
+  toFailureText,
+} from "@/main/services/subgraph-health/subgraph-health.utils";
 import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-overrides.service";
 import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import { ErrorKey } from "@/shared/errors/errors.types";
@@ -19,10 +22,35 @@ import {
   Reachability,
 } from "@/shared/subgraph/subgraph.types";
 
-/** Reports whether a URL answers at all. */
+/**
+ * Reports whether a URL answers as a working GraphQL endpoint. A plain
+ * `fetch` would count a VPN login page or a 404 as "reachable" — this sends
+ * an actual query, the same way rover's own introspection does, so a
+ * subgraph that would fail composition shows red before Start is ever
+ * clicked, not after rover has already tried and given up.
+ */
 async function checkEndpoint(url: string): Promise<ProbeResult> {
   try {
-    await fetch(url, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: "{ __typename }" }),
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    if (response.status === 401 || response.status === 403) {
+      return {
+        reachable: false,
+        raw: `HTTP ${response.status}`,
+        key: ErrorKey.SubgraphUnauthorized,
+      };
+    }
+    if (!response.ok) {
+      return { reachable: false, raw: `HTTP ${response.status}` };
+    }
+    const body: unknown = await response.json();
+    if (!looksLikeGraphQL(body)) {
+      return { reachable: false, raw: "Did not answer like a GraphQL server" };
+    }
     return { reachable: true, raw: null };
   } catch (failure) {
     return { reachable: false, raw: toFailureText(failure) };
@@ -72,7 +100,7 @@ async function checkTarget(target: Target): Promise<Reachability> {
     clearSubgraphFailure(target.name);
     return Reachability.Reachable;
   }
-  reportSubgraphFailure(target.name, [target.key], result.raw);
+  reportSubgraphFailure(target.name, [result.key ?? target.key], result.raw);
   return Reachability.Unreachable;
 }
 

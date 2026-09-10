@@ -7,8 +7,13 @@ export type Target = {
   key: ErrorKey;
 };
 
-/** Whether a URL answered and the error when it did not. */
+/**
+ * Whether a URL answered and the error when it did not. A response, even a
+ * rejected one, means the network path works — key overrides the target's
+ * default so that outcome isn't reported as an unreachable one.
+ */
 export type ProbeResult = {
   reachable: boolean;
   raw: string | null;
+  key?: ErrorKey;
 };

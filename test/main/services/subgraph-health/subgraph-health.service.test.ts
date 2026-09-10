@@ -16,9 +16,13 @@ const SUBGRAPHS = [
   { name: "starships", routingUrl: "https://starships.svc/graphql" },
 ];
 
-/** Answers every request the same way. */
+/** Answers every request like a working GraphQL server. */
 function alwaysAnswers(): void {
-  answer.mockResolvedValue(undefined);
+  answer.mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({ data: { __typename: "Query" } }),
+  });
 }
 
 /** Fails every request the way Node fails a dead connection. */
