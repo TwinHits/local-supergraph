@@ -104,7 +104,11 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
   ],
   [ErrorKey.PortInUse]: [/\bEADDRINUSE\b/],
   [ErrorKey.PortInvalid]: [],
-  [ErrorKey.CompositionFailed]: [/composition (failed|error)/i],
+  [ErrorKey.CompositionFailed]: [
+    /composition (failed|error)/i,
+    /satisfiability_error/i,
+    /encountered \d+ build error/i,
+  ],
   [ErrorKey.ComposedButUnreachable]: [],
   [ErrorKey.LocalRefused]: [],
   [ErrorKey.RemoteUnreachable]: [/\bENOTFOUND\b/, /\bEAI_AGAIN\b/],

@@ -5,18 +5,24 @@ import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.
 import { useErrorModal } from "@/renderer/features/SupergraphWorkspace/useErrorModal";
 import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
+import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 const SUPERGRAPH_NAME = "Supergraph";
 
 type SupergraphWorkspaceProps = {
   routerPort: number;
+  supergraphState: SupergraphState;
 };
 
 /** Everything below the header. */
 export default function SupergraphWorkspace({
   routerPort,
+  supergraphState,
 }: SupergraphWorkspaceProps) {
-  const subgraphs = useSubgraphs(routerPort);
+  const subgraphs = useSubgraphs(
+    routerPort,
+    supergraphState !== SupergraphState.Stopped
+  );
   const modal = useErrorModal();
 
   if (subgraphs.loading) {

@@ -1,5 +1,5 @@
 import { type ChildProcess, execFile, spawn } from "node:child_process";
-import { closeSync, existsSync, openSync } from "node:fs";
+import { appendFileSync, existsSync, writeFileSync } from "node:fs";
 import { promisify } from "node:util";
 
 import { environment } from "@/main/services/environment/environment.service";
@@ -18,8 +18,25 @@ import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 const run = promisify(execFile);
 const WINDOWS = "win32";
 
+type OutputHandler = (chunk: string) => void;
+
 let roverProcess: ChildProcess | null = null;
 let state: SupergraphState = SupergraphState.Stopped;
+const outputHandlers = new Set<OutputHandler>();
+
+/** Subscribes to rover's combined stdout and stderr while it runs. */
+export function onRoverOutput(handler: OutputHandler): () => void {
+  outputHandlers.add(handler);
+  return function unsubscribe() {
+    outputHandlers.delete(handler);
+  };
+}
+
+function notifyOutput(chunk: string): void {
+  for (const handler of outputHandlers) {
+    handler(chunk);
+  }
+}
 
 /**
  * Looks in rover's install path first, because its installer only updates PATH
@@ -78,9 +95,7 @@ export function startRoverDev(
   state = SupergraphState.Starting;
 
   return new Promise(function spawnRover(resolve) {
-    // An unread pipe fills up and rover blocks on write before the router
-    // ever comes up, so its output goes to a file instead.
-    const log = openSync(logFilePath, "w");
+    writeFileSync(logFilePath, "");
 
     const child = spawn(
       findRover(),
@@ -96,12 +111,20 @@ export function startRoverDev(
       {
         env: environment.childEnv(),
         detached: process.platform !== WINDOWS,
-        stdio: ["ignore", log, log],
+        stdio: ["ignore", "pipe", "pipe"],
       }
     );
 
-    closeSync(log);
     roverProcess = child;
+
+    function captureOutput(chunk: Buffer): void {
+      const text = chunk.toString("utf8");
+      appendFileSync(logFilePath, text);
+      notifyOutput(text);
+    }
+
+    child.stdout?.on("data", captureOutput);
+    child.stderr?.on("data", captureOutput);
 
     child.once("error", function failedToStart() {
       roverProcess = null;

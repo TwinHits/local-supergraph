@@ -20,6 +20,7 @@ import {
 } from "@/shared/subgraph/subgraph.types";
 
 const NO_COMPOSITION: Record<string, Composition> = {};
+const SUPERGRAPH_ERROR_POLL_MS = 2000;
 
 type Snapshot = {
   subgraphs: RegisteredSubgraph[];
@@ -62,7 +63,7 @@ function isSameListing(current: Snapshot, next: Snapshot): boolean {
 }
 
 /** Holds the table's state and talks to main. */
-export function useSubgraphs(routerPort: number) {
+export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
@@ -121,6 +122,34 @@ export function useSubgraphs(routerPort: number) {
       load();
     },
     [load]
+  );
+
+  useEffect(
+    function pollSupergraphErrorsWhileActive() {
+      if (!supergraphActive) {
+        return undefined;
+      }
+
+      const interval = setInterval(function check() {
+        void api.errors
+          .supergraphErrors()
+          .then(function apply(supergraphErrors) {
+            setSnapshot(function merge(current) {
+              return areFailuresEqual(
+                current.supergraphErrors,
+                supergraphErrors
+              )
+                ? current
+                : { ...current, supergraphErrors };
+            });
+          });
+      }, SUPERGRAPH_ERROR_POLL_MS);
+
+      return function stop() {
+        clearInterval(interval);
+      };
+    },
+    [supergraphActive]
   );
 
   const updateOverride = useCallback(function write(
