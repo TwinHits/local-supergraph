@@ -1,16 +1,21 @@
 import {
+  readOverrides,
+  settings,
+  writeOverrides,
+} from "@/main/services/settings/settings.service";
+import {
   type Override,
   type OverrideMap,
 } from "@/shared/subgraph/subgraph.types";
 
-const overrides: OverrideMap = {};
-
 export const subgraphOverrides = {
   overrides(): OverrideMap {
-    return overrides;
+    return readOverrides(settings.currentVariant());
   },
   updateOverride(name: string, override: Override): OverrideMap {
-    overrides[name] = override;
-    return overrides;
+    const variant = settings.currentVariant();
+    const next = { ...readOverrides(variant), [name]: override };
+    writeOverrides(variant, next);
+    return next;
   },
 };

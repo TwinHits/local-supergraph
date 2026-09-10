@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
+import { registerConfigFile } from "@/main/services/settings/settings.service";
 import { startServices } from "@/main/services/startup/startup.service";
 import { supergraph } from "@/main/services/supergraph/supergraph.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
@@ -13,6 +14,7 @@ import { registerBridge } from "./bridge";
 const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");
 const DOCK_ICON = join(__dirname, "..", "assets", "logo.png");
+const CONFIG_FILE_NAME = "config.json";
 
 /** Sets the Dock icon, where the platform has a Dock. */
 function setDockIcon(): void {
@@ -79,6 +81,7 @@ function stopSupergraphBeforeQuit(event: Electron.Event): void {
 registerBridge();
 startServices();
 void app.whenReady().then(function ready() {
+  registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
   setDockIcon();
   createWindow();
 });
