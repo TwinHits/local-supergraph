@@ -7,7 +7,11 @@ import { errors } from "@/main/services/errors/errors.service";
 import { settings } from "@/main/services/settings/settings.service";
 import { subgraphHealth } from "@/main/services/subgraph-health/subgraph-health.service";
 import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-overrides.service";
-import { supergraph } from "@/main/services/supergraph/supergraph.service";
+import {
+  setSubgraphEnabled,
+  supergraph,
+  updateOverride,
+} from "@/main/services/supergraph/supergraph.service";
 import { windowControls } from "@/main/services/window/window.service";
 import { buildChannelName } from "@/shared/contract/contract.constants";
 import {
@@ -19,10 +23,10 @@ import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
 
 const subgraph: Awaitable<SubgraphContract> = {
   overrides: subgraphOverrides.overrides,
-  updateOverride: subgraphOverrides.updateOverride,
+  updateOverride,
   checkHealth: subgraphHealth.checkHealth,
   disabledSubgraphs: subgraphOverrides.disabledSubgraphs,
-  setSubgraphEnabled: subgraphOverrides.setSubgraphEnabled,
+  setSubgraphEnabled,
 };
 
 const handlers = {

@@ -15,6 +15,11 @@ import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-o
 import { ROVER_LOG_FILE } from "@/main/services/supergraph-config/supergraph-config.constants";
 import { writeSupergraphConfig } from "@/main/services/supergraph-config/supergraph-config.service";
 import { type Awaitable } from "@/shared/contract/contract.types";
+import {
+  type DisabledSubgraphs,
+  type Override,
+  type OverrideMap,
+} from "@/shared/subgraph/subgraph.types";
 import { type SupergraphContract } from "@/shared/supergraph/supergraph.contract";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
@@ -82,50 +87,115 @@ function watchComposition(chunk: string): void {
 
 onRoverOutput(watchComposition);
 
+/** Writes the current variant's config from its latest subgraphs and choices. */
+async function writeCurrentConfig(): Promise<string> {
+  const variant = settings.currentVariant();
+  const subgraphs = await apollo.listSubgraphs();
+  return writeSupergraphConfig(
+    variant,
+    subgraphs,
+    subgraphOverrides.overrides(),
+    subgraphOverrides.disabledSubgraphs()
+  );
+}
+
+/** Writes the config and spawns rover, waiting for its first composition attempt. */
+async function startSupergraph(): Promise<SupergraphState> {
+  attemptOutput = "";
+  if (settleTimer !== null) {
+    clearTimeout(settleTimer);
+    settleTimer = null;
+  }
+
+  const configFilePath = await writeCurrentConfig();
+
+  const firstAttempt = new Promise<void>(function wait(resolve) {
+    resolveFirstAttempt = resolve;
+  });
+  const giveUpWaiting = setTimeout(
+    settleFirstAttempt,
+    MAX_WAIT_FOR_FIRST_ATTEMPT_MS
+  );
+
+  const spawned = await startRoverDev(
+    configFilePath,
+    settings.read().routerPort,
+    ROVER_LOG_FILE
+  );
+
+  if (spawned !== SupergraphState.Running) {
+    clearTimeout(giveUpWaiting);
+    resolveFirstAttempt = null;
+    return spawned;
+  }
+
+  await firstAttempt;
+  clearTimeout(giveUpWaiting);
+  return roverDevState();
+}
+
+let restarting = false;
+let restartQueued = false;
+
+/**
+ * Restarts rover on its latest config if it's up. rover only reads
+ * --supergraph-config once at launch — confirmed it does not watch the file
+ * — so picking up an override or enabled change means a real restart, not a
+ * rewrite. Queues at most one more restart if changes land while one is
+ * already in flight, so a rapid run of toggles doesn't drop the last one.
+ */
+async function recomposeIfRunning(): Promise<void> {
+  if (restarting) {
+    restartQueued = true;
+    return;
+  }
+  if (roverDevState() === SupergraphState.Stopped) {
+    return;
+  }
+
+  restarting = true;
+  do {
+    restartQueued = false;
+    settleFirstAttempt();
+    await stopRoverDev();
+    await startSupergraph();
+  } while (restartQueued);
+  restarting = false;
+}
+
+/**
+ * Changes a subgraph's local/remote override and restarts rover if it's
+ * running. Resolves as soon as the choice is saved — the restart, if any,
+ * keeps going in the background so the toggle itself doesn't wait on it.
+ */
+export async function updateOverride(
+  name: string,
+  override: Override
+): Promise<OverrideMap> {
+  const next = subgraphOverrides.updateOverride(name, override);
+  void recomposeIfRunning();
+  return next;
+}
+
+/**
+ * Enables or disables a subgraph and restarts rover if it's running.
+ * Resolves as soon as the choice is saved, same as updateOverride.
+ */
+export async function setSubgraphEnabled(
+  name: string,
+  enabled: boolean
+): Promise<DisabledSubgraphs> {
+  const next = subgraphOverrides.setSubgraphEnabled(name, enabled);
+  void recomposeIfRunning();
+  return next;
+}
+
 export const supergraph: Awaitable<SupergraphContract> = {
   async start(): Promise<SupergraphState> {
     if (roverDevState() !== SupergraphState.Stopped) {
       return roverDevState();
     }
-
-    attemptOutput = "";
-    if (settleTimer !== null) {
-      clearTimeout(settleTimer);
-      settleTimer = null;
-    }
-
-    const variant = settings.currentVariant();
-    const subgraphs = await apollo.listSubgraphs();
-    const configFilePath = writeSupergraphConfig(
-      variant,
-      subgraphs,
-      subgraphOverrides.overrides(),
-      subgraphOverrides.disabledSubgraphs()
-    );
-
-    const firstAttempt = new Promise<void>(function wait(resolve) {
-      resolveFirstAttempt = resolve;
-    });
-    const giveUpWaiting = setTimeout(
-      settleFirstAttempt,
-      MAX_WAIT_FOR_FIRST_ATTEMPT_MS
-    );
-
-    const spawned = await startRoverDev(
-      configFilePath,
-      settings.read().routerPort,
-      ROVER_LOG_FILE
-    );
-
-    if (spawned !== SupergraphState.Running) {
-      clearTimeout(giveUpWaiting);
-      resolveFirstAttempt = null;
-      return spawned;
-    }
-
-    await firstAttempt;
-    clearTimeout(giveUpWaiting);
-    return roverDevState();
+    return startSupergraph();
   },
 
   async stop(): Promise<SupergraphState> {
