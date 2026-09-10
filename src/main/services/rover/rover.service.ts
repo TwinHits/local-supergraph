@@ -141,6 +141,21 @@ export function startRoverDev(
   });
 }
 
+/**
+ * Signals a process group, tolerating one that is already gone. rover can
+ * exit on its own in the instant before this runs — Node hasn't delivered
+ * that process's "exit" event yet, so the stale pid still looks live — and
+ * signalling a dead pid throws ESRCH.
+ */
+function signalGroup(pid: number, signal: NodeJS.Signals): boolean {
+  try {
+    process.kill(-pid, signal);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Kills rover and everything it spawned, and waits for it to exit. */
 export function stopRoverDev(): Promise<SupergraphState> {
   if (roverProcess === null) {
@@ -165,10 +180,14 @@ export function stopRoverDev(): Promise<SupergraphState> {
       return;
     }
 
-    process.kill(-pid, "SIGTERM");
+    if (!signalGroup(pid, "SIGTERM")) {
+      resolve(SupergraphState.Stopped);
+      return;
+    }
+
     setTimeout(function forceKill() {
       if (roverProcess === stoppingProcess) {
-        process.kill(-pid, "SIGKILL");
+        signalGroup(pid, "SIGKILL");
       }
     }, SHUTDOWN_GRACE_MS);
   });

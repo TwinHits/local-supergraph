@@ -15,6 +15,9 @@ const RENDERER_HTML = join(__dirname, "..", "dist", "index.html");
 const PRELOAD_SCRIPT = join(__dirname, "preload.cjs");
 const DOCK_ICON = join(__dirname, "..", "assets", "logo.png");
 const CONFIG_FILE_NAME = "config.json";
+// A last resort if stopping rover somehow never resolves, so the app can
+// still quit instead of hanging until it's force-killed.
+const QUIT_STOP_TIMEOUT_MS = 10000;
 
 /** Sets the Dock icon, where the platform has a Dock. */
 function setDockIcon(): void {
@@ -73,7 +76,13 @@ function stopSupergraphBeforeQuit(event: Electron.Event): void {
   }
   event.preventDefault();
   quitting = true;
-  void Promise.resolve(supergraph.stop()).then(function quit() {
+
+  const stopped = Promise.resolve(supergraph.stop());
+  const gaveUp = new Promise<void>(function wait(resolve) {
+    setTimeout(resolve, QUIT_STOP_TIMEOUT_MS);
+  });
+
+  void Promise.race([stopped, gaveUp]).then(function quit() {
     app.quit();
   });
 }
