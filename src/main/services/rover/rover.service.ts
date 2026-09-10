@@ -84,6 +84,7 @@ export function roverDevState(): SupergraphState {
  */
 export function startRoverDev(
   configFilePath: string,
+  routerConfigFilePath: string,
   routerPort: number,
   logFilePath: string
 ): Promise<SupergraphState> {
@@ -102,11 +103,13 @@ export function startRoverDev(
         "dev",
         "--supergraph-config",
         configFilePath,
+        "--router-config",
+        routerConfigFilePath,
         "--supergraph-port",
         String(routerPort),
       ],
       {
-        env: environment.childEnv(),
+        env: environment.routerEnv(),
         detached: process.platform !== WINDOWS,
         stdio: ["ignore", "pipe", "pipe"],
       }

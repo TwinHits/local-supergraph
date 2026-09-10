@@ -28,6 +28,16 @@ function splitGraphRef(): string[] {
   return readVariable(EnvironmentVariable.ApolloGraphRef).split("@");
 }
 
+function baseChildEnv(): NodeJS.ProcessEnv {
+  loadEnvFile();
+  return {
+    ...process.env,
+    [EnvironmentVariable.ApolloElv2License]: "accept",
+    [EnvironmentVariable.ApolloRoverSkipUpdate]: "1",
+    [EnvironmentVariable.ApolloTelemetryDisabled]: "1",
+  };
+}
+
 export const environment = {
   graphRef(): string {
     return readVariable(EnvironmentVariable.ApolloGraphRef);
@@ -50,13 +60,19 @@ export const environment = {
       });
   },
   childEnv(): NodeJS.ProcessEnv {
-    loadEnvFile();
-    return {
-      ...process.env,
-      [EnvironmentVariable.ApolloElv2License]: "accept",
-      [EnvironmentVariable.ApolloRoverSkipUpdate]: "1",
-      [EnvironmentVariable.ApolloTelemetryDisabled]: "1",
-    };
+    return baseChildEnv();
+  },
+  /**
+   * The router never uses `--graph-ref`, so it has no Studio credentials to
+   * report usage against — but it tries anyway if it finds a key and ref
+   * lying around in its own environment. Without them, it skips that
+   * entirely instead of endlessly retrying a call that can only fail.
+   */
+  routerEnv(): NodeJS.ProcessEnv {
+    const env = baseChildEnv();
+    delete env[EnvironmentVariable.ApolloKey];
+    delete env[EnvironmentVariable.ApolloGraphRef];
+    return env;
   },
 };
 

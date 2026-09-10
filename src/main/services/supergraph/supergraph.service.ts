@@ -4,6 +4,7 @@ import {
   reportSupergraphFailure,
 } from "@/main/services/errors/errors.service";
 import { findMatchingKeys } from "@/main/services/errors/errors.utils";
+import { writeRouterConfig } from "@/main/services/router-config/router-config.service";
 import {
   onRoverOutput,
   roverDevState,
@@ -108,6 +109,7 @@ async function startSupergraph(): Promise<SupergraphState> {
   }
 
   const configFilePath = await writeCurrentConfig();
+  const routerConfigFilePath = writeRouterConfig();
 
   const firstAttempt = new Promise<void>(function wait(resolve) {
     resolveFirstAttempt = resolve;
@@ -119,6 +121,7 @@ async function startSupergraph(): Promise<SupergraphState> {
 
   const spawned = await startRoverDev(
     configFilePath,
+    routerConfigFilePath,
     settings.read().routerPort,
     ROVER_LOG_FILE
   );
