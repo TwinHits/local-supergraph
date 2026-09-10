@@ -22,6 +22,7 @@ import {
 
 const NO_COMPOSITION: Record<string, Composition> = {};
 const SUPERGRAPH_ERROR_POLL_MS = 2000;
+const SUBGRAPH_HEALTH_POLL_MS = 3000;
 
 type Snapshot = {
   subgraphs: RegisteredSubgraph[];
@@ -156,6 +157,22 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
     },
     [supergraphActive]
   );
+
+  useEffect(function pollSubgraphHealth() {
+    const interval = setInterval(function check() {
+      void api.subgraph.checkHealth().then(function withHealth(health) {
+        return api.errors.subgraphErrors().then(function withErrors(errors) {
+          setSnapshot(function merge(current) {
+            return { ...current, health, errors };
+          });
+        });
+      });
+    }, SUBGRAPH_HEALTH_POLL_MS);
+
+    return function stop() {
+      clearInterval(interval);
+    };
+  }, []);
 
   const updateOverride = useCallback(function write(
     name: string,
