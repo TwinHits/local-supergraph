@@ -7,6 +7,7 @@ import { type Row, RowStatus } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphRowProps = {
   row: Row;
+  supergraphRunning: boolean;
   onLocalChange: (local: boolean) => void;
   onPortChange: (port: number | null) => void;
   onEnabledChange: (enabled: boolean) => void;
@@ -16,6 +17,7 @@ type SubgraphRowProps = {
 /** One line of the table for one subgraph. */
 export default function SubgraphRow({
   row,
+  supergraphRunning,
   onLocalChange,
   onPortChange,
   onEnabledChange,
@@ -27,6 +29,7 @@ export default function SubgraphRow({
         <StatusIndicator
           status={row.status}
           reason={row.reason}
+          running={supergraphRunning && row.enabled}
           onClick={row.status === RowStatus.Failed ? onShowErrors : undefined}
         />
       </TableCell>

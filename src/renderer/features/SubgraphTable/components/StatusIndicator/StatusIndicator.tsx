@@ -6,6 +6,7 @@ import { RowStatus } from "@/shared/subgraph/subgraph.types";
 type StatusIndicatorProps = {
   status: RowStatus;
   reason: string;
+  running?: boolean;
   onClick?: () => void;
 };
 
@@ -15,17 +16,28 @@ const SHAPES: Record<RowStatus, string> = {
   [RowStatus.Pending]: styles["statusIndicator--pending"],
 };
 
-/** What healthy, failed and pending look like. */
+/**
+ * What healthy, failed and pending look like. Running marks a subgraph the
+ * graph actually needs right now: a spinning ring on a healthy one, a
+ * faster pulse on a failed one — the graph is up but this piece of it isn't.
+ */
 export default function StatusIndicator({
   status,
   reason,
+  running,
   onClick,
 }: StatusIndicatorProps) {
   const shape = (
     <span
       role="img"
       aria-label={`${status}: ${reason}`}
-      className={`${styles.statusIndicator} ${SHAPES[status]}`}
+      className={[
+        styles.statusIndicator,
+        SHAPES[status],
+        running === true ? styles["statusIndicator--running"] : "",
+      ]
+        .join(" ")
+        .trim()}
     />
   );
 

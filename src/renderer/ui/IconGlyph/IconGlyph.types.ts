@@ -10,4 +10,5 @@ export enum IconName {
   Start = "start",
   Stop = "stop",
   Refresh = "refresh",
+  Search = "search",
 }

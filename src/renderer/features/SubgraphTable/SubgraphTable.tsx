@@ -9,6 +9,7 @@ type SubgraphTableProps = {
   rows: Row[];
   search: string;
   sort: SortColumn;
+  supergraphRunning: boolean;
   onSearchChange: (search: string) => void;
   onSortChange: (column: SortColumn) => void;
   onLocalChange: (name: string, local: boolean) => void;
@@ -42,6 +43,7 @@ export default function SubgraphTable({
   rows,
   search,
   sort,
+  supergraphRunning,
   onSearchChange,
   onSortChange,
   onLocalChange,
@@ -72,6 +74,7 @@ export default function SubgraphTable({
             <SubgraphRow
               key={row.name}
               row={row}
+              supergraphRunning={supergraphRunning}
               onLocalChange={function setLocal(local) {
                 onLocalChange(row.name, local);
               }}

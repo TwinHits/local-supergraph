@@ -1,6 +1,7 @@
 @use "@/renderer/styles/colors.module.scss" as colors;
 
 .statusIndicator {
+  position: relative;
   display: inline-block;
   width: 1rem;
   height: 1rem;
@@ -12,8 +13,30 @@
   background: colors.$healthy;
 }
 
+.statusIndicator--running.statusIndicator--healthy::after {
+  content: "";
+  position: absolute;
+  inset: -0.25rem;
+  border: 2px solid transparent;
+  border-top-color: colors.$healthy;
+  border-radius: 50%;
+  animation: statusIndicator__spin 1.2s linear infinite;
+}
+
+@keyframes statusIndicator__spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 .statusIndicator--failed {
   background: colors.$failed;
+}
+
+// A subgraph the running graph actually needs right now, broken right now —
+// more urgent than the calmer pending pulse below, so it's faster.
+.statusIndicator--running.statusIndicator--failed {
+  animation: statusIndicator__pulse 0.8s ease-in-out infinite;
 }
 
 .statusIndicator--pending {
