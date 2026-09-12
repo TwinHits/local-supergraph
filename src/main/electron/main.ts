@@ -1,7 +1,7 @@
 /* v8 ignore file -- only real Electron runs this */
 import { join } from "node:path";
 
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 
 import { supergraph } from "@/main/services/rover/rover.service";
 import { registerConfigFile } from "@/main/services/settings/settings.service";
@@ -57,6 +57,9 @@ function createWindow(): void {
     },
     isMaximized() {
       return window.isMaximized();
+    },
+    openExternal(url) {
+      void shell.openExternal(url);
     },
   });
 

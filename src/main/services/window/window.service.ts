@@ -31,4 +31,9 @@ export const windowControls: WindowContract = {
     }
     return actions.isMaximized();
   },
+  openExternal(url) {
+    if (actions !== null) {
+      actions.openExternal(url);
+    }
+  },
 };

@@ -13,6 +13,12 @@ export const NOT_FOUND_CODE = "ENOENT";
 /** How long to wait after SIGTERM before sending SIGKILL. */
 export const SHUTDOWN_GRACE_MS = 5000;
 
+/** How often to check whether the router port has come free while stopping. */
+export const PORT_FREE_POLL_MS = 100;
+
+/** How long to poll for the router port before forcing the group down. */
+export const PORT_FREE_TIMEOUT_MS = 5000;
+
 /** Where generated rover configuration is written. */
 export const GENERATED_DIR = join(process.cwd(), "_generated");
 

@@ -96,6 +96,34 @@ vi.mock("node:child_process", () => {
   return { spawn, execFile, default: { spawn, execFile } };
 });
 
+// Held busy for a number of checks, then free — so a test can simulate a
+// router that outlives the group signal for a while before it lets go.
+const portState = vi.hoisted(() => ({ busyChecksLeft: 0 }));
+
+vi.mock("node:net", () => {
+  function createServer() {
+    const server = new EventEmitter() as EventEmitter & {
+      listen: (port: number, host: string) => void;
+      close: (onClosed: () => void) => void;
+    };
+    server.listen = function listen() {
+      queueMicrotask(function respond() {
+        if (portState.busyChecksLeft > 0) {
+          portState.busyChecksLeft -= 1;
+          server.emit("error", new Error("EADDRINUSE"));
+        } else {
+          server.emit("listening");
+        }
+      });
+    };
+    server.close = function close(onClosed) {
+      onClosed();
+    };
+    return server;
+  }
+  return { createServer, default: { createServer } };
+});
+
 /** The most recently spawned fake process. */
 function latestProcess(): FakeRoverProcess {
   const process_ = spawned[spawned.length - 1];
@@ -125,6 +153,7 @@ beforeEach(async function isolate() {
   spawnMock.mockClear();
   settingsState.overrides = {};
   settingsState.disabled = [];
+  portState.busyChecksLeft = 0;
   vi.useFakeTimers();
   vi.spyOn(process, "kill").mockImplementation(function fakeKill() {
     return true;
@@ -150,14 +179,34 @@ test("starts stopped", async () => {
   expect(supergraph.status()).toBe("stopped");
 });
 
-test("start spawns rover with the expected flags and resolves once composed", async () => {
+test("status becomes running as soon as rover announces it, without waiting out the silence timeout", async () => {
+  const { supergraph } = await freshRover();
+
+  const starting = supergraph.start();
+  const process_ = await spawnedProcess();
+  await starting;
+  expect(supergraph.status()).toBe("starting");
+
+  process_.stdout.emit("data", Buffer.from("🎶 composing supergraph\n"));
+  process_.stdout.emit(
+    "data",
+    Buffer.from(
+      "🚀 your supergraph is running! head to http://localhost:4041\n"
+    )
+  );
+  await vi.advanceTimersByTimeAsync(0);
+
+  expect(supergraph.status()).toBe("running");
+});
+
+test("start spawns rover with the expected flags and resolves once the process is up", async () => {
   const { supergraph } = await freshRover();
 
   const starting = supergraph.start();
   await composeSuccessfully(await spawnedProcess());
   const result = await starting;
 
-  expect(result).toBe("running");
+  expect(result).toBe("starting");
   expect(supergraph.status()).toBe("running");
   expect(spawnMock).toHaveBeenCalledTimes(1);
   const args = spawnMock.mock.calls[0][1] as string[];
@@ -272,7 +321,7 @@ test("stop resolves once rover actually exits", async () => {
   expect(supergraph.status()).toBe("stopped");
 });
 
-test("stop cancels a start that is still waiting to compose", async () => {
+test("stop works on a start that has not composed yet", async () => {
   const { supergraph } = await freshRover();
   const starting = supergraph.start();
   await vi.waitFor(function spawnedOnce() {
@@ -280,9 +329,26 @@ test("stop cancels a start that is still waiting to compose", async () => {
   });
 
   // Rover has spawned but has not said anything about composing yet.
+  await expect(starting).resolves.toBe("starting");
   const stopping = supergraph.stop();
   latestProcess().emit("close");
 
   await expect(stopping).resolves.toBe("stopped");
-  await expect(starting).resolves.toBe("stopped");
+});
+
+test("kills the group again if the router port is still held after the grace period", async () => {
+  const { supergraph } = await freshRover();
+  const starting = supergraph.start();
+  await composeSuccessfully(await spawnedProcess());
+  await starting;
+
+  portState.busyChecksLeft = Infinity;
+  const stopping = supergraph.stop();
+  latestProcess().emit("close");
+
+  await vi.advanceTimersByTimeAsync(5000);
+  await stopping;
+
+  expect(process.kill).toHaveBeenCalledWith(-4242, "SIGTERM");
+  expect(process.kill).toHaveBeenCalledWith(-4242, "SIGKILL");
 });

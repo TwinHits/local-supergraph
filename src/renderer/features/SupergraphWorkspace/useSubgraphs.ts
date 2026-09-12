@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/renderer/api";
 import {
@@ -174,54 +174,55 @@ export function useSubgraphs(
     [supergraphActive]
   );
 
-  useEffect(function pollSubgraphHealth() {
-    const interval = setInterval(function check() {
-      void api.subgraph.checkHealth().then(function withHealth(health) {
-        return api.errors.subgraphErrors().then(function withErrors(errors) {
+  const overrideGeneration = useRef(0);
+
+  const refreshHealth = useCallback(function refresh() {
+    const generation = overrideGeneration.current;
+    void api.subgraph.checkHealth().then(function withHealth(health) {
+      return api.errors.subgraphErrors().then(function withErrors(errors) {
+        if (generation === overrideGeneration.current) {
           setSnapshot(function merge(current) {
             return { ...current, health, errors };
           });
-        });
+        }
       });
-    }, SUBGRAPH_HEALTH_POLL_MS);
-
-    return function stop() {
-      clearInterval(interval);
-    };
-  }, []);
-
-  const updateOverride = useCallback(function write(
-    name: string,
-    local: boolean,
-    port: number | null
-  ) {
-    setSnapshot(function resetHealth(current) {
-      return {
-        ...current,
-        health: { ...current.health, [name]: Reachability.Unknown },
-      };
     });
-
-    void api.subgraph
-      .updateOverride(name, { local, port })
-      .then(function store(overrides) {
-        setSnapshot(function merge(current) {
-          return { ...current, overrides };
-        });
-        return api.subgraph.checkHealth();
-      })
-      .then(function withHealth(health) {
-        setSnapshot(function mergeHealth(current) {
-          return { ...current, health };
-        });
-        return api.errors.subgraphErrors();
-      })
-      .then(function withErrors(errors) {
-        setSnapshot(function mergeErrors(current) {
-          return { ...current, errors };
-        });
-      });
   }, []);
+
+  useEffect(
+    function pollSubgraphHealth() {
+      const interval = setInterval(function check() {
+        refreshHealth();
+      }, SUBGRAPH_HEALTH_POLL_MS);
+
+      return function stop() {
+        clearInterval(interval);
+      };
+    },
+    [refreshHealth]
+  );
+
+  const updateOverride = useCallback(
+    function write(name: string, local: boolean, port: number | null) {
+      overrideGeneration.current += 1;
+      setSnapshot(function resetHealth(current) {
+        return {
+          ...current,
+          health: { ...current.health, [name]: Reachability.Unknown },
+        };
+      });
+
+      void api.subgraph
+        .updateOverride(name, { local, port })
+        .then(function store(overrides) {
+          setSnapshot(function merge(current) {
+            return { ...current, overrides };
+          });
+          refreshHealth();
+        });
+    },
+    [refreshHealth]
+  );
 
   const updateEnabled = useCallback(function write(
     name: string,

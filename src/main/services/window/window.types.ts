@@ -3,4 +3,5 @@ export type WindowActions = {
   toggleMaximize(): boolean;
   close(): void;
   isMaximized(): boolean;
+  openExternal(url: string): void;
 };

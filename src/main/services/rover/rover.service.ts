@@ -1,5 +1,6 @@
 import { type ChildProcess, execFile, spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { createServer } from "node:net";
 import { promisify } from "node:util";
 
 import { apollo } from "@/main/services/apollo/apollo.service";
@@ -15,6 +16,8 @@ import {
   INSTALLED_PATH,
   NOT_FOUND_CODE,
   PATH_COMMAND,
+  PORT_FREE_POLL_MS,
+  PORT_FREE_TIMEOUT_MS,
   ROUTER_CONFIG_FILE,
   ROVER_LOG_FILE,
   SHUTDOWN_GRACE_MS,
@@ -33,6 +36,7 @@ import {
 } from "@/main/services/settings/settings.service";
 import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import { type Awaitable } from "@/shared/contract/contract.types";
+import { LOCAL_HOST } from "@/shared/settings/settings.constants";
 import {
   type DisabledSubgraphs,
   type Override,
@@ -90,27 +94,16 @@ function roverDevState(): SupergraphState {
 // Rover recomposes on every hot reload, so its output is collected one
 // composition attempt at a time: a fresh "composing supergraph" line starts
 // a new attempt rather than being appended to the last one. A failure is
-// reported the instant it appears; with no failure and nothing new to say
-// for a while, the attempt is treated as composed.
+// reported the instant it appears; the state only becomes Running on rover's
+// own ready line, with a silence timeout as a fallback if that line never
+// comes — the process being alive is not the same as the graph being served.
 
 const COMPOSING_MARKER = "composing supergraph";
-// A large graph can go quiet for a while mid-compose, so this only fires once
-// nothing has been said for a while — long enough that it means "done", not
-// "still working".
+const READY_MARKER = /supergraph is running/i;
 const ASSUME_COMPOSED_AFTER_MS = 1000;
 
 let attemptOutput = "";
 let settleTimer: ReturnType<typeof setTimeout> | null = null;
-let onAttemptSettled: (() => void) | null = null;
-
-/** Unblocks whatever is waiting on the current attempt, once. */
-function settleAttempt(): void {
-  if (onAttemptSettled !== null) {
-    const notify = onAttemptSettled;
-    onAttemptSettled = null;
-    notify();
-  }
-}
 
 /** Reports a failure the moment rover's output for this attempt shows one. */
 function attemptFailed(): boolean {
@@ -118,15 +111,14 @@ function attemptFailed(): boolean {
     return false;
   }
   reportSupergraphFailure([], attemptOutput);
-  settleAttempt();
   return true;
 }
 
 /** With no failure and nothing new to say, treats the attempt as composed. */
 function assumeAttemptComposed(): void {
-  if (attemptOutput.includes(COMPOSING_MARKER)) {
+  if (attemptOutput.includes(COMPOSING_MARKER) && roverProcess !== null) {
     clearSupergraphFailure();
-    settleAttempt();
+    state = SupergraphState.Running;
   }
 }
 
@@ -145,28 +137,20 @@ function watchOutput(chunk: string): void {
   if (attemptFailed()) {
     return;
   }
+  if (READY_MARKER.test(chunk)) {
+    assumeAttemptComposed();
+    return;
+  }
   settleTimer = setTimeout(assumeAttemptComposed, ASSUME_COMPOSED_AFTER_MS);
 }
 
-/** Resets the buffer for a fresh process and waits for its first attempt to settle. */
-function watchNextAttempt(): Promise<void> {
+/** Resets the buffer for a fresh process's first attempt. */
+function resetAttemptWatch(): void {
   attemptOutput = "";
   if (settleTimer !== null) {
     clearTimeout(settleTimer);
     settleTimer = null;
   }
-  return new Promise(function wait(resolve) {
-    onAttemptSettled = resolve;
-  });
-}
-
-/** Unblocks a pending watch immediately — used when stopping mid-attempt. */
-function stopWatching(): void {
-  if (settleTimer !== null) {
-    clearTimeout(settleTimer);
-    settleTimer = null;
-  }
-  settleAttempt();
 }
 
 // --- Generated config files -------------------------------------------------
@@ -296,6 +280,44 @@ function signalGroup(pid: number, signal: NodeJS.Signals): boolean {
   }
 }
 
+/** True once nothing answers on the port — the port itself, not any pid, is the source of truth. */
+function isPortFree(port: number): Promise<boolean> {
+  return new Promise(function check(resolve) {
+    const probe = createServer();
+    probe.once("error", function busy() {
+      resolve(false);
+    });
+    probe.once("listening", function free() {
+      probe.close(function closed() {
+        resolve(true);
+      });
+    });
+    probe.listen(port, LOCAL_HOST);
+  });
+}
+
+/**
+ * Rover's own exit does not mean the router it spawned has let go of the
+ * port — that grandchild can outlive the group signal rover's pid answers
+ * for. Polls the port itself, with a timeout, since a new rover dev needs it
+ * free to bind.
+ */
+async function waitForPortFree(
+  port: number,
+  timeoutMs: number
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await isPortFree(port)) {
+      return true;
+    }
+    await new Promise(function wait(resolve) {
+      setTimeout(resolve, PORT_FREE_POLL_MS);
+    });
+  }
+  return isPortFree(port);
+}
+
 /**
  * Spawns rover dev and resolves once it has either started or failed to start.
  * Runs detached so the router it launches can be killed along with it —
@@ -307,9 +329,9 @@ function startRoverDev(
   routerConfigFilePath: string,
   routerPort: number,
   logFilePath: string
-): Promise<SupergraphState> {
+): Promise<boolean> {
   if (roverProcess !== null) {
-    return Promise.resolve(state);
+    return Promise.resolve(false);
   }
 
   state = SupergraphState.Starting;
@@ -351,12 +373,11 @@ function startRoverDev(
     child.once("error", function failedToStart() {
       roverProcess = null;
       state = SupergraphState.Stopped;
-      resolve(state);
+      resolve(false);
     });
 
     child.once("spawn", function started() {
-      state = SupergraphState.Running;
-      resolve(state);
+      resolve(true);
     });
 
     child.once("close", function stopped() {
@@ -366,7 +387,11 @@ function startRoverDev(
   });
 }
 
-/** Kills rover and everything it spawned, and waits for it to fully exit. */
+/**
+ * Kills rover and everything it spawned, and waits for the router port to
+ * actually come free. Finishing on rover's exit alone can hand the next
+ * start a port its predecessor's router is still sitting on.
+ */
 function stopRoverDev(): Promise<SupergraphState> {
   if (roverProcess === null) {
     state = SupergraphState.Stopped;
@@ -374,16 +399,28 @@ function stopRoverDev(): Promise<SupergraphState> {
   }
 
   const stoppingProcess = roverProcess;
-  const pid = stoppingProcess.pid;
+  const maybePid = stoppingProcess.pid;
 
-  if (pid === undefined) {
+  if (maybePid === undefined) {
     return Promise.resolve(state);
   }
 
+  const pid: number = maybePid;
+  const routerPort = settings.read().routerPort;
+
   return new Promise(function waitForExit(resolve) {
-    stoppingProcess.once("close", function stopped() {
-      resolve(SupergraphState.Stopped);
-    });
+    function resolveOncePortFree(): void {
+      void waitForPortFree(routerPort, PORT_FREE_TIMEOUT_MS).then(
+        function settled(freed) {
+          if (!freed) {
+            signalGroup(pid, "SIGKILL");
+          }
+          resolve(SupergraphState.Stopped);
+        }
+      );
+    }
+
+    stoppingProcess.once("close", resolveOncePortFree);
 
     if (process.platform === WINDOWS) {
       execFile("taskkill", ["/pid", String(pid), "/t", "/f"]);
@@ -391,7 +428,7 @@ function stopRoverDev(): Promise<SupergraphState> {
     }
 
     if (!signalGroup(pid, "SIGTERM")) {
-      resolve(SupergraphState.Stopped);
+      resolveOncePortFree();
       return;
     }
 
@@ -405,31 +442,19 @@ function stopRoverDev(): Promise<SupergraphState> {
 
 // --- Starting, stopping, and restarting on change ---------------------------
 
-const MAX_WAIT_FOR_FIRST_ATTEMPT_MS = 60000;
-
-/** Writes both configs and spawns rover, waiting for its first composition attempt. */
+/** Writes both configs and spawns rover. Resolves once it has started, not once it has composed. */
 async function startSupergraph(): Promise<SupergraphState> {
   const configFilePath = await writeCurrentConfig();
   const routerConfigFilePath = writeRouterConfigFile();
+  resetAttemptWatch();
 
-  const attempt = watchNextAttempt();
-  const giveUpWaiting = setTimeout(stopWatching, MAX_WAIT_FOR_FIRST_ATTEMPT_MS);
-
-  const spawned = await startRoverDev(
+  await startRoverDev(
     configFilePath,
     routerConfigFilePath,
     settings.read().routerPort,
     ROVER_LOG_FILE
   );
 
-  if (spawned !== SupergraphState.Running) {
-    clearTimeout(giveUpWaiting);
-    stopWatching();
-    return spawned;
-  }
-
-  await attempt;
-  clearTimeout(giveUpWaiting);
   return roverDevState();
 }
 
@@ -453,6 +478,13 @@ let restartQueued = false;
  * Restarts rover on its latest config, if it's up. Coalesces a rapid run of
  * changes into one restart that picks up the latest state, rather than
  * running once per change.
+ *
+ * A rewrite-in-place without a restart was tried first: rover's own watch is
+ * on the router config, not the supergraph one, and touching the router
+ * config only reloads router-level settings — a subgraph's URL stays whatever
+ * it was given at startup until the process restarts. Confirmed against a
+ * real graph: the stale URL kept getting polled and its retries kept
+ * exhausting after the override changed.
  */
 function recomposeIfRunning(): void {
   if (restartQueued) {
@@ -464,7 +496,6 @@ function recomposeIfRunning(): void {
     if (roverDevState() === SupergraphState.Stopped) {
       return roverDevState();
     }
-    stopWatching();
     await stopRoverDev();
     return startSupergraph();
   });
@@ -508,7 +539,6 @@ export const supergraph: Awaitable<SupergraphContract> = {
   },
 
   async stop(): Promise<SupergraphState> {
-    stopWatching();
     return stopRoverDev();
   },
 

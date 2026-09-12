@@ -19,6 +19,7 @@ type ToolbarProps = {
   onSearchChange: (search: string) => void;
   onLaunchStart: () => void;
   onLaunchStop: () => void;
+  onOpenRouter: () => void;
   onRefresh: () => void;
   onOpenSettings: () => void;
 };
@@ -35,19 +36,22 @@ export default function Toolbar({
   onSearchChange,
   onLaunchStart,
   onLaunchStop,
+  onOpenRouter,
   onRefresh,
   onOpenSettings,
 }: ToolbarProps) {
   return (
     <div className={styles.toolbar}>
       <span className={styles.toolbar__identity}>
-        <TextLabel>{graphName}</TextLabel>
-        <DropdownSelect
-          value={variant}
-          label="Variant"
-          options={variants}
-          onChange={onVariantChange}
-        />
+        <TextLabel>{graphName}@</TextLabel>
+        <span className={styles.toolbar__variant}>
+          <DropdownSelect
+            value={variant}
+            label="Variant"
+            options={variants}
+            onChange={onVariantChange}
+          />
+        </span>
         <SearchField value={search} onChange={onSearchChange} />
         <RefreshButton refreshing={refreshing} onClick={onRefresh} />
       </span>
@@ -57,6 +61,14 @@ export default function Toolbar({
           onStart={onLaunchStart}
           onStop={onLaunchStop}
         />
+        <IconButton
+          label="Open router in browser"
+          tooltip="Open Local"
+          disabled={launchState !== SupergraphState.Running}
+          onClick={onOpenRouter}
+        >
+          <IconGlyph name={IconName.OpenLink} />
+        </IconButton>
         <IconButton
           label="Settings"
           tooltip="Settings"

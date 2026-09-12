@@ -4,4 +4,5 @@ export type WindowContract = {
   toggleMaximize(): boolean;
   close(): void;
   isMaximized(): boolean;
+  openExternal(url: string): void;
 };

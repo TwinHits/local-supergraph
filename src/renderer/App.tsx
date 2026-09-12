@@ -33,6 +33,7 @@ export default function App() {
         onSearchChange={subgraphs.setSearch}
         onLaunchStart={launch.start}
         onLaunchStop={launch.stop}
+        onOpenRouter={launch.openRouter}
         onRefresh={subgraphs.reload}
         onOpenSettings={settings.show}
       />

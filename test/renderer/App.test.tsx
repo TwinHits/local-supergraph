@@ -94,6 +94,9 @@ vi.mock("@/renderer/api", function stubBridge() {
         updateVariant() {
           return Promise.resolve("staging");
         },
+        routerAddress() {
+          return Promise.resolve("http://localhost:4041");
+        },
       },
       windowControls: {
         isMaximized() {
@@ -107,6 +110,20 @@ vi.mock("@/renderer/api", function stubBridge() {
         },
         close() {
           return Promise.resolve(undefined);
+        },
+        openExternal() {
+          return Promise.resolve(undefined);
+        },
+      },
+      supergraph: {
+        start() {
+          return Promise.resolve("stopped");
+        },
+        stop() {
+          return Promise.resolve("stopped");
+        },
+        status() {
+          return Promise.resolve("stopped");
         },
       },
     },

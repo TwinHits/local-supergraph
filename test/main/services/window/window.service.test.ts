@@ -20,6 +20,7 @@ test("passes minimize on to the window", () => {
     isMaximized() {
       return false;
     },
+    openExternal() {},
   });
 
   windowControls.minimize();
@@ -37,6 +38,7 @@ test("reports what the window says about being maximized", () => {
     isMaximized() {
       return true;
     },
+    openExternal() {},
   });
 
   expect(windowControls.toggleMaximize()).toBe(true);

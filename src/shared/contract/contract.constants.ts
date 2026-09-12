@@ -33,6 +33,7 @@ export const CHANNELS = [
   "windowControls.toggleMaximize",
   "windowControls.close",
   "windowControls.isMaximized",
+  "windowControls.openExternal",
 ] as const satisfies readonly Channel[];
 
 type Unlisted = Exclude<Channel, (typeof CHANNELS)[number]>;
