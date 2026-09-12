@@ -27,5 +27,8 @@ coverage/
 # Tool-generated artifacts (see spec section 5)
 _generated/
 
+# Local state for prestart version check
+.package-version-cache
+
 # The spec has its own repo, cloned in here
 spec/

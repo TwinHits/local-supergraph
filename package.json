@@ -8,7 +8,9 @@
     "node": ">=26.0.0"
   },
   "scripts": {
+    "prestart": "node scripts/checkPackageVersion.ts",
     "start": "npm run build && electron .",
+    "ci": "npm ci",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "fix": "npm run format && npm run lint",
