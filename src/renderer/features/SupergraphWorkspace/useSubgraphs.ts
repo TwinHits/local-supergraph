@@ -67,12 +67,24 @@ function isSameListing(current: Snapshot, next: Snapshot): boolean {
 }
 
 /** Holds the table's state and talks to main. */
-export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
+export function useSubgraphs(
+  routerPort: number,
+  supergraphActive: boolean,
+  variant: string
+) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortColumn>(SortColumn.Name);
+  const [loadedVariant, setLoadedVariant] = useState(variant);
+
+  if (variant !== loadedVariant) {
+    setLoadedVariant(variant);
+    setSearch("");
+    setSort(SortColumn.Name);
+    setLoading(true);
+  }
 
   const load = useCallback(function read() {
     const primary = Promise.all([
@@ -97,7 +109,6 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
       });
     });
 
-    // Only replace the cached answer when the registry has moved since.
     const secondary = api.apollo
       .reloadSubgraphs()
       .then(function reloaded(subgraphs) {
@@ -120,7 +131,12 @@ export function useSubgraphs(routerPort: number, supergraphActive: boolean) {
     });
   }, []);
 
-  useEffect(load, [load]);
+  useEffect(
+    function reloadForVariant() {
+      load();
+    },
+    [variant, load]
+  );
 
   const refresh = useCallback(
     function trigger() {

@@ -3,7 +3,10 @@ import {
   clearSubgraphFailure,
   reportSubgraphFailure,
 } from "@/main/services/errors/errors.service";
-import { settings } from "@/main/services/settings/settings.service";
+import {
+  currentOverrides,
+  settings,
+} from "@/main/services/settings/settings.service";
 import { PROBE_TIMEOUT_MS } from "@/main/services/subgraph-health/subgraph-health.constants";
 import {
   type ProbeResult,
@@ -13,7 +16,6 @@ import {
   looksLikeGraphQL,
   toFailureText,
 } from "@/main/services/subgraph-health/subgraph-health.utils";
-import { subgraphOverrides } from "@/main/services/subgraph-overrides/subgraph-overrides.service";
 import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 import { ErrorKey } from "@/shared/errors/errors.types";
 import {
@@ -104,7 +106,13 @@ async function checkTarget(target: Target): Promise<Reachability> {
   return Reachability.Unreachable;
 }
 
-/** Probes every subgraph at once. */
+/**
+ * Probes every subgraph at once, disabled ones included — a subgraph is
+ * usually disabled because it's broken, and its row should keep showing
+ * whether that's still true rather than freezing on whatever was last known.
+ * Composition is what actually leaves disabled subgraphs out; this is just
+ * telling the user about them.
+ */
 export async function checkSubgraphs(
   subgraphs: RegisteredSubgraph[],
   overrides: OverrideMap
@@ -130,9 +138,6 @@ export async function checkSubgraphs(
 
 export const subgraphHealth = {
   async checkHealth(): Promise<HealthMap> {
-    return checkSubgraphs(
-      await apollo.listSubgraphs(),
-      subgraphOverrides.overrides()
-    );
+    return checkSubgraphs(await apollo.listSubgraphs(), currentOverrides());
   },
 };

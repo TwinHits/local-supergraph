@@ -3,29 +3,43 @@ import SubgraphTable from "@/renderer/features/SubgraphTable";
 import SupergraphError from "@/renderer/features/SupergraphWorkspace/components/SupergraphError";
 import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.module.scss";
 import { useErrorModal } from "@/renderer/features/SupergraphWorkspace/useErrorModal";
-import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
+import {
+  type Diagnosis,
+  type SubgraphErrorMap,
+} from "@/shared/errors/errors.types";
+import { type Row, SortColumn } from "@/shared/subgraph/subgraph.types";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 const SUPERGRAPH_NAME = "Supergraph";
 
 type SupergraphWorkspaceProps = {
-  routerPort: number;
+  loading: boolean;
+  rows: Row[];
+  sort: SortColumn;
+  errors: SubgraphErrorMap;
+  supergraphErrors: Diagnosis[];
   supergraphState: SupergraphState;
+  onSortChange: (column: SortColumn) => void;
+  onLocalChange: (name: string, local: boolean, port: number | null) => void;
+  onEnabledChange: (name: string, enabled: boolean) => void;
 };
 
-/** Everything below the header. */
+/** Everything below the toolbar. */
 export default function SupergraphWorkspace({
-  routerPort,
+  loading,
+  rows,
+  sort,
+  errors,
+  supergraphErrors,
   supergraphState,
+  onSortChange,
+  onLocalChange,
+  onEnabledChange,
 }: SupergraphWorkspaceProps) {
-  const subgraphs = useSubgraphs(
-    routerPort,
-    supergraphState !== SupergraphState.Stopped
-  );
   const modal = useErrorModal();
 
-  if (subgraphs.loading) {
+  if (loading) {
     return (
       <div className={styles.supergraphWorkspace__loading}>
         <LoadingSpinner label="Reading the graph" />
@@ -36,33 +50,29 @@ export default function SupergraphWorkspace({
   return (
     <>
       <SupergraphError
-        diagnoses={subgraphs.supergraphErrors}
+        diagnoses={supergraphErrors}
         onShowErrors={function showSupergraphErrors() {
-          modal.show(SUPERGRAPH_NAME, subgraphs.supergraphErrors);
+          modal.show(SUPERGRAPH_NAME, supergraphErrors);
         }}
       />
       <SubgraphTable
-        rows={subgraphs.rows}
-        search={subgraphs.search}
-        sort={subgraphs.sort}
+        rows={rows}
+        sort={sort}
         supergraphRunning={supergraphState === SupergraphState.Running}
-        onSearchChange={subgraphs.setSearch}
-        onSortChange={subgraphs.setSort}
+        onSortChange={onSortChange}
         onLocalChange={function setLocal(name, local) {
-          const row = subgraphs.rows.find(function named(each) {
+          const row = rows.find(function named(each) {
             return each.name === name;
           });
-          subgraphs.updateOverride(name, local, row?.port ?? null);
+          onLocalChange(name, local, row?.port ?? null);
         }}
         onPortChange={function setPort(name, port) {
-          subgraphs.updateOverride(name, true, port);
+          onLocalChange(name, true, port);
         }}
-        onEnabledChange={subgraphs.updateEnabled}
+        onEnabledChange={onEnabledChange}
         onShowErrors={function showErrors(name) {
-          modal.show(name, subgraphs.errors[name] ?? []);
+          modal.show(name, errors[name] ?? []);
         }}
-        onRefresh={subgraphs.reload}
-        refreshing={subgraphs.refreshing}
       />
       <ErrorModal
         key={modal.shown.subject}

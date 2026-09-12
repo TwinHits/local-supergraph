@@ -1,4 +1,5 @@
-import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
+import styles from "@/renderer/features/LaunchControl/LaunchControl.module.scss";
+import IconButton from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
@@ -19,32 +20,45 @@ export default function LaunchControl({
       <IconButton
         label="Cancel starting the supergraph"
         tooltip="Composing"
-        busy
-        variant={IconButtonVariant.Pending}
         onClick={onStop}
       >
-        <IconGlyph name={IconName.Stop} />
+        <span
+          className={[
+            styles.launchControl,
+            styles["launchControl--starting"],
+          ].join(" ")}
+        >
+          <IconGlyph name={IconName.Stop} />
+        </span>
       </IconButton>
     );
   }
 
   if (state === SupergraphState.Running) {
     return (
-      <IconButton
-        label="Stop supergraph"
-        tooltip="Stop"
-        busy
-        variant={IconButtonVariant.Running}
-        onClick={onStop}
-      >
-        <IconGlyph name={IconName.Stop} />
+      <IconButton label="Stop supergraph" tooltip="Stop" onClick={onStop}>
+        <span
+          className={[
+            styles.launchControl,
+            styles["launchControl--running"],
+          ].join(" ")}
+        >
+          <IconGlyph name={IconName.Stop} />
+        </span>
       </IconButton>
     );
   }
 
   return (
     <IconButton label="Start supergraph" tooltip="Start" onClick={onStart}>
-      <IconGlyph name={IconName.Start} />
+      <span
+        className={[
+          styles.launchControl,
+          styles["launchControl--stopped"],
+        ].join(" ")}
+      >
+        <IconGlyph name={IconName.Start} />
+      </span>
     </IconButton>
   );
 }

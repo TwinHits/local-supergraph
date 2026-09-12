@@ -8,8 +8,6 @@ import { IconButtonVariant } from "@/renderer/ui/IconButton/IconButton.types";
 const VARIANTS: Record<IconButtonVariant, string> = {
   [IconButtonVariant.Default]: "",
   [IconButtonVariant.Muted]: styles["iconButton--muted"],
-  [IconButtonVariant.Running]: styles["iconButton--running"],
-  [IconButtonVariant.Pending]: styles["iconButton--pending"],
   [IconButtonVariant.Inline]: styles["iconButton--inline"],
 };
 
@@ -18,7 +16,6 @@ type IconButtonProps = {
   children: ReactNode;
   tooltip?: string;
   disabled?: boolean;
-  busy?: boolean;
   variant?: IconButtonVariant;
   onClick: () => void;
 };
@@ -29,14 +26,12 @@ export default function IconButton({
   children,
   tooltip,
   disabled,
-  busy,
   variant,
   onClick,
 }: IconButtonProps) {
   const look = [
     styles.iconButton,
     VARIANTS[variant ?? IconButtonVariant.Default],
-    busy === true ? styles["iconButton--busy"] : "",
   ]
     .join(" ")
     .trim();

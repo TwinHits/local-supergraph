@@ -1,0 +1,38 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+.launchControl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.launchControl--stopped {
+  color: colors.$healthy;
+}
+
+.launchControl--running {
+  color: colors.$failed;
+}
+
+.launchControl--starting {
+  color: colors.$pending;
+}
+
+.launchControl--starting::after {
+  content: "";
+  position: absolute;
+  inset: -0.25rem;
+  border: 2px solid transparent;
+  border-top-color: currentcolor;
+  border-radius: 50%;
+  animation: launchControl__spin 1.2s linear infinite;
+}
+
+@keyframes launchControl__spin {
+  to {
+    transform: rotate(1turn);
+  }
+}

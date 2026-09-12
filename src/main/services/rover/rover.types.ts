@@ -11,3 +11,9 @@ export type ExecFailure = {
   stderr?: string;
   code?: string;
 };
+
+/** One subgraph rover should compose, and the URL it answers at. */
+export type ConfigEntry = {
+  name: string;
+  url: string;
+};

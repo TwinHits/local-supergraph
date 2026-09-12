@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import { app, BrowserWindow } from "electron";
 
+import { supergraph } from "@/main/services/rover/rover.service";
 import { registerConfigFile } from "@/main/services/settings/settings.service";
 import { startServices } from "@/main/services/startup/startup.service";
-import { supergraph } from "@/main/services/supergraph/supergraph.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 

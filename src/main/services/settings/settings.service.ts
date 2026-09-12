@@ -10,6 +10,7 @@ import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type Settings } from "@/shared/settings/settings.types";
 import {
   type DisabledSubgraphs,
+  type Override,
   type OverrideMap,
 } from "@/shared/subgraph/subgraph.types";
 
@@ -127,3 +128,40 @@ export const settings: SettingsContract = {
     return `${LOCAL_HOST}:${port}`;
   },
 };
+
+/** The overrides saved for the current variant. */
+export function currentOverrides(): OverrideMap {
+  return readOverrides(settings.currentVariant());
+}
+
+/** Changes one subgraph's override for the current variant. */
+export function updateCurrentOverride(
+  name: string,
+  override: Override
+): OverrideMap {
+  const variant = settings.currentVariant();
+  const next = { ...readOverrides(variant), [name]: override };
+  writeOverrides(variant, next);
+  return next;
+}
+
+/** The subgraphs disabled for the current variant. */
+export function currentDisabledSubgraphs(): DisabledSubgraphs {
+  return readDisabledSubgraphs(settings.currentVariant());
+}
+
+/** Enables or disables one subgraph for the current variant. */
+export function setSubgraphEnabled(
+  name: string,
+  enabled: boolean
+): DisabledSubgraphs {
+  const variant = settings.currentVariant();
+  const withoutName = readDisabledSubgraphs(variant).filter(
+    function isOther(each) {
+      return each !== name;
+    }
+  );
+  const next = enabled ? withoutName : [...withoutName, name];
+  writeDisabledSubgraphs(variant, next);
+  return next;
+}

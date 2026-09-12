@@ -1,0 +1,25 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
+.toolbar {
+  height: sizes.$toolbar-height;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background: colors.$surface;
+  border-bottom: 1px solid colors.$border;
+}
+
+.toolbar__identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar__actions {
+  display: flex;
+  align-items: center;
+}

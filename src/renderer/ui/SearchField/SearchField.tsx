@@ -1,5 +1,6 @@
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import styles from "@/renderer/ui/SearchField/SearchField.module.scss";
 import TextField from "@/renderer/ui/TextField";
 
 type SearchFieldProps = {
@@ -7,8 +8,10 @@ type SearchFieldProps = {
   onChange: (value: string) => void;
 };
 
-/** A search input, with a clear button that appears once there's something to clear. */
+/** A search input with a clear button. */
 export default function SearchField({ value, onChange }: SearchFieldProps) {
+  const empty = value === "";
+
   return (
     <TextField
       value={value}
@@ -16,18 +19,21 @@ export default function SearchField({ value, onChange }: SearchFieldProps) {
       onChange={onChange}
       startAdornment={<IconGlyph name={IconName.Search} />}
       endAdornment={
-        value === "" ? undefined : (
+        <span
+          className={empty ? styles["searchField__clear--hidden"] : undefined}
+        >
           <IconButton
             label="Clear search"
             tooltip="Clear"
             variant={IconButtonVariant.Inline}
+            disabled={empty}
             onClick={function clear() {
               onChange("");
             }}
           >
             <IconGlyph name={IconName.Close} />
           </IconButton>
-        )
+        </span>
       }
     />
   );

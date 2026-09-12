@@ -26,36 +26,12 @@ button.iconButton--inline {
   }
 }
 
-button.iconButton--running {
-  color: colors.$healthy;
-}
-
-button.iconButton--pending {
-  color: colors.$pending;
-}
-
 button.iconButton--muted {
   color: colors.$text-muted;
 
   &:hover {
     color: colors.$text-primary;
     background: colors.$hover-muted;
-  }
-}
-
-.iconButton--busy::after {
-  content: "";
-  position: absolute;
-  inset: 0.4rem;
-  border: 2px solid transparent;
-  border-top-color: currentcolor;
-  border-radius: 50%;
-  animation: spin 1.2s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(1turn);
   }
 }
 

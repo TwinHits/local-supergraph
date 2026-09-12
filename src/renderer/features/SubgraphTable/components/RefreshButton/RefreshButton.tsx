@@ -27,7 +27,7 @@ export default function RefreshButton({
   return (
     <IconButton
       label="Refresh subgraphs"
-      tooltip="Refresh subgraphs"
+      tooltip="Refetch Subgraphs"
       onClick={onClick}
     >
       <span

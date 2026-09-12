@@ -1,23 +1,16 @@
-import RefreshButton from "@/renderer/features/SubgraphTable/components/RefreshButton";
 import SubgraphRow from "@/renderer/features/SubgraphTable/components/SubgraphRow";
-import styles from "@/renderer/features/SubgraphTable/SubgraphTable.module.scss";
 import DataTable, { type Column } from "@/renderer/ui/DataTable";
-import SearchField from "@/renderer/ui/SearchField";
 import { type Row, SortColumn } from "@/shared/subgraph/subgraph.types";
 
 type SubgraphTableProps = {
   rows: Row[];
-  search: string;
   sort: SortColumn;
   supergraphRunning: boolean;
-  onSearchChange: (search: string) => void;
   onSortChange: (column: SortColumn) => void;
   onLocalChange: (name: string, local: boolean) => void;
   onPortChange: (name: string, port: number | null) => void;
   onEnabledChange: (name: string, enabled: boolean) => void;
   onShowErrors: (name: string) => void;
-  onRefresh: () => void;
-  refreshing: boolean;
 };
 
 /** Reads a sortable column out of the table's plain key. */
@@ -38,59 +31,49 @@ const COLUMNS: Column[] = [
   { key: "enabled", label: "Enabled", sortable: false },
 ];
 
-/** One searchable and sortable row per subgraph. */
+/** One sortable row per subgraph. */
 export default function SubgraphTable({
   rows,
-  search,
   sort,
   supergraphRunning,
-  onSearchChange,
   onSortChange,
   onLocalChange,
   onPortChange,
   onEnabledChange,
   onShowErrors,
-  onRefresh,
-  refreshing,
 }: SubgraphTableProps) {
   return (
-    <div>
-      <div className={styles.subgraphTable__controls}>
-        <SearchField value={search} onChange={onSearchChange} />
-        <RefreshButton refreshing={refreshing} onClick={onRefresh} />
-      </div>
-      <DataTable
-        columns={COLUMNS}
-        sortKey={sort}
-        onSort={function sortBy(key) {
-          const column = toSortColumn(key);
-          if (column !== null) {
-            onSortChange(column);
-          }
-        }}
-      >
-        {rows.map(function toRow(row) {
-          return (
-            <SubgraphRow
-              key={row.name}
-              row={row}
-              supergraphRunning={supergraphRunning}
-              onLocalChange={function setLocal(local) {
-                onLocalChange(row.name, local);
-              }}
-              onPortChange={function setPort(port) {
-                onPortChange(row.name, port);
-              }}
-              onEnabledChange={function setEnabled(enabled) {
-                onEnabledChange(row.name, enabled);
-              }}
-              onShowErrors={function show() {
-                onShowErrors(row.name);
-              }}
-            />
-          );
-        })}
-      </DataTable>
-    </div>
+    <DataTable
+      columns={COLUMNS}
+      sortKey={sort}
+      onSort={function sortBy(key) {
+        const column = toSortColumn(key);
+        if (column !== null) {
+          onSortChange(column);
+        }
+      }}
+    >
+      {rows.map(function toRow(row) {
+        return (
+          <SubgraphRow
+            key={row.name}
+            row={row}
+            supergraphRunning={supergraphRunning}
+            onLocalChange={function setLocal(local) {
+              onLocalChange(row.name, local);
+            }}
+            onPortChange={function setPort(port) {
+              onPortChange(row.name, port);
+            }}
+            onEnabledChange={function setEnabled(enabled) {
+              onEnabledChange(row.name, enabled);
+            }}
+            onShowErrors={function show() {
+              onShowErrors(row.name);
+            }}
+          />
+        );
+      })}
+    </DataTable>
   );
 }

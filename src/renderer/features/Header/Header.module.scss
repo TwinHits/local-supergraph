@@ -18,15 +18,20 @@
   z-index: 1;
 }
 
-.header__graph,
+.header__logo,
 .header__actions {
   display: flex;
   align-items: center;
   -webkit-app-region: no-drag;
 }
 
-.header__graph {
-  gap: 8px;
+.header__logo {
+  padding: 0 12px;
+}
+
+.header__logoImage {
+  height: 20px;
+  width: auto;
 }
 
 .header__spacer {
