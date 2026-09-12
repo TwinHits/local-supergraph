@@ -2,7 +2,7 @@ import { existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/main/services/environment/environment.service", () => ({
   environment: {
@@ -29,76 +29,82 @@ async function freshSettings() {
 beforeEach(removeConfigFile);
 afterEach(removeConfigFile);
 
-test("a subgraph with no override yet has none", async () => {
-  const { currentOverrides } = await freshSettings();
+describe("overrides are stored per variant", () => {
+  it("a subgraph with no override yet has none", async () => {
+    const { currentOverrides } = await freshSettings();
 
-  expect(currentOverrides()).toEqual({});
-});
+    expect(currentOverrides()).toEqual({});
+  });
 
-test("updating an override saves it for the current variant", async () => {
-  const { currentOverrides, updateCurrentOverride } = await freshSettings();
+  it("updating an override saves it for the current variant", async () => {
+    const { currentOverrides, updateCurrentOverride } = await freshSettings();
 
-  updateCurrentOverride("characters", { local: true, port: 4001 });
+    updateCurrentOverride("characters", { local: true, port: 4001 });
 
-  expect(currentOverrides()).toEqual({
-    characters: { local: true, port: 4001 },
+    expect(currentOverrides()).toEqual({
+      characters: { local: true, port: 4001 },
+    });
+  });
+
+  it("overrides are kept separate per variant", async () => {
+    const { currentOverrides, settings, updateCurrentOverride } =
+      await freshSettings();
+
+    updateCurrentOverride("characters", { local: true, port: 4001 });
+    settings.updateVariant("staging");
+
+    expect(currentOverrides()).toEqual({});
+  });
+
+  it("a saved override survives being reloaded from disk", async () => {
+    const first = await freshSettings();
+    first.updateCurrentOverride("characters", { local: true, port: 4001 });
+
+    const second = await freshSettings();
+
+    expect(second.currentOverrides()).toEqual({
+      characters: { local: true, port: 4001 },
+    });
   });
 });
 
-test("overrides are kept separate per variant", async () => {
-  const { currentOverrides, settings, updateCurrentOverride } =
-    await freshSettings();
+describe("a subgraph can be disabled and re-enabled, per variant", () => {
+  it("disabling a subgraph adds it to the current variant's list", async () => {
+    const { currentDisabledSubgraphs, setSubgraphEnabled } =
+      await freshSettings();
 
-  updateCurrentOverride("characters", { local: true, port: 4001 });
-  settings.updateVariant("staging");
+    setSubgraphEnabled("characters", false);
 
-  expect(currentOverrides()).toEqual({});
-});
+    expect(currentDisabledSubgraphs()).toEqual(["characters"]);
+  });
 
-test("a saved override survives being reloaded from disk", async () => {
-  const first = await freshSettings();
-  first.updateCurrentOverride("characters", { local: true, port: 4001 });
+  it("re-enabling a subgraph removes it from the list", async () => {
+    const { currentDisabledSubgraphs, setSubgraphEnabled } =
+      await freshSettings();
 
-  const second = await freshSettings();
+    setSubgraphEnabled("characters", false);
+    setSubgraphEnabled("characters", true);
 
-  expect(second.currentOverrides()).toEqual({
-    characters: { local: true, port: 4001 },
+    expect(currentDisabledSubgraphs()).toEqual([]);
+  });
+
+  it("disabling the same subgraph twice does not duplicate it", async () => {
+    const { currentDisabledSubgraphs, setSubgraphEnabled } =
+      await freshSettings();
+
+    setSubgraphEnabled("characters", false);
+    setSubgraphEnabled("characters", false);
+
+    expect(currentDisabledSubgraphs()).toEqual(["characters"]);
   });
 });
 
-test("disabling a subgraph adds it to the current variant's list", async () => {
-  const { currentDisabledSubgraphs, setSubgraphEnabled } =
-    await freshSettings();
+describe("the current variant falls back to a real one if the saved choice is gone", () => {
+  it("a variant not offered anymore falls back to the first one", async () => {
+    const { settings } = await freshSettings();
 
-  setSubgraphEnabled("characters", false);
+    settings.updateVariant("retired-variant");
 
-  expect(currentDisabledSubgraphs()).toEqual(["characters"]);
-});
-
-test("re-enabling a subgraph removes it from the list", async () => {
-  const { currentDisabledSubgraphs, setSubgraphEnabled } =
-    await freshSettings();
-
-  setSubgraphEnabled("characters", false);
-  setSubgraphEnabled("characters", true);
-
-  expect(currentDisabledSubgraphs()).toEqual([]);
-});
-
-test("disabling the same subgraph twice does not duplicate it", async () => {
-  const { currentDisabledSubgraphs, setSubgraphEnabled } =
-    await freshSettings();
-
-  setSubgraphEnabled("characters", false);
-  setSubgraphEnabled("characters", false);
-
-  expect(currentDisabledSubgraphs()).toEqual(["characters"]);
-});
-
-test("a variant not offered anymore falls back to the first one", async () => {
-  const { settings } = await freshSettings();
-
-  settings.updateVariant("retired-variant");
-
-  expect(settings.currentVariant()).toBe("current");
+    expect(settings.currentVariant()).toBe("current");
+  });
 });

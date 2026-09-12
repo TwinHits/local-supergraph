@@ -165,6 +165,10 @@ place for it is the commit message.
 ## Tests
 
 - `test/` mirrors `src/`. Naming is `.test.ts` / `.test.tsx`.
+- Group `it`s under a `describe` that states a requirement in plain language,
+  not an implementation detail. The `describe` titles alone should read as a
+  spec of what the app promises — a future agent should be able to skim them
+  and know what would break, before reading a single `it`.
 - Classical style, expected/actual. Do not mock what you own.
 - Pure logic lives apart from the view and is tested by calling it. If answering
   a question needs a rendered component, the logic is in the wrong place.

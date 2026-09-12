@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   buildDiagnosisMessage,
@@ -19,54 +19,56 @@ import {
   SortColumn,
 } from "@/shared/subgraph/subgraph.types";
 
-test("a local subgraph that answers is healthy", () => {
-  const actual = buildRowStatus({
-    local: true,
-    reachability: Reachability.Reachable,
-    composition: Composition.NotRunning,
+describe("row status picks the signal closest to the developer's own machine", () => {
+  it("a local subgraph that answers is healthy", () => {
+    const actual = buildRowStatus({
+      local: true,
+      reachability: Reachability.Reachable,
+      composition: Composition.NotRunning,
+    });
+
+    expect(actual).toBe(RowStatus.Healthy);
   });
 
-  expect(actual).toBe(RowStatus.Healthy);
-});
+  it("a local subgraph that refuses beats a composed graph", () => {
+    const actual = buildRowStatus({
+      local: true,
+      reachability: Reachability.Unreachable,
+      composition: Composition.Composed,
+    });
 
-test("a local subgraph that refuses beats a composed graph", () => {
-  const actual = buildRowStatus({
-    local: true,
-    reachability: Reachability.Unreachable,
-    composition: Composition.Composed,
+    expect(actual).toBe(RowStatus.Failed);
   });
 
-  expect(actual).toBe(RowStatus.Failed);
-});
+  it("composition beats a remote probe", () => {
+    const actual = buildRowStatus({
+      local: false,
+      reachability: Reachability.Reachable,
+      composition: Composition.Failed,
+    });
 
-test("composition beats a remote probe", () => {
-  const actual = buildRowStatus({
-    local: false,
-    reachability: Reachability.Reachable,
-    composition: Composition.Failed,
+    expect(actual).toBe(RowStatus.Failed);
   });
 
-  expect(actual).toBe(RowStatus.Failed);
-});
+  it("a remote probe answers when nothing nearer has", () => {
+    const actual = buildRowStatus({
+      local: false,
+      reachability: Reachability.Unreachable,
+      composition: Composition.NotRunning,
+    });
 
-test("a remote probe answers when nothing nearer has", () => {
-  const actual = buildRowStatus({
-    local: false,
-    reachability: Reachability.Unreachable,
-    composition: Composition.NotRunning,
+    expect(actual).toBe(RowStatus.Failed);
   });
 
-  expect(actual).toBe(RowStatus.Failed);
-});
+  it("nothing reported yet is pending", () => {
+    const actual = buildRowStatus({
+      local: false,
+      reachability: Reachability.Unknown,
+      composition: Composition.NotRunning,
+    });
 
-test("nothing reported yet is pending", () => {
-  const actual = buildRowStatus({
-    local: false,
-    reachability: Reachability.Unknown,
-    composition: Composition.NotRunning,
+    expect(actual).toBe(RowStatus.Pending);
   });
-
-  expect(actual).toBe(RowStatus.Pending);
 });
 
 const subgraphs = [
@@ -74,72 +76,116 @@ const subgraphs = [
   { name: "starships", routingUrl: "https://starships.svc/graphql" },
 ];
 
-test("a subgraph with no override is remote and portless", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: {},
-    health: {},
-    composition: {},
-    errors: {},
-    disabled: [],
+const KEY_REJECTED: Diagnosis = {
+  key: ErrorKey.ApolloKeyInvalid,
+  summary: "Apollo rejected the key",
+  cause: "APOLLO_KEY is invalid or has expired.",
+  resolution: ["Regenerate the key"],
+  raw: "401 Unauthorized",
+};
+
+describe("a table row merges the subgraph, its override, its health, and its errors into one line", () => {
+  it("a subgraph with no override is remote and portless", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: {},
+      health: {},
+      composition: {},
+      errors: {},
+      disabled: [],
+    });
+
+    expect(actual[0]).toEqual({
+      name: "characters",
+      routingUrl: "https://characters.svc/graphql",
+      local: false,
+      port: null,
+      enabled: true,
+      status: RowStatus.Pending,
+      reason: "No answer yet",
+    });
   });
 
-  expect(actual[0]).toEqual({
-    name: "characters",
-    routingUrl: "https://characters.svc/graphql",
-    local: false,
-    port: null,
-    enabled: true,
-    status: RowStatus.Pending,
-    reason: "No answer yet",
-  });
-});
+  it("an override makes the row local and carries its port", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: { starships: { local: true, port: 4002 } },
+      health: { starships: Reachability.Reachable },
+      composition: {},
+      errors: {},
+      disabled: [],
+    });
 
-test("an override makes the row local and carries its port", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: { starships: { local: true, port: 4002 } },
-    health: { starships: Reachability.Reachable },
-    composition: {},
-    errors: {},
-    disabled: [],
-  });
-
-  expect(actual[1]).toEqual({
-    name: "starships",
-    routingUrl: "https://starships.svc/graphql",
-    local: true,
-    port: 4002,
-    enabled: true,
-    status: RowStatus.Healthy,
-    reason: "Answering",
-  });
-});
-
-test("a failed composition shows on a remote row", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: {},
-    health: { characters: Reachability.Reachable },
-    composition: { characters: Composition.Failed },
-    errors: {},
-    disabled: [],
+    expect(actual[1]).toEqual({
+      name: "starships",
+      routingUrl: "https://starships.svc/graphql",
+      local: true,
+      port: 4002,
+      enabled: true,
+      status: RowStatus.Healthy,
+      reason: "Answering",
+    });
   });
 
-  expect(actual[0].status).toBe(RowStatus.Failed);
-});
+  it("a failed composition shows on a remote row", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: {},
+      health: { characters: Reachability.Reachable },
+      composition: { characters: Composition.Failed },
+      errors: {},
+      disabled: [],
+    });
 
-test("returns one row per subgraph", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: {},
-    health: {},
-    composition: {},
-    errors: {},
-    disabled: [],
+    expect(actual[0].status).toBe(RowStatus.Failed);
   });
 
-  expect(actual.length).toBe(subgraphs.length);
+  it("returns one row per subgraph", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: {},
+      health: {},
+      composition: {},
+      errors: {},
+      disabled: [],
+    });
+
+    expect(actual.length).toBe(subgraphs.length);
+  });
+
+  it("a failing row says what its top error was", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: {},
+      health: { characters: Reachability.Unreachable },
+      composition: {},
+      errors: {
+        characters: [
+          {
+            ...KEY_REJECTED,
+            key: ErrorKey.RemoteUnreachable,
+            summary: "The deployed URL did not answer",
+          },
+        ],
+      },
+      disabled: [],
+    });
+
+    expect(actual[0].reason).toBe("The deployed URL did not answer");
+  });
+
+  it("a row nothing was reported about falls back to how its probe went", () => {
+    const actual = buildSubgraphRows({
+      subgraphs,
+      overrides: {},
+      health: { characters: Reachability.Reachable },
+      composition: {},
+      errors: {},
+      disabled: [],
+    });
+
+    expect(actual[0].reason).toBe("Answering");
+  });
 });
 
 function row(name: string, status: RowStatus, local: boolean): Row {
@@ -160,164 +206,128 @@ const rows = [
   row("starships", RowStatus.Pending, false),
 ];
 
-test("an empty search keeps every row", () => {
-  const actual = filterRows(rows, "   ");
+describe("the table can be searched and sorted", () => {
+  it("an empty search keeps every row", () => {
+    const actual = filterRows(rows, "   ");
 
-  expect(actual.length).toBe(3);
-});
-
-test("search matches the name", () => {
-  const actual = filterRows(rows, "STAR");
-
-  expect(
-    actual.map(function name(each) {
-      return each.name;
-    })
-  ).toEqual(["starships"]);
-});
-
-test("search matches the url", () => {
-  const actual = filterRows(rows, "planets.svc");
-
-  expect(
-    actual.map(function name(each) {
-      return each.name;
-    })
-  ).toEqual(["planets"]);
-});
-
-test("sorting by status puts the broken ones on top", () => {
-  const actual = sortRows(rows, SortColumn.Status);
-
-  expect(
-    actual.map(function name(each) {
-      return each.name;
-    })
-  ).toEqual(["characters", "starships", "planets"]);
-});
-
-test("sorting by local puts the local ones on top", () => {
-  const actual = sortRows(rows, SortColumn.Local);
-
-  expect(actual[0].name).toBe("characters");
-});
-
-test("sorting leaves the given rows alone", () => {
-  const before = rows.map(function name(each) {
-    return each.name;
+    expect(actual.length).toBe(3);
   });
 
-  sortRows(rows, SortColumn.Status);
+  it("search matches the name", () => {
+    const actual = filterRows(rows, "STAR");
 
-  expect(
-    rows.map(function name(each) {
+    expect(
+      actual.map(function name(each) {
+        return each.name;
+      })
+    ).toEqual(["starships"]);
+  });
+
+  it("search matches the url", () => {
+    const actual = filterRows(rows, "planets.svc");
+
+    expect(
+      actual.map(function name(each) {
+        return each.name;
+      })
+    ).toEqual(["planets"]);
+  });
+
+  it("sorting by status puts the broken ones on top", () => {
+    const actual = sortRows(rows, SortColumn.Status);
+
+    expect(
+      actual.map(function name(each) {
+        return each.name;
+      })
+    ).toEqual(["characters", "starships", "planets"]);
+  });
+
+  it("sorting by local puts the local ones on top", () => {
+    const actual = sortRows(rows, SortColumn.Local);
+
+    expect(actual[0].name).toBe("characters");
+  });
+
+  it("sorting leaves the given rows alone", () => {
+    const before = rows.map(function name(each) {
       return each.name;
-    })
-  ).toEqual(before);
-});
+    });
 
-test("the view filters before it sorts", () => {
-  const actual = buildTableView(rows, "s", SortColumn.Name);
+    sortRows(rows, SortColumn.Status);
 
-  expect(
-    actual.map(function name(each) {
-      return each.name;
-    })
-  ).toEqual(["characters", "planets", "starships"]);
+    expect(
+      rows.map(function name(each) {
+        return each.name;
+      })
+    ).toEqual(before);
+  });
+
+  it("the view filters before it sorts", () => {
+    const actual = buildTableView(rows, "s", SortColumn.Name);
+
+    expect(
+      actual.map(function name(each) {
+        return each.name;
+      })
+    ).toEqual(["characters", "planets", "starships"]);
+  });
 });
 
 const ROUTER_PORT = 4041;
 
-test("accepts a port in range", () => {
-  expect(isValidPort(4001)).toBe(true);
-});
-
-test("rejects a port past the top of the range", () => {
-  expect(isValidPort(65536)).toBe(false);
-});
-
-test("rejects a fraction", () => {
-  expect(isValidPort(80.5)).toBe(false);
-});
-
-test("asks for a port when there is none", () => {
-  const actual = buildPortDiagnosis(null, [], ROUTER_PORT);
-
-  expect(actual?.summary).toBe("No port is set for this subgraph");
-});
-
-test("names the range when the port is out of it", () => {
-  const actual = buildPortDiagnosis(0, [], ROUTER_PORT);
-
-  expect(actual?.summary).toBe("That port is not valid");
-});
-
-test("warns when the router already holds the port", () => {
-  const actual = buildPortDiagnosis(ROUTER_PORT, [], ROUTER_PORT);
-
-  expect(actual?.summary).toBe("That port is already used by the router");
-});
-
-test("warns when another subgraph holds the port", () => {
-  const actual = buildPortDiagnosis(4001, [4001], ROUTER_PORT);
-
-  expect(actual?.summary).toBe(
-    "That port is already used by another local subgraph"
-  );
-});
-
-test("says nothing when the port is usable", () => {
-  const actual = buildPortDiagnosis(4002, [4001], ROUTER_PORT);
-
-  expect(actual).toBeNull();
-});
-
-const KEY_REJECTED: Diagnosis = {
-  key: ErrorKey.ApolloKeyInvalid,
-  summary: "Apollo rejected the key",
-  cause: "APOLLO_KEY is invalid or has expired.",
-  resolution: ["Regenerate the key"],
-  raw: "401 Unauthorized",
-};
-
-test("a failure reads as its summary and its cause", () => {
-  const actual = buildDiagnosisMessage(KEY_REJECTED);
-
-  expect(actual).toBe(
-    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
-  );
-});
-
-test("a failing row says what its top error was", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: {},
-    health: { characters: Reachability.Unreachable },
-    composition: {},
-    errors: {
-      characters: [
-        {
-          ...KEY_REJECTED,
-          key: ErrorKey.RemoteUnreachable,
-          summary: "The deployed URL did not answer",
-        },
-      ],
-    },
-    disabled: [],
+describe("a local subgraph's port is checked for real conflicts before it's trusted", () => {
+  it("accepts a port in range", () => {
+    expect(isValidPort(4001)).toBe(true);
   });
 
-  expect(actual[0].reason).toBe("The deployed URL did not answer");
-});
-
-test("a row nothing was reported about falls back to how its probe went", () => {
-  const actual = buildSubgraphRows({
-    subgraphs,
-    overrides: {},
-    health: { characters: Reachability.Reachable },
-    composition: {},
-    errors: {},
-    disabled: [],
+  it("rejects a port past the top of the range", () => {
+    expect(isValidPort(65536)).toBe(false);
   });
 
-  expect(actual[0].reason).toBe("Answering");
+  it("rejects a fraction", () => {
+    expect(isValidPort(80.5)).toBe(false);
+  });
+
+  it("asks for a port when there is none", () => {
+    const actual = buildPortDiagnosis(null, [], ROUTER_PORT);
+
+    expect(actual?.summary).toBe("No port is set for this subgraph");
+  });
+
+  it("names the range when the port is out of it", () => {
+    const actual = buildPortDiagnosis(0, [], ROUTER_PORT);
+
+    expect(actual?.summary).toBe("That port is not valid");
+  });
+
+  it("warns when the router already holds the port", () => {
+    const actual = buildPortDiagnosis(ROUTER_PORT, [], ROUTER_PORT);
+
+    expect(actual?.summary).toBe("That port is already used by the router");
+  });
+
+  it("warns when another subgraph holds the port", () => {
+    const actual = buildPortDiagnosis(4001, [4001], ROUTER_PORT);
+
+    expect(actual?.summary).toBe(
+      "That port is already used by another local subgraph"
+    );
+  });
+
+  it("says nothing when the port is usable", () => {
+    const actual = buildPortDiagnosis(4002, [4001], ROUTER_PORT);
+
+    expect(actual).toBeNull();
+  });
+});
+
+describe("a diagnosis reads as one line: its summary and its cause", () => {
+  it("a failure reads as its summary and its cause", () => {
+    const actual = buildDiagnosisMessage(KEY_REJECTED);
+
+    expect(actual).toBe(
+      "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+    );
+  });
 });

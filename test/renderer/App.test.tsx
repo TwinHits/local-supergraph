@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/renderer/App";
 
@@ -130,144 +130,154 @@ vi.mock("@/renderer/api", function stubBridge() {
   };
 });
 
-test("lists every subgraph", async () => {
-  render(<App />);
-  await screen.findByText("https://characters.svc/graphql");
+describe("the table lists every subgraph from the registry", () => {
+  it("lists every subgraph", async () => {
+    render(<App />);
+    await screen.findByText("https://characters.svc/graphql");
 
-  const rows = screen.getAllByRole("row");
+    const rows = screen.getAllByRole("row");
 
-  // One heading row, then one per subgraph.
-  expect(rows.length).toBe(stub.subgraphs.length + 1);
-});
+    // One heading row, then one per subgraph.
+    expect(rows.length).toBe(stub.subgraphs.length + 1);
+  });
 
-test("shows the routing url for a remote subgraph", async () => {
-  render(<App />);
+  it("shows the routing url for a remote subgraph", async () => {
+    render(<App />);
 
-  const actual = await screen.findByText("https://characters.svc/graphql");
+    const actual = await screen.findByText("https://characters.svc/graphql");
 
-  expect(actual).toBeDefined();
-});
+    expect(actual).toBeDefined();
+  });
 
-test("shows a port input instead of a url for a local subgraph", async () => {
-  render(<App />);
+  it("shows a port input instead of a url for a local subgraph", async () => {
+    render(<App />);
 
-  const actual = await screen.findByDisplayValue("4002");
+    const actual = await screen.findByDisplayValue("4002");
 
-  expect(actual).toBeDefined();
-});
-
-test("search filters the rows", async () => {
-  render(<App />);
-  await screen.findByText("https://characters.svc/graphql");
-
-  await userEvent.type(screen.getByLabelText("Search"), "starships");
-
-  expect(screen.queryByText("https://characters.svc/graphql")).toBeNull();
-});
-
-test("the toggle reports a subgraph going local", async () => {
-  render(<App />);
-  const toggle = await screen.findByLabelText("Run characters locally");
-
-  await userEvent.click(toggle);
-
-  expect(stub.updateOverride).toHaveBeenCalledWith("characters", {
-    local: true,
-    port: null,
+    expect(actual).toBeDefined();
   });
 });
 
-test("clicking a failed status opens its errors", async () => {
-  render(<App />);
-  const status = await screen.findByRole("button", {
-    name: "failed: Nothing is listening on that port",
+describe("search filters the table", () => {
+  it("search filters the rows", async () => {
+    render(<App />);
+    await screen.findByText("https://characters.svc/graphql");
+
+    await userEvent.type(screen.getByLabelText("Search"), "starships");
+
+    expect(screen.queryByText("https://characters.svc/graphql")).toBeNull();
+  });
+});
+
+describe("toggling a subgraph local reports the change", () => {
+  it("the toggle reports a subgraph going local", async () => {
+    render(<App />);
+    const toggle = await screen.findByLabelText("Run characters locally");
+
+    await userEvent.click(toggle);
+
+    expect(stub.updateOverride).toHaveBeenCalledWith("characters", {
+      local: true,
+      port: null,
+    });
+  });
+});
+
+describe("a failed status opens the error modal", () => {
+  it("clicking a failed status opens its errors", async () => {
+    render(<App />);
+    const status = await screen.findByRole("button", {
+      name: "failed: Nothing is listening on that port",
+    });
+
+    await userEvent.click(status);
+
+    expect(
+      await screen.findByText("Nothing is listening on that port")
+    ).toBeDefined();
+  });
+});
+
+describe("a supergraph failure shows above the table and opens the same modal a row would", () => {
+  afterEach(function forgetSupergraphErrors() {
+    stub.supergraphErrors = [];
   });
 
-  await userEvent.click(status);
+  it("a supergraph the registry would not answer for says so above the table", async () => {
+    stub.supergraphErrors = [
+      {
+        key: "APOLLO_KEY_INVALID",
+        summary: "Apollo rejected the key",
+        cause: "APOLLO_KEY is invalid or has expired.",
+        resolution: ["Regenerate the key"],
+        raw: "401 Unauthorized",
+      },
+    ];
 
-  expect(
-    await screen.findByText("Nothing is listening on that port")
-  ).toBeDefined();
-});
+    render(<App />);
 
-afterEach(function forgetSupergraphErrors() {
-  stub.supergraphErrors = [];
-});
+    const actual = await screen.findByText(
+      "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+    );
 
-test("a supergraph the registry would not answer for says so above the table", async () => {
-  stub.supergraphErrors = [
-    {
-      key: "APOLLO_KEY_INVALID",
-      summary: "Apollo rejected the key",
-      cause: "APOLLO_KEY is invalid or has expired.",
-      resolution: ["Regenerate the key"],
-      raw: "401 Unauthorized",
-    },
-  ];
+    expect(actual).toBeDefined();
+  });
 
-  render(<App />);
+  it("the supergraph's failure opens the same modal the rows use", async () => {
+    stub.supergraphErrors = [
+      {
+        key: "APOLLO_KEY_INVALID",
+        summary: "Apollo rejected the key",
+        cause: "APOLLO_KEY is invalid or has expired.",
+        resolution: ["Regenerate the key"],
+        raw: "401 Unauthorized",
+      },
+      {
+        key: "GRAPH_NOT_FOUND",
+        summary: "The key cannot see that graph",
+        cause: "The graph or variant does not exist.",
+        resolution: ["Check the variant"],
+        raw: null,
+      },
+    ];
+    render(<App />);
+    const notice = await screen.findByText(
+      "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+    );
 
-  const actual = await screen.findByText(
-    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
-  );
+    await userEvent.click(notice);
 
-  expect(actual).toBeDefined();
-});
+    expect(await screen.findByText("Regenerate the key")).toBeDefined();
+  });
 
-test("the supergraph's failure opens the same modal the rows use", async () => {
-  stub.supergraphErrors = [
-    {
-      key: "APOLLO_KEY_INVALID",
-      summary: "Apollo rejected the key",
-      cause: "APOLLO_KEY is invalid or has expired.",
-      resolution: ["Regenerate the key"],
-      raw: "401 Unauthorized",
-    },
-    {
-      key: "GRAPH_NOT_FOUND",
-      summary: "The key cannot see that graph",
-      cause: "The graph or variant does not exist.",
-      resolution: ["Check the variant"],
-      raw: null,
-    },
-  ];
-  render(<App />);
-  const notice = await screen.findByText(
-    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
-  );
+  it("the notice steps through the supergraph's other failures", async () => {
+    stub.supergraphErrors = [
+      {
+        key: "APOLLO_KEY_INVALID",
+        summary: "Apollo rejected the key",
+        cause: "APOLLO_KEY is invalid or has expired.",
+        resolution: ["Regenerate the key"],
+        raw: "401 Unauthorized",
+      },
+      {
+        key: "GRAPH_NOT_FOUND",
+        summary: "The key cannot see that graph",
+        cause: "The graph or variant does not exist.",
+        resolution: ["Check the variant"],
+        raw: null,
+      },
+    ];
+    render(<App />);
+    await screen.findByText(
+      "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
+    );
 
-  await userEvent.click(notice);
+    await userEvent.click(screen.getByRole("button", { name: "Next error" }));
 
-  expect(await screen.findByText("Regenerate the key")).toBeDefined();
-});
-
-test("the notice steps through the supergraph's other failures", async () => {
-  stub.supergraphErrors = [
-    {
-      key: "APOLLO_KEY_INVALID",
-      summary: "Apollo rejected the key",
-      cause: "APOLLO_KEY is invalid or has expired.",
-      resolution: ["Regenerate the key"],
-      raw: "401 Unauthorized",
-    },
-    {
-      key: "GRAPH_NOT_FOUND",
-      summary: "The key cannot see that graph",
-      cause: "The graph or variant does not exist.",
-      resolution: ["Check the variant"],
-      raw: null,
-    },
-  ];
-  render(<App />);
-  await screen.findByText(
-    "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
-  );
-
-  await userEvent.click(screen.getByRole("button", { name: "Next error" }));
-
-  expect(
-    screen.getByText(
-      "The key cannot see that graph: The graph or variant does not exist."
-    )
-  ).toBeDefined();
+    expect(
+      screen.getByText(
+        "The key cannot see that graph: The graph or variant does not exist."
+      )
+    ).toBeDefined();
+  });
 });

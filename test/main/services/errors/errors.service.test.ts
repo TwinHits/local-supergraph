@@ -1,4 +1,4 @@
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   clearSubgraphFailure,
@@ -21,73 +21,81 @@ beforeEach(function forgetEverything() {
   clearSubgraphFailure("characters");
 });
 
-test("a subgraph nobody reported has nothing wrong with it", () => {
-  expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
+describe("each subgraph tracks its own failures", () => {
+  it("a subgraph nobody reported has nothing wrong with it", () => {
+    expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
+  });
+
+  it("a reported subgraph answers with its diagnosis", () => {
+    reportSubgraphFailure(
+      "characters",
+      [ErrorKey.LocalRefused],
+      "ECONNREFUSED"
+    );
+
+    expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
+      ErrorKey.LocalRefused,
+    ]);
+  });
+
+  it("the text is read for signatures the caller did not name", () => {
+    reportSubgraphFailure(
+      "characters",
+      [ErrorKey.LocalRefused],
+      "The SSO session has expired"
+    );
+
+    expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
+      ErrorKey.AwsSsoExpired,
+      ErrorKey.LocalRefused,
+    ]);
+  });
+
+  it("a failure nothing recognizes is still an answer", () => {
+    reportSubgraphFailure("characters", [], "it fell over");
+
+    expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
+      ErrorKey.Unknown,
+    ]);
+  });
+
+  it("clearing a subgraph forgets it", () => {
+    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
+    clearSubgraphFailure("characters");
+
+    expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
+  });
+
+  it("one subgraph's failure is not another's", () => {
+    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
+
+    expect(errors.subgraphErrors()["starships"] ?? []).toEqual([]);
+  });
 });
 
-test("a reported subgraph answers with its diagnosis", () => {
-  reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "ECONNREFUSED");
+describe("the supergraph tracks its own failure, separate from subgraphs", () => {
+  it("the supergraph reports separately from its subgraphs", () => {
+    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "401 Unauthorized");
 
-  expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
-    ErrorKey.LocalRefused,
-  ]);
-});
+    expect(keysOf(errors.supergraphErrors())).toEqual([
+      ErrorKey.ApolloKeyInvalid,
+    ]);
+    expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
+  });
 
-test("the text is read for signatures the caller did not name", () => {
-  reportSubgraphFailure(
-    "characters",
-    [ErrorKey.LocalRefused],
-    "The SSO session has expired"
-  );
+  it("a later report replaces the one before it", () => {
+    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
+    reportSupergraphFailure([ErrorKey.GraphNotFound], "");
 
-  expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
-    ErrorKey.AwsSsoExpired,
-    ErrorKey.LocalRefused,
-  ]);
-});
+    expect(keysOf(errors.supergraphErrors())).toEqual([ErrorKey.GraphNotFound]);
+  });
 
-test("a failure nothing recognizes is still an answer", () => {
-  reportSubgraphFailure("characters", [], "it fell over");
+  it("every diagnosis carries copy for the screen", () => {
+    reportSupergraphFailure([ErrorKey.RoverMissing], "ENOENT");
 
-  expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
-    ErrorKey.Unknown,
-  ]);
-});
+    const actual = errors.supergraphErrors()[0];
 
-test("clearing a subgraph forgets it", () => {
-  reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
-  clearSubgraphFailure("characters");
-
-  expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
-});
-
-test("one subgraph's failure is not another's", () => {
-  reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
-
-  expect(errors.subgraphErrors()["starships"] ?? []).toEqual([]);
-});
-
-test("the supergraph reports separately from its subgraphs", () => {
-  reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "401 Unauthorized");
-
-  expect(keysOf(errors.supergraphErrors())).toEqual([
-    ErrorKey.ApolloKeyInvalid,
-  ]);
-  expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
-});
-
-test("a later report replaces the one before it", () => {
-  reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
-  reportSupergraphFailure([ErrorKey.GraphNotFound], "");
-
-  expect(keysOf(errors.supergraphErrors())).toEqual([ErrorKey.GraphNotFound]);
-});
-
-test("every diagnosis carries copy for the screen", () => {
-  reportSupergraphFailure([ErrorKey.RoverMissing], "ENOENT");
-
-  const actual = errors.supergraphErrors()[0];
-
-  expect(actual.summary).toBe("rover is not installed");
-  expect(actual.resolution.length).toBeGreaterThan(0);
+    expect(actual.summary).toBe("rover is not installed");
+    expect(actual.resolution.length).toBeGreaterThan(0);
+  });
 });

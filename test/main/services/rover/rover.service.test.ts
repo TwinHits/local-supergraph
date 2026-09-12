@@ -3,7 +3,15 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterAll, afterEach, beforeEach, expect, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const GENERATED_DIR = mkdtempSync(join(tmpdir(), "local-supergraph-rover-"));
 
@@ -173,182 +181,202 @@ async function freshRover() {
   return import("@/main/services/rover/rover.service");
 }
 
-test("starts stopped", async () => {
-  const { supergraph } = await freshRover();
+describe("status reflects whether the graph is actually up", () => {
+  it("starts stopped", async () => {
+    const { supergraph } = await freshRover();
 
-  expect(supergraph.status()).toBe("stopped");
-});
-
-test("status becomes running as soon as rover announces it, without waiting out the silence timeout", async () => {
-  const { supergraph } = await freshRover();
-
-  const starting = supergraph.start();
-  const process_ = await spawnedProcess();
-  await starting;
-  expect(supergraph.status()).toBe("starting");
-
-  process_.stdout.emit("data", Buffer.from("🎶 composing supergraph\n"));
-  process_.stdout.emit(
-    "data",
-    Buffer.from(
-      "🚀 your supergraph is running! head to http://localhost:4041\n"
-    )
-  );
-  await vi.advanceTimersByTimeAsync(0);
-
-  expect(supergraph.status()).toBe("running");
-});
-
-test("start spawns rover with the expected flags and resolves once the process is up", async () => {
-  const { supergraph } = await freshRover();
-
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  const result = await starting;
-
-  expect(result).toBe("starting");
-  expect(supergraph.status()).toBe("running");
-  expect(spawnMock).toHaveBeenCalledTimes(1);
-  const args = spawnMock.mock.calls[0][1] as string[];
-  expect(args).toEqual([
-    "dev",
-    "--supergraph-config",
-    expect.stringContaining("supergraph.current.yaml"),
-    "--router-config",
-    expect.stringContaining("router.yaml"),
-    "--supergraph-port",
-    "4041",
-    "--graph-ref",
-    "local-supergraph@current",
-  ]);
-});
-
-test("the generated config excludes a disabled subgraph and keeps the rest", async () => {
-  const { setSubgraphEnabled, supergraph } = await freshRover();
-  await setSubgraphEnabled("characters", false);
-
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
-
-  const yaml = readFileSync(
-    join(GENERATED_DIR, "supergraph.current.yaml"),
-    "utf8"
-  );
-  expect(yaml).not.toContain("characters");
-  expect(yaml).toContain("starships");
-  expect(yaml).toContain("https://starships.svc/graphql");
-});
-
-test("a local override is used instead of the registry url", async () => {
-  const { supergraph, updateOverride } = await freshRover();
-  await updateOverride("characters", { local: true, port: 4001 });
-
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
-
-  const yaml = readFileSync(
-    join(GENERATED_DIR, "supergraph.current.yaml"),
-    "utf8"
-  );
-  expect(yaml).toContain("http://localhost:4001");
-  expect(yaml).not.toContain("https://characters.svc/graphql");
-});
-
-test("changing an override while stopped does not spawn rover", async () => {
-  const { updateOverride } = await freshRover();
-
-  await updateOverride("characters", { local: true, port: 4001 });
-
-  expect(spawnMock).not.toHaveBeenCalled();
-});
-
-test("changing an override while running restarts rover", async () => {
-  const { supergraph, updateOverride } = await freshRover();
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
-
-  await updateOverride("characters", { local: true, port: 4001 });
-  // The restart stops the old process first, so it has to actually exit
-  // before the new one spawns.
-  latestProcess().emit("close");
-  await vi.waitFor(function respawned() {
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(supergraph.status()).toBe("stopped");
   });
-  await composeSuccessfully(latestProcess());
 
-  expect(process.kill).toHaveBeenCalledWith(-4242, "SIGTERM");
-});
+  it("does not report running the instant rover's process spawns — only once rover confirms the graph composed", async () => {
+    const { supergraph } = await freshRover();
 
-test("two rapid changes while running coalesce into a single restart", async () => {
-  const { setSubgraphEnabled, supergraph, updateOverride } = await freshRover();
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
+    const starting = supergraph.start();
+    await spawnedProcess();
+    await starting;
 
-  void updateOverride("characters", { local: true, port: 4001 });
-  void setSubgraphEnabled("starships", false);
-  // The queued restart needs one microtask turn to reach stopRoverDev and
-  // attach its close listener before the process actually exits.
-  await Promise.resolve();
-  latestProcess().emit("close");
-  await vi.waitFor(function respawned() {
-    expect(spawnMock).toHaveBeenCalledTimes(2);
+    expect(supergraph.status()).toBe("starting");
   });
-  await composeSuccessfully(latestProcess());
 
-  const yaml = readFileSync(
-    join(GENERATED_DIR, "supergraph.current.yaml"),
-    "utf8"
-  );
-  expect(yaml).toContain("http://localhost:4001");
-  expect(yaml).not.toContain("starships");
+  it("becomes running as soon as rover announces it, without waiting out the silence timeout", async () => {
+    const { supergraph } = await freshRover();
+
+    const starting = supergraph.start();
+    const process_ = await spawnedProcess();
+    await starting;
+
+    process_.stdout.emit("data", Buffer.from("🎶 composing supergraph\n"));
+    process_.stdout.emit(
+      "data",
+      Buffer.from(
+        "🚀 your supergraph is running! head to http://localhost:4041\n"
+      )
+    );
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(supergraph.status()).toBe("running");
+  });
 });
 
-test("stop resolves once rover actually exits", async () => {
-  const { supergraph } = await freshRover();
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
+describe("starting the supergraph spawns rover with the right config", () => {
+  it("spawns rover with the expected flags and resolves once the process is up, not once composed", async () => {
+    const { supergraph } = await freshRover();
 
-  const stopping = supergraph.stop();
-  latestProcess().emit("close");
-  const result = await stopping;
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    const result = await starting;
 
-  expect(result).toBe("stopped");
-  expect(supergraph.status()).toBe("stopped");
-});
-
-test("stop works on a start that has not composed yet", async () => {
-  const { supergraph } = await freshRover();
-  const starting = supergraph.start();
-  await vi.waitFor(function spawnedOnce() {
+    expect(result).toBe("starting");
+    expect(supergraph.status()).toBe("running");
     expect(spawnMock).toHaveBeenCalledTimes(1);
+    const args = spawnMock.mock.calls[0][1] as string[];
+    expect(args).toEqual([
+      "dev",
+      "--supergraph-config",
+      expect.stringContaining("supergraph.current.yaml"),
+      "--router-config",
+      expect.stringContaining("router.yaml"),
+      "--supergraph-port",
+      "4041",
+      "--graph-ref",
+      "local-supergraph@current",
+    ]);
   });
-
-  // Rover has spawned but has not said anything about composing yet.
-  await expect(starting).resolves.toBe("starting");
-  const stopping = supergraph.stop();
-  latestProcess().emit("close");
-
-  await expect(stopping).resolves.toBe("stopped");
 });
 
-test("kills the group again if the router port is still held after the grace period", async () => {
-  const { supergraph } = await freshRover();
-  const starting = supergraph.start();
-  await composeSuccessfully(await spawnedProcess());
-  await starting;
+describe("the generated config applies overrides and disabled subgraphs", () => {
+  it("excludes a disabled subgraph and keeps the rest", async () => {
+    const { setSubgraphEnabled, supergraph } = await freshRover();
+    await setSubgraphEnabled("characters", false);
 
-  portState.busyChecksLeft = Infinity;
-  const stopping = supergraph.stop();
-  latestProcess().emit("close");
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
 
-  await vi.advanceTimersByTimeAsync(5000);
-  await stopping;
+    const yaml = readFileSync(
+      join(GENERATED_DIR, "supergraph.current.yaml"),
+      "utf8"
+    );
+    expect(yaml).not.toContain("characters");
+    expect(yaml).toContain("starships");
+    expect(yaml).toContain("https://starships.svc/graphql");
+  });
 
-  expect(process.kill).toHaveBeenCalledWith(-4242, "SIGTERM");
-  expect(process.kill).toHaveBeenCalledWith(-4242, "SIGKILL");
+  it("uses a local override's url instead of the registry's", async () => {
+    const { supergraph, updateOverride } = await freshRover();
+    await updateOverride("characters", { local: true, port: 4001 });
+
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
+
+    const yaml = readFileSync(
+      join(GENERATED_DIR, "supergraph.current.yaml"),
+      "utf8"
+    );
+    expect(yaml).toContain("http://localhost:4001");
+    expect(yaml).not.toContain("https://characters.svc/graphql");
+  });
+});
+
+describe("changing an override or enabling/disabling a subgraph restarts rover while it's running", () => {
+  it("does not spawn rover while stopped — the change just waits for the next start", async () => {
+    const { updateOverride } = await freshRover();
+
+    await updateOverride("characters", { local: true, port: 4001 });
+
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  it("restarts rover while running, so the new url actually reaches the router", async () => {
+    const { supergraph, updateOverride } = await freshRover();
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
+
+    await updateOverride("characters", { local: true, port: 4001 });
+    // The restart stops the old process first, so it has to actually exit
+    // before the new one spawns.
+    latestProcess().emit("close");
+    await vi.waitFor(function respawned() {
+      expect(spawnMock).toHaveBeenCalledTimes(2);
+    });
+    await composeSuccessfully(latestProcess());
+
+    expect(process.kill).toHaveBeenCalledWith(-4242, "SIGTERM");
+  });
+
+  it("coalesces two rapid changes into a single restart that reflects both", async () => {
+    const { setSubgraphEnabled, supergraph, updateOverride } =
+      await freshRover();
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
+
+    void updateOverride("characters", { local: true, port: 4001 });
+    void setSubgraphEnabled("starships", false);
+    // The queued restart needs one microtask turn to reach stopRoverDev and
+    // attach its close listener before the process actually exits.
+    await Promise.resolve();
+    latestProcess().emit("close");
+    await vi.waitFor(function respawned() {
+      expect(spawnMock).toHaveBeenCalledTimes(2);
+    });
+    await composeSuccessfully(latestProcess());
+
+    const yaml = readFileSync(
+      join(GENERATED_DIR, "supergraph.current.yaml"),
+      "utf8"
+    );
+    expect(yaml).toContain("http://localhost:4001");
+    expect(yaml).not.toContain("starships");
+  });
+});
+
+describe("stopping waits for the router port to actually free up", () => {
+  it("resolves once rover actually exits", async () => {
+    const { supergraph } = await freshRover();
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
+
+    const stopping = supergraph.stop();
+    latestProcess().emit("close");
+    const result = await stopping;
+
+    expect(result).toBe("stopped");
+    expect(supergraph.status()).toBe("stopped");
+  });
+
+  it("works on a start that has not composed yet", async () => {
+    const { supergraph } = await freshRover();
+    const starting = supergraph.start();
+    await vi.waitFor(function spawnedOnce() {
+      expect(spawnMock).toHaveBeenCalledTimes(1);
+    });
+
+    // Rover has spawned but has not said anything about composing yet.
+    await expect(starting).resolves.toBe("starting");
+    const stopping = supergraph.stop();
+    latestProcess().emit("close");
+
+    await expect(stopping).resolves.toBe("stopped");
+  });
+
+  it("kills the group again if the port is still held after the grace period", async () => {
+    const { supergraph } = await freshRover();
+    const starting = supergraph.start();
+    await composeSuccessfully(await spawnedProcess());
+    await starting;
+
+    portState.busyChecksLeft = Infinity;
+    const stopping = supergraph.stop();
+    latestProcess().emit("close");
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await stopping;
+
+    expect(process.kill).toHaveBeenCalledWith(-4242, "SIGTERM");
+    expect(process.kill).toHaveBeenCalledWith(-4242, "SIGKILL");
+  });
 });

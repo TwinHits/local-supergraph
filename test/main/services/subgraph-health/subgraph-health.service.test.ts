@@ -1,4 +1,4 @@
-import { beforeEach, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   clearSubgraphFailure,
@@ -39,70 +39,76 @@ beforeEach(function forgetEverything() {
   clearSubgraphFailure("starships");
 });
 
-test("a subgraph that answers is reachable", async () => {
-  alwaysAnswers();
+describe("checking a subgraph sends a real graphql query, not just a ping", () => {
+  it("a subgraph that answers is reachable", async () => {
+    alwaysAnswers();
 
-  const actual = await checkSubgraphs(SUBGRAPHS, {});
+    const actual = await checkSubgraphs(SUBGRAPHS, {});
 
-  expect(actual).toEqual({
-    characters: Reachability.Reachable,
-    starships: Reachability.Reachable,
+    expect(actual).toEqual({
+      characters: Reachability.Reachable,
+      starships: Reachability.Reachable,
+    });
+  });
+
+  it("a subgraph that does not answer is unreachable", async () => {
+    neverAnswers("ENOTFOUND", "getaddrinfo ENOTFOUND characters.svc");
+
+    const actual = await checkSubgraphs(SUBGRAPHS, {});
+
+    expect(actual.characters).toBe(Reachability.Unreachable);
   });
 });
 
-test("a subgraph that does not answer is unreachable", async () => {
-  neverAnswers("ENOTFOUND", "getaddrinfo ENOTFOUND characters.svc");
+describe("a local override is checked at its own port, not the registry url", () => {
+  it("a local subgraph is asked at its own port, not at its routing url", async () => {
+    alwaysAnswers();
 
-  const actual = await checkSubgraphs(SUBGRAPHS, {});
+    await checkSubgraphs(SUBGRAPHS, { starships: { local: true, port: 4002 } });
 
-  expect(actual.characters).toBe(Reachability.Unreachable);
-});
-
-test("a local subgraph is asked at its own port, not at its routing url", async () => {
-  alwaysAnswers();
-
-  await checkSubgraphs(SUBGRAPHS, { starships: { local: true, port: 4002 } });
-
-  expect(answer.mock.calls[1][0]).toBe("http://localhost:4002");
-});
-
-test("a local subgraph with no port yet has nothing to ask", async () => {
-  alwaysAnswers();
-
-  const actual = await checkSubgraphs(SUBGRAPHS, {
-    starships: { local: true, port: null },
+    expect(answer.mock.calls[1][0]).toBe("http://localhost:4002");
   });
 
-  expect(actual.starships).toBe(Reachability.Unknown);
-  expect(answer).toHaveBeenCalledTimes(1);
+  it("a local subgraph with no port yet has nothing to ask", async () => {
+    alwaysAnswers();
+
+    const actual = await checkSubgraphs(SUBGRAPHS, {
+      starships: { local: true, port: null },
+    });
+
+    expect(actual.starships).toBe(Reachability.Unknown);
+    expect(answer).toHaveBeenCalledTimes(1);
+  });
 });
 
-test("a silent local port files a refused connection", async () => {
-  neverAnswers("ECONNREFUSED", "connect ECONNREFUSED 127.0.0.1:4002");
+describe("a failed check is filed under the right cause", () => {
+  it("a silent local port files a refused connection", async () => {
+    neverAnswers("ECONNREFUSED", "connect ECONNREFUSED 127.0.0.1:4002");
 
-  await checkSubgraphs(SUBGRAPHS, { starships: { local: true, port: 4002 } });
+    await checkSubgraphs(SUBGRAPHS, { starships: { local: true, port: 4002 } });
 
-  expect(errors.subgraphErrors()["starships"][0].key).toBe(
-    ErrorKey.LocalRefused
-  );
-});
+    expect(errors.subgraphErrors()["starships"][0].key).toBe(
+      ErrorKey.LocalRefused
+    );
+  });
 
-test("a silent deployed url files an unreachable remote", async () => {
-  neverAnswers("ENOTFOUND", "getaddrinfo ENOTFOUND characters.svc");
+  it("a silent deployed url files an unreachable remote", async () => {
+    neverAnswers("ENOTFOUND", "getaddrinfo ENOTFOUND characters.svc");
 
-  await checkSubgraphs(SUBGRAPHS, {});
+    await checkSubgraphs(SUBGRAPHS, {});
 
-  expect(errors.subgraphErrors()["characters"][0].key).toBe(
-    ErrorKey.RemoteUnreachable
-  );
-});
+    expect(errors.subgraphErrors()["characters"][0].key).toBe(
+      ErrorKey.RemoteUnreachable
+    );
+  });
 
-test("answering again forgets the last failure", async () => {
-  neverAnswers("ECONNREFUSED", "connect ECONNREFUSED 127.0.0.1:4001");
-  await checkSubgraphs(SUBGRAPHS, {});
-  alwaysAnswers();
+  it("answering again forgets the last failure", async () => {
+    neverAnswers("ECONNREFUSED", "connect ECONNREFUSED 127.0.0.1:4001");
+    await checkSubgraphs(SUBGRAPHS, {});
+    alwaysAnswers();
 
-  await checkSubgraphs(SUBGRAPHS, {});
+    await checkSubgraphs(SUBGRAPHS, {});
 
-  expect(errors.subgraphErrors()["characters"]).toBeUndefined();
+    expect(errors.subgraphErrors()["characters"]).toBeUndefined();
+  });
 });

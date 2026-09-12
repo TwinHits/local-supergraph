@@ -1,46 +1,48 @@
-import { expect, test, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   registerWindowActions,
   windowControls,
 } from "@/main/services/window/window.service";
 
-test("does nothing before Electron supplies a window", () => {
-  expect(windowControls.isMaximized()).toBe(false);
-});
-
-test("passes minimize on to the window", () => {
-  const minimize = vi.fn();
-  registerWindowActions({
-    minimize,
-    toggleMaximize() {
-      return false;
-    },
-    close() {},
-    isMaximized() {
-      return false;
-    },
-    openExternal() {},
+describe("window actions are injected, so they're safe to call before Electron supplies a real window", () => {
+  it("does nothing before Electron supplies a window", () => {
+    expect(windowControls.isMaximized()).toBe(false);
   });
 
-  windowControls.minimize();
+  it("passes minimize on to the window", () => {
+    const minimize = vi.fn();
+    registerWindowActions({
+      minimize,
+      toggleMaximize() {
+        return false;
+      },
+      close() {},
+      isMaximized() {
+        return false;
+      },
+      openExternal() {},
+    });
 
-  expect(minimize).toHaveBeenCalledOnce();
-});
+    windowControls.minimize();
 
-test("reports what the window says about being maximized", () => {
-  registerWindowActions({
-    minimize() {},
-    toggleMaximize() {
-      return true;
-    },
-    close() {},
-    isMaximized() {
-      return true;
-    },
-    openExternal() {},
+    expect(minimize).toHaveBeenCalledOnce();
   });
 
-  expect(windowControls.toggleMaximize()).toBe(true);
-  expect(windowControls.isMaximized()).toBe(true);
+  it("reports what the window says about being maximized", () => {
+    registerWindowActions({
+      minimize() {},
+      toggleMaximize() {
+        return true;
+      },
+      close() {},
+      isMaximized() {
+        return true;
+      },
+      openExternal() {},
+    });
+
+    expect(windowControls.toggleMaximize()).toBe(true);
+    expect(windowControls.isMaximized()).toBe(true);
+  });
 });

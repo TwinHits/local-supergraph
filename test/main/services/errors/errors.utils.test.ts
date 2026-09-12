@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import {
   buildDiagnoses,
@@ -15,62 +15,66 @@ function keysOf(diagnoses: { key: ErrorKey }[]): ErrorKey[] {
   });
 }
 
-test("orders matches by authored priority, not by the order given", () => {
-  const actual = buildDiagnoses(
-    [ErrorKey.RemoteUnreachable, ErrorKey.AwsSsoExpired],
-    RAW
-  );
+describe("diagnoses are ordered by priority, root cause first", () => {
+  it("orders matches by authored priority, not by the order given", () => {
+    const actual = buildDiagnoses(
+      [ErrorKey.RemoteUnreachable, ErrorKey.AwsSsoExpired],
+      RAW
+    );
 
-  expect(keysOf(actual)).toEqual([
-    ErrorKey.AwsSsoExpired,
-    ErrorKey.RemoteUnreachable,
-  ]);
+    expect(keysOf(actual)).toEqual([
+      ErrorKey.AwsSsoExpired,
+      ErrorKey.RemoteUnreachable,
+    ]);
+  });
+
+  it("carries the raw text onto every diagnosis", () => {
+    const actual = buildDiagnoses([ErrorKey.LocalRefused], RAW);
+
+    expect(actual[0].raw).toBe(RAW);
+  });
+
+  it("no matches gives nothing", () => {
+    expect(buildDiagnoses([], RAW)).toEqual([]);
+  });
 });
 
-test("carries the raw text onto every diagnosis", () => {
-  const actual = buildDiagnoses([ErrorKey.LocalRefused], RAW);
+describe("matching failure text to known error signatures", () => {
+  it("reads a stale sso session out of the text", () => {
+    const actual = findMatchingKeys(
+      "The SSO session associated with this profile has expired"
+    );
 
-  expect(actual[0].raw).toBe(RAW);
-});
+    expect(actual).toEqual([ErrorKey.AwsSsoExpired]);
+  });
 
-test("no matches gives nothing", () => {
-  expect(buildDiagnoses([], RAW)).toEqual([]);
-});
+  it("reads a held port out of the text", () => {
+    const actual = findMatchingKeys(
+      "listen EADDRINUSE: address already in use :::4001"
+    );
 
-test("reads a stale sso session out of the text", () => {
-  const actual = findMatchingKeys(
-    "The SSO session associated with this profile has expired"
-  );
+    expect(actual).toEqual([ErrorKey.PortInUse]);
+  });
 
-  expect(actual).toEqual([ErrorKey.AwsSsoExpired]);
-});
+  it("reads rover's rejected key code out of the text", () => {
+    const actual = findMatchingKeys("E004: could not authenticate");
 
-test("reads a held port out of the text", () => {
-  const actual = findMatchingKeys(
-    "listen EADDRINUSE: address already in use :::4001"
-  );
+    expect(actual).toEqual([ErrorKey.ApolloKeyInvalid]);
+  });
 
-  expect(actual).toEqual([ErrorKey.PortInUse]);
-});
+  it("no text at all matches nothing", () => {
+    expect(findMatchingKeys(null)).toEqual([]);
+  });
 
-test("reads rover's rejected key code out of the text", () => {
-  const actual = findMatchingKeys("E004: could not authenticate");
+  it("text nothing recognizes matches nothing", () => {
+    expect(findMatchingKeys("something went wrong")).toEqual([]);
+  });
 
-  expect(actual).toEqual([ErrorKey.ApolloKeyInvalid]);
-});
+  it("one failure can match more than one signature", () => {
+    const actual = findMatchingKeys(
+      "ExpiredToken while binding, listen EADDRINUSE"
+    );
 
-test("no text at all matches nothing", () => {
-  expect(findMatchingKeys(null)).toEqual([]);
-});
-
-test("text nothing recognizes matches nothing", () => {
-  expect(findMatchingKeys("something went wrong")).toEqual([]);
-});
-
-test("one failure can match more than one signature", () => {
-  const actual = findMatchingKeys(
-    "ExpiredToken while binding, listen EADDRINUSE"
-  );
-
-  expect(actual).toEqual([ErrorKey.AwsSsoExpired, ErrorKey.PortInUse]);
+    expect(actual).toEqual([ErrorKey.AwsSsoExpired, ErrorKey.PortInUse]);
+  });
 });
