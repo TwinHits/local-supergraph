@@ -48,9 +48,6 @@ vi.mock("@/renderer/api", function stubBridge() {
         graphName() {
           return Promise.resolve("My-Graph");
         },
-        variants() {
-          return Promise.resolve(["current", "staging"]);
-        },
       },
       apollo: {
         listSubgraphs() {
@@ -58,6 +55,9 @@ vi.mock("@/renderer/api", function stubBridge() {
         },
         reloadSubgraphs() {
           return Promise.resolve(stub.subgraphs);
+        },
+        allVariants() {
+          return Promise.resolve(["current", "staging"]);
         },
       },
       subgraph: {
@@ -93,6 +93,12 @@ vi.mock("@/renderer/api", function stubBridge() {
         },
         updateVariant() {
           return Promise.resolve("staging");
+        },
+        variantFilter() {
+          return Promise.resolve([]);
+        },
+        updateVariantFilter() {
+          return Promise.resolve([]);
         },
         routerAddress() {
           return Promise.resolve("http://localhost:4041");

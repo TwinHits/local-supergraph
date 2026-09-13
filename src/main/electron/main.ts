@@ -91,9 +91,9 @@ function stopSupergraphBeforeQuit(event: Electron.Event): void {
 }
 
 registerBridge();
-startServices();
 void app.whenReady().then(function ready() {
   registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
+  startServices();
   setDockIcon();
   createWindow();
 });

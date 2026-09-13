@@ -1,6 +1,7 @@
 import { type ApolloContract } from "@/shared/apollo/apollo.contract";
 import { type EnvironmentContract } from "@/shared/environment/environment.contract";
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
+import { type LogsContract } from "@/shared/logs/logs.contract";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
 import { type SupergraphContract } from "@/shared/supergraph/supergraph.contract";
@@ -11,6 +12,7 @@ export type Contract = {
   apollo: ApolloContract;
   environment: EnvironmentContract;
   errors: ErrorsContract;
+  logs: LogsContract;
   settings: SettingsContract;
   subgraph: SubgraphContract;
   supergraph: SupergraphContract;

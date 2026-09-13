@@ -1,6 +1,10 @@
 import styles from "@/renderer/App.module.scss";
 import Header from "@/renderer/features/Header";
 import { useLaunchControl } from "@/renderer/features/LaunchControl/useLaunchControl";
+import LogsDrawer, {
+  LogsDrawerState,
+  useLogsDrawer,
+} from "@/renderer/features/LogsDrawer";
 import SettingsModal from "@/renderer/features/SettingsModal";
 import SupergraphWorkspace from "@/renderer/features/SupergraphWorkspace";
 import { useSubgraphs } from "@/renderer/features/SupergraphWorkspace/useSubgraphs";
@@ -13,6 +17,7 @@ export default function App() {
   const graph = useGraph();
   const settings = useSettings();
   const launch = useLaunchControl();
+  const logsDrawer = useLogsDrawer();
   const subgraphs = useSubgraphs(
     settings.settings.routerPort,
     launch.state !== SupergraphState.Stopped,
@@ -31,13 +36,25 @@ export default function App() {
         refreshing={subgraphs.refreshing}
         onVariantChange={graph.select}
         onSearchChange={subgraphs.setSearch}
-        onLaunchStart={launch.start}
+        onLaunchStart={function startSupergraph() {
+          launch.start();
+          logsDrawer.notifyLaunched();
+        }}
         onLaunchStop={launch.stop}
         onOpenRouter={launch.openRouter}
         onRefresh={subgraphs.reload}
         onOpenSettings={settings.show}
       />
-      <div className={styles.app__content}>
+      <div
+        className={[
+          styles.app__content,
+          logsDrawer.state === LogsDrawerState.Minimized
+            ? styles["app__content--withMinimizedLogs"]
+            : "",
+        ]
+          .join(" ")
+          .trim()}
+      >
         <SupergraphWorkspace
           loading={subgraphs.loading}
           rows={subgraphs.rows}
@@ -50,11 +67,18 @@ export default function App() {
           onEnabledChange={subgraphs.updateEnabled}
         />
       </div>
+      <LogsDrawer drawer={logsDrawer} />
       <SettingsModal
         open={settings.open}
         settings={settings.settings}
+        variantFilter={settings.variantFilter}
+        allVariants={settings.allVariants}
         onChange={settings.change}
-        onClose={settings.close}
+        onVariantFilterChange={settings.changeVariantFilter}
+        onClose={function closeSettings() {
+          settings.close();
+          graph.reload();
+        }}
       />
     </div>
   );

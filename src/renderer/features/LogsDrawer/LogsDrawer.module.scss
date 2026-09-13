@@ -1,0 +1,58 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
+.logsDrawer__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: sizes.$logs-drawer-minimized-height;
+  padding: 0 0.5rem 0 0.75rem;
+  background: colors.$surface-raised;
+  border-top: 1px solid colors.$border;
+}
+
+div.logsDrawer__paper {
+  height: sizes.$logs-drawer-open-height;
+  display: flex;
+  flex-direction: column;
+  background: colors.$surface-raised;
+  border-top: 1px solid colors.$border;
+}
+
+div.logsDrawer__paper--maximized {
+  height: calc(100vh - #{sizes.$title-bar-height} - #{sizes.$toolbar-height});
+}
+
+.logsDrawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid colors.$border;
+}
+
+.logsDrawer__title {
+  color: colors.$text-primary;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.logsDrawer__controls {
+  display: flex;
+  align-items: center;
+}
+
+.logsDrawer__lines {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.5rem 1rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: colors.$text-primary;
+}
+
+.logsDrawer__line {
+  white-space: pre-wrap;
+}

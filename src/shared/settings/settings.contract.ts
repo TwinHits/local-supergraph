@@ -7,5 +7,7 @@ export type SettingsContract = {
   routerAddress(): string;
   currentVariant(): string;
   updateVariant(name: string): string;
+  variantFilter(): string[];
+  updateVariantFilter(names: string[]): string[];
   localAddress(port: number | null): string;
 };

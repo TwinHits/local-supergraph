@@ -11,7 +11,10 @@ function show(onChange = vi.fn()) {
     <SettingsModal
       open
       settings={settings}
+      variantFilter={[]}
+      allVariants={[]}
       onChange={onChange}
+      onVariantFilterChange={vi.fn()}
       onClose={vi.fn()}
     />
   );

@@ -1,5 +1,6 @@
 import ArrowLeftGlyph from "@mui/icons-material/ArrowLeft";
 import ArrowRightGlyph from "@mui/icons-material/ArrowRight";
+import ClearAllGlyph from "@mui/icons-material/ClearAll";
 import CloseGlyph from "@mui/icons-material/Close";
 import CropSquareGlyph from "@mui/icons-material/CropSquare";
 import FilterNoneGlyph from "@mui/icons-material/FilterNone";
@@ -30,4 +31,5 @@ export const GLYPHS: Record<IconName, Glyph> = {
   [IconName.Refresh]: RefreshGlyph,
   [IconName.Search]: SearchGlyph,
   [IconName.OpenLink]: OpenInNewGlyph,
+  [IconName.Clear]: ClearAllGlyph,
 };

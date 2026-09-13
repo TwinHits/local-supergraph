@@ -4,4 +4,5 @@ import { type RegisteredSubgraph } from "@/shared/apollo/apollo.types";
 export type ApolloContract = {
   listSubgraphs(): RegisteredSubgraph[];
   reloadSubgraphs(): RegisteredSubgraph[];
+  allVariants(): string[];
 };

@@ -3,7 +3,9 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const projectRoot: string = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const projectRoot: string = path.dirname(
+  path.dirname(fileURLToPath(import.meta.url))
+);
 const packageJsonPath: string = path.join(projectRoot, "package.json");
 const cacheFilePath: string = path.join(projectRoot, ".package-version-cache");
 

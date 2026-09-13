@@ -21,10 +21,12 @@ Fill in `.env`:
 
 - `APOLLO_KEY` — a personal key from studio.apollographql.com.
 - `APOLLO_GRAPH_REF` — the graph to run, as `name@variant`.
-- `SUPERGRAPH_VARIANTS` — the variants the header dropdown offers, comma
-  separated.
 
 `.env` is gitignored. Put any credentials your local subgraphs need in it too.
+
+Which variants the header dropdown offers is a setting, not an env var —
+open it from the gear icon (Settings -> Variants). Leave nothing checked to
+offer every variant on the graph, or check a subset to narrow the list.
 
 ## Run
 

@@ -13,5 +13,11 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "test", "scripts", "vite.config.ts", "vite.electron.config.ts"]
+  "include": [
+    "src",
+    "test",
+    "scripts",
+    "vite.config.ts",
+    "vite.electron.config.ts"
+  ]
 }

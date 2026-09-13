@@ -26,3 +26,11 @@ export type ParsedListing = {
   keys: ErrorKey[];
   raw: string | null;
 };
+
+/** The shape of Apollo's platform API answer to `VARIANTS_QUERY`. */
+export type PlatformVariantsResponse = {
+  data?: {
+    graph?: { variants: { name: string }[] } | null;
+  };
+  errors?: { message: string }[];
+};

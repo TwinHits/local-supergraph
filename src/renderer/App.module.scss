@@ -12,3 +12,10 @@
   overflow-y: auto;
   padding: 0 2rem 2.5rem;
 }
+
+.app__content--withMinimizedLogs {
+  height: calc(
+    100vh - #{sizes.$title-bar-height} - #{sizes.$toolbar-height} -
+      #{sizes.$logs-drawer-minimized-height}
+  );
+}

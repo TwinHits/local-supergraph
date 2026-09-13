@@ -4,6 +4,7 @@ import { ipcMain } from "electron";
 import { apollo } from "@/main/services/apollo/apollo.service";
 import { environmentContract as environment } from "@/main/services/environment/environment.service";
 import { errors } from "@/main/services/errors/errors.service";
+import { logs } from "@/main/services/logs/logs.service";
 import {
   setSubgraphEnabled,
   supergraph,
@@ -36,6 +37,7 @@ const handlers = {
   apollo,
   environment,
   errors,
+  logs,
   settings,
   subgraph,
   supergraph,

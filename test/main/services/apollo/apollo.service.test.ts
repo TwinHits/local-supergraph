@@ -19,25 +19,29 @@ vi.mock("@/main/services/rover/rover.service", () => ({
 
 const environmentState = vi.hoisted(() => ({
   graphName: "my-graph",
-  variants: ["current", "staging"],
 }));
 
 vi.mock("@/main/services/environment/environment.service", () => ({
   environment: {
     graphName: () => environmentState.graphName,
-    variants: () => environmentState.variants,
+    apolloKey: () => "",
   },
 }));
 
 const settingsState = vi.hoisted(() => ({
   currentVariant: "current",
+  variantFilter: ["current", "staging"],
 }));
 
 vi.mock("@/main/services/settings/settings.service", () => ({
   settings: {
     currentVariant: () => settingsState.currentVariant,
+    variantFilter: () => settingsState.variantFilter,
   },
 }));
+
+const answer = vi.fn();
+vi.stubGlobal("fetch", answer);
 
 const errorsState = vi.hoisted(() => ({
   reportSupergraphFailure: vi.fn(),
@@ -78,12 +82,13 @@ const BAD_KEY = JSON.stringify({
 
 beforeEach(function isolate() {
   environmentState.graphName = "my-graph";
-  environmentState.variants = ["current", "staging"];
   settingsState.currentVariant = "current";
+  settingsState.variantFilter = ["current", "staging"];
   errorsState.reportSupergraphFailure.mockClear();
   errorsState.clearSupergraphFailure.mockClear();
   roverState.handler = () =>
     Promise.resolve({ stdout: LISTING, stderr: "", found: true });
+  answer.mockReset();
 });
 
 describe("parsing rover's subgraph list", () => {
@@ -280,5 +285,66 @@ describe("every variant is cached at startup", () => {
     await vi.waitFor(function cleared() {
       expect(errorsState.clearSupergraphFailure).toHaveBeenCalled();
     });
+  });
+});
+
+describe("every variant the graph has comes straight from Apollo Studio, not rover", () => {
+  it("returns every variant name from a successful answer", async () => {
+    answer.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            graph: { variants: [{ name: "current" }, { name: "staging" }] },
+          },
+        }),
+    });
+    const { apollo } = await freshApollo();
+
+    const actual = await apollo.allVariants();
+
+    expect(actual).toEqual(["current", "staging"]);
+  });
+
+  it("asks nothing when no graph is set", async () => {
+    environmentState.graphName = "";
+    const { apollo } = await freshApollo();
+
+    const actual = await apollo.allVariants();
+
+    expect(actual).toEqual([]);
+    expect(answer).not.toHaveBeenCalled();
+  });
+
+  it("a GraphQL error in the response yields no variants", async () => {
+    answer.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ errors: [{ message: "boom" }] }),
+    });
+    const { apollo } = await freshApollo();
+
+    const actual = await apollo.allVariants();
+
+    expect(actual).toEqual([]);
+  });
+
+  it("an HTTP failure yields no variants", async () => {
+    answer.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({}),
+    });
+    const { apollo } = await freshApollo();
+
+    const actual = await apollo.allVariants();
+
+    expect(actual).toEqual([]);
+  });
+
+  it("a network failure yields no variants instead of throwing", async () => {
+    answer.mockRejectedValue(new Error("network down"));
+    const { apollo } = await freshApollo();
+
+    await expect(apollo.allVariants()).resolves.toEqual([]);
   });
 });

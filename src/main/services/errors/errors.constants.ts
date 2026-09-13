@@ -13,8 +13,11 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
   [ErrorKey.GraphRefUnset]: {
     key: ErrorKey.GraphRefUnset,
     summary: "The graph ref or variant is not set",
-    cause: "APOLLO_GRAPH_REF or SUPERGRAPH_VARIANTS isn't set in .env.",
-    resolution: ["Fill in both values in .env", "Reopen the app"],
+    cause: "APOLLO_GRAPH_REF isn't set in .env, or no variant is selected.",
+    resolution: [
+      "Fill in APOLLO_GRAPH_REF in .env",
+      "Pick a variant from the toolbar",
+    ],
   },
   [ErrorKey.ApolloKeyInvalid]: {
     key: ErrorKey.ApolloKeyInvalid,

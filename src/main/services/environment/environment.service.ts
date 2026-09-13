@@ -46,16 +46,6 @@ export const environment = {
   apolloKey(): string {
     return readVariable(EnvironmentVariable.ApolloKey);
   },
-  variants(): string[] {
-    return readVariable(EnvironmentVariable.SupergraphVariants)
-      .split(",")
-      .map(function trim(name) {
-        return name.trim();
-      })
-      .filter(function isPresent(name) {
-        return name !== "";
-      });
-  },
   childEnv(): NodeJS.ProcessEnv {
     return baseChildEnv();
   },
@@ -64,8 +54,5 @@ export const environment = {
 export const environmentContract: EnvironmentContract = {
   graphName() {
     return environment.graphName();
-  },
-  variants() {
-    return environment.variants();
   },
 };

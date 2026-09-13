@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { environment } from "@/main/services/environment/environment.service";
 import {
   DEFAULT_SETTINGS,
   LOCAL_HOST,
@@ -17,6 +16,7 @@ import {
 type PersistedConfig = {
   settings: Settings;
   currentVariant: string;
+  variantFilter: string[];
   subgraphOverrides: Record<string, OverrideMap>;
   disabledSubgraphs: Record<string, DisabledSubgraphs>;
 };
@@ -26,6 +26,7 @@ let loaded = false;
 let doc: PersistedConfig = {
   settings: { ...DEFAULT_SETTINGS },
   currentVariant: "",
+  variantFilter: [],
   subgraphOverrides: {},
   disabledSubgraphs: {},
 };
@@ -39,8 +40,13 @@ function load(): void {
   if (loaded) {
     return;
   }
+  // Not yet registered — try again on the next call instead of marking
+  // `loaded` now, which would lock this in on the empty default forever.
+  if (configFilePath === null) {
+    return;
+  }
   loaded = true;
-  if (configFilePath === null || !existsSync(configFilePath)) {
+  if (!existsSync(configFilePath)) {
     return;
   }
   // Trusted because this service is the file's only writer.
@@ -50,6 +56,7 @@ function load(): void {
   doc = {
     settings: { ...DEFAULT_SETTINGS, ...saved.settings },
     currentVariant: saved.currentVariant ?? "",
+    variantFilter: saved.variantFilter ?? [],
     subgraphOverrides: saved.subgraphOverrides ?? {},
     disabledSubgraphs: saved.disabledSubgraphs ?? {},
   };
@@ -103,11 +110,19 @@ export const settings: SettingsContract = {
     persist();
     return doc.settings;
   },
-  /** The variant every other service reads, defaulting to the first offered. */
+  /**
+   * The variant every other service reads. Self-heals against the filter
+   * only — with no filter set (the "all variants" case), there's no local
+   * list to validate against, so the renderer reconciles that case itself
+   * once it has fetched Apollo's actual variant list.
+   */
   currentVariant() {
     load();
-    if (!environment.variants().includes(doc.currentVariant)) {
-      doc.currentVariant = environment.variants()[0] ?? "";
+    if (
+      doc.variantFilter.length > 0 &&
+      !doc.variantFilter.includes(doc.currentVariant)
+    ) {
+      doc.currentVariant = doc.variantFilter[0];
     }
     return doc.currentVariant;
   },
@@ -116,6 +131,16 @@ export const settings: SettingsContract = {
     doc.currentVariant = name;
     persist();
     return doc.currentVariant;
+  },
+  variantFilter() {
+    load();
+    return doc.variantFilter;
+  },
+  updateVariantFilter(names: string[]) {
+    load();
+    doc.variantFilter = names;
+    persist();
+    return doc.variantFilter;
   },
   routerAddress() {
     load();

@@ -12,3 +12,13 @@ export const FAILURES: Record<string, ErrorKey> = {
   [INVALID_KEY_CODE]: ErrorKey.ApolloKeyInvalid,
   [UNKNOWN_GRAPH_CODE]: ErrorKey.GraphNotFound,
 };
+
+export const APOLLO_PLATFORM_API_URL = "https://api.apollographql.com/graphql";
+
+export const APOLLO_CLIENT_NAME = "local-supergraph";
+export const APOLLO_CLIENT_VERSION = "1.0.0";
+
+export const PLATFORM_API_TIMEOUT_MS = 5000;
+
+export const VARIANTS_QUERY =
+  "query LocalSupergraphVariants($graphId: ID!) { graph(id: $graphId) { variants { name } } }";

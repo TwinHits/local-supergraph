@@ -1,10 +1,18 @@
-import { FAILURES, JSON_FORMAT } from "@/main/services/apollo/apollo.constants";
+import {
+  APOLLO_CLIENT_NAME,
+  APOLLO_CLIENT_VERSION,
+  APOLLO_PLATFORM_API_URL,
+  FAILURES,
+  JSON_FORMAT,
+  PLATFORM_API_TIMEOUT_MS,
+  VARIANTS_QUERY,
+} from "@/main/services/apollo/apollo.constants";
 import {
   type ParsedListing,
+  type PlatformVariantsResponse,
   type RoverResponse,
   type RoverSubgraph,
 } from "@/main/services/apollo/apollo.types";
-import { EnvironmentVariable } from "@/main/services/environment/environment.constants";
 import { environment } from "@/main/services/environment/environment.service";
 import {
   clearSupergraphFailure,
@@ -69,7 +77,7 @@ async function checkVariant(variant: string): Promise<VariantCheck> {
       subgraphs: [],
       failed: true,
       keys: [ErrorKey.GraphRefUnset],
-      raw: `${EnvironmentVariable.ApolloGraphRef} or ${EnvironmentVariable.SupergraphVariants} is not set.`,
+      raw: "APOLLO_GRAPH_REF is not set, or no variant is selected.",
     };
   }
 
@@ -102,9 +110,14 @@ async function checkVariant(variant: string): Promise<VariantCheck> {
   return { subgraphs: listing.subgraphs, failed: false, keys: [], raw: null };
 }
 
-/** Reads every variant before anything asks for one. */
+/**
+ * Reads every variant before anything asks for one. Only the explicitly
+ * configured filter is precached — with no filter, the dropdown falls back
+ * to every variant the graph has (see `allVariants`), and that list is
+ * typically far too large to precache a `rover subgraph list` for each one.
+ */
 export function cacheAllVariants(): void {
-  const variants = environment.variants();
+  const variants = settings.variantFilter();
   startupCheck = Promise.all(variants.map(checkVariant)).then(
     function summarize(checks) {
       checks.forEach(function store(check, index) {
@@ -140,7 +153,49 @@ async function refreshSubgraphs(
   return check.subgraphs;
 }
 
+/** Every variant the graph has in Apollo Studio, regardless of any local filter. */
+async function fetchAllVariants(): Promise<string[]> {
+  const graphName = environment.graphName();
+  if (graphName === "") {
+    return [];
+  }
+
+  try {
+    const response = await fetch(APOLLO_PLATFORM_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": environment.apolloKey(),
+        "apollographql-client-name": APOLLO_CLIENT_NAME,
+        "apollographql-client-version": APOLLO_CLIENT_VERSION,
+      },
+      body: JSON.stringify({
+        query: VARIANTS_QUERY,
+        variables: { graphId: graphName },
+      }),
+      signal: AbortSignal.timeout(PLATFORM_API_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const body = (await response.json()) as PlatformVariantsResponse;
+    if (body.errors !== undefined || !body.data?.graph) {
+      return [];
+    }
+
+    return body.data.graph.variants.map(function toName(variant) {
+      return variant.name;
+    });
+  } catch {
+    return [];
+  }
+}
+
 export const apollo: Awaitable<ApolloContract> = {
+  allVariants: fetchAllVariants,
+
   async listSubgraphs(): Promise<RegisteredSubgraph[]> {
     if (startupCheck !== null) {
       await startupCheck;
