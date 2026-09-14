@@ -74,7 +74,7 @@ export function useSubgraphs(
 ) {
   const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(true);
+  const [refreshPending, setRefreshPending] = useState(false);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortColumn>(SortColumn.Name);
   const [loadedVariant, setLoadedVariant] = useState(variant);
@@ -127,7 +127,7 @@ export function useSubgraphs(
       });
 
     void Promise.all([primary, secondary]).then(function finish() {
-      setRefreshing(false);
+      setRefreshPending(false);
     });
   }, []);
 
@@ -140,7 +140,8 @@ export function useSubgraphs(
 
   const refresh = useCallback(
     function trigger() {
-      setRefreshing(true);
+      setLoading(true);
+      setRefreshPending(true);
       load();
     },
     [load]
@@ -245,7 +246,7 @@ export function useSubgraphs(
     errors: validated.errors,
     supergraphErrors: snapshot.supergraphErrors,
     loading,
-    refreshing,
+    refreshing: refreshPending,
     search,
     sort,
     setSearch,

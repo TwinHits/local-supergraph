@@ -5,7 +5,10 @@ import { LogsDrawerState } from "@/renderer/features/LogsDrawer/LogsDrawer.types
 import { isAtBottom } from "@/renderer/features/LogsDrawer/LogsDrawer.utils";
 import { type useLogsDrawer } from "@/renderer/features/LogsDrawer/useLogsDrawer";
 import Drawer from "@/renderer/ui/Drawer";
-import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
+import IconButton, {
+  IconButtonSize,
+  IconButtonVariant,
+} from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 
 type LogsDrawerProps = {
@@ -41,17 +44,10 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             label="Restore logs"
             tooltip="Restore"
             variant={IconButtonVariant.Muted}
+            size={IconButtonSize.Small}
             onClick={restore}
           >
             <IconGlyph name={IconName.Restore} />
-          </IconButton>
-          <IconButton
-            label="Maximize logs"
-            tooltip="Maximize"
-            variant={IconButtonVariant.Muted}
-            onClick={maximize}
-          >
-            <IconGlyph name={IconName.Maximize} />
           </IconButton>
         </span>
       </div>
@@ -74,6 +70,7 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             label="Clear logs"
             tooltip="Clear"
             variant={IconButtonVariant.Muted}
+            size={IconButtonSize.Small}
             onClick={clear}
           >
             <IconGlyph name={IconName.Clear} />
@@ -82,6 +79,7 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             label="Minimize logs"
             tooltip="Minimize"
             variant={IconButtonVariant.Muted}
+            size={IconButtonSize.Small}
             onClick={minimize}
           >
             <IconGlyph name={IconName.Minimize} />
@@ -90,6 +88,7 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             label={maximized ? "Restore logs" : "Maximize logs"}
             tooltip={maximized ? "Restore" : "Maximize"}
             variant={IconButtonVariant.Muted}
+            size={IconButtonSize.Small}
             onClick={maximized ? restore : maximize}
           >
             <IconGlyph

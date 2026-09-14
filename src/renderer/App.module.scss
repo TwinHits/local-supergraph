@@ -19,3 +19,15 @@
       #{sizes.$logs-drawer-minimized-height}
   );
 }
+
+.app__content--withOpenLogs {
+  height: calc(
+    100vh - #{sizes.$title-bar-height} - #{sizes.$toolbar-height} -
+      #{sizes.$logs-drawer-open-height}
+  );
+}
+
+// The maximized drawer already fills the same space app__content would.
+.app__content--withMaximizedLogs {
+  height: 0;
+}

@@ -2,8 +2,8 @@ import ArrowLeftGlyph from "@mui/icons-material/ArrowLeft";
 import ArrowRightGlyph from "@mui/icons-material/ArrowRight";
 import ClearAllGlyph from "@mui/icons-material/ClearAll";
 import CloseGlyph from "@mui/icons-material/Close";
-import CropSquareGlyph from "@mui/icons-material/CropSquare";
-import FilterNoneGlyph from "@mui/icons-material/FilterNone";
+import FullscreenGlyph from "@mui/icons-material/Fullscreen";
+import FullscreenExitGlyph from "@mui/icons-material/FullscreenExit";
 import MinimizeGlyph from "@mui/icons-material/Minimize";
 import OpenInNewGlyph from "@mui/icons-material/OpenInNew";
 import PlayArrowGlyph from "@mui/icons-material/PlayArrow";
@@ -23,8 +23,8 @@ export const GLYPHS: Record<IconName, Glyph> = {
   [IconName.Forward]: ArrowRightGlyph,
   [IconName.Settings]: SettingsGlyph,
   [IconName.Minimize]: MinimizeGlyph,
-  [IconName.Maximize]: CropSquareGlyph,
-  [IconName.Restore]: FilterNoneGlyph,
+  [IconName.Maximize]: FullscreenGlyph,
+  [IconName.Restore]: FullscreenExitGlyph,
   [IconName.Close]: CloseGlyph,
   [IconName.Start]: PlayArrowGlyph,
   [IconName.Stop]: StopGlyph,

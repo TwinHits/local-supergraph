@@ -13,6 +13,13 @@ import { useGraph } from "@/renderer/hooks/useGraph";
 import { useSettings } from "@/renderer/hooks/useSettings";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
+const LOGS_DRAWER_CONTENT_CLASSES: Record<LogsDrawerState, string> = {
+  [LogsDrawerState.Hidden]: "",
+  [LogsDrawerState.Minimized]: styles["app__content--withMinimizedLogs"],
+  [LogsDrawerState.Open]: styles["app__content--withOpenLogs"],
+  [LogsDrawerState.Maximized]: styles["app__content--withMaximizedLogs"],
+};
+
 export default function App() {
   const graph = useGraph();
   const settings = useSettings();
@@ -48,9 +55,7 @@ export default function App() {
       <div
         className={[
           styles.app__content,
-          logsDrawer.state === LogsDrawerState.Minimized
-            ? styles["app__content--withMinimizedLogs"]
-            : "",
+          LOGS_DRAWER_CONTENT_CLASSES[logsDrawer.state],
         ]
           .join(" ")
           .trim()}

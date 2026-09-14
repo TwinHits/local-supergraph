@@ -3,3 +3,8 @@ export enum IconButtonVariant {
   Muted = "muted",
   Inline = "inline",
 }
+
+export enum IconButtonSize {
+  Medium = "medium",
+  Small = "small",
+}

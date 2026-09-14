@@ -3,12 +3,20 @@ import { type ReactNode } from "react";
 
 import HoverTooltip from "@/renderer/ui/HoverTooltip";
 import styles from "@/renderer/ui/IconButton/IconButton.module.scss";
-import { IconButtonVariant } from "@/renderer/ui/IconButton/IconButton.types";
+import {
+  IconButtonSize,
+  IconButtonVariant,
+} from "@/renderer/ui/IconButton/IconButton.types";
 
 const VARIANTS: Record<IconButtonVariant, string> = {
   [IconButtonVariant.Default]: "",
   [IconButtonVariant.Muted]: styles["iconButton--muted"],
   [IconButtonVariant.Inline]: styles["iconButton--inline"],
+};
+
+const SIZES: Record<IconButtonSize, string> = {
+  [IconButtonSize.Medium]: "",
+  [IconButtonSize.Small]: styles["iconButton--small"],
 };
 
 type IconButtonProps = {
@@ -17,6 +25,7 @@ type IconButtonProps = {
   tooltip?: string;
   disabled?: boolean;
   variant?: IconButtonVariant;
+  size?: IconButtonSize;
   onClick: () => void;
 };
 
@@ -27,11 +36,13 @@ export default function IconButton({
   tooltip,
   disabled,
   variant,
+  size,
   onClick,
 }: IconButtonProps) {
   const look = [
     styles.iconButton,
     VARIANTS[variant ?? IconButtonVariant.Default],
+    SIZES[size ?? IconButtonSize.Medium],
   ]
     .join(" ")
     .trim();

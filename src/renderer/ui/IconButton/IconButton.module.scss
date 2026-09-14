@@ -26,6 +26,13 @@ button.iconButton--inline {
   }
 }
 
+button.iconButton--small {
+  align-self: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1rem;
+}
+
 button.iconButton--muted {
   color: colors.$text-muted;
 

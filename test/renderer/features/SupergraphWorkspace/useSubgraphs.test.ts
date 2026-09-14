@@ -218,6 +218,42 @@ describe("a health check already running when an override changes never overwrit
 });
 
 describe("refresh reloads the table and reports while it's in flight", () => {
+  it("puts the table back into a loading state until the refresh arrives", async () => {
+    const { result } = renderHook(() => useSubgraphs(4041, false, "current"));
+    await waitFor(function loaded() {
+      expect(result.current.loading).toBe(false);
+    });
+
+    let resolveListSubgraphs: (value: typeof SUBGRAPHS) => void = () => {};
+    api.listSubgraphs.mockImplementationOnce(
+      () =>
+        new Promise(function pending(resolve) {
+          resolveListSubgraphs = resolve;
+        })
+    );
+
+    act(function triggerReload() {
+      result.current.reload();
+    });
+    expect(result.current.loading).toBe(true);
+
+    await act(async () => {
+      resolveListSubgraphs(SUBGRAPHS);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(function settled() {
+      expect(result.current.loading).toBe(false);
+    });
+  });
+
+  it("does not report refreshing during the initial load", () => {
+    const { result } = renderHook(() => useSubgraphs(4041, false, "current"));
+
+    expect(result.current.refreshing).toBe(false);
+  });
+
   it("sets refreshing true until the reload finishes", async () => {
     const { result } = renderHook(() => useSubgraphs(4041, false, "current"));
     await waitFor(function loaded() {
