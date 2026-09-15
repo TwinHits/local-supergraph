@@ -8,7 +8,7 @@
     "node": ">=26.0.0"
   },
   "scripts": {
-    "prestart": "nvm use && node scripts/checkPackageVersion.ts",
+    "prestart": "node scripts/checkPackageVersion.ts",
     "start": "npm run build && electron .",
     "ci": "npm ci",
     "lint": "eslint . --fix",
