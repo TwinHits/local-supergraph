@@ -3,30 +3,30 @@ import { describe, expect, it } from "vitest";
 import { LogsDrawerState } from "@/renderer/features/LogsDrawer/LogsDrawer.types";
 import {
   isAtBottom,
-  nextStateAfterLaunch,
+  nextStateAfterStart,
 } from "@/renderer/features/LogsDrawer/LogsDrawer.utils";
 
-describe("starting the supergraph opens a hidden drawer, and never re-opens a visible one", () => {
+describe("starting the thing a drawer watches opens it if hidden, and never re-opens a visible one", () => {
   it("opens a hidden drawer", () => {
-    expect(nextStateAfterLaunch(LogsDrawerState.Hidden)).toBe(
+    expect(nextStateAfterStart(LogsDrawerState.Hidden)).toBe(
       LogsDrawerState.Open
     );
   });
 
   it("leaves a minimized drawer where it is", () => {
-    expect(nextStateAfterLaunch(LogsDrawerState.Minimized)).toBe(
+    expect(nextStateAfterStart(LogsDrawerState.Minimized)).toBe(
       LogsDrawerState.Minimized
     );
   });
 
   it("leaves an open drawer where it is", () => {
-    expect(nextStateAfterLaunch(LogsDrawerState.Open)).toBe(
+    expect(nextStateAfterStart(LogsDrawerState.Open)).toBe(
       LogsDrawerState.Open
     );
   });
 
   it("leaves a maximized drawer where it is", () => {
-    expect(nextStateAfterLaunch(LogsDrawerState.Maximized)).toBe(
+    expect(nextStateAfterStart(LogsDrawerState.Maximized)).toBe(
       LogsDrawerState.Maximized
     );
   });

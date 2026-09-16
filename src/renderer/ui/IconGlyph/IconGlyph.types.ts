@@ -13,4 +13,9 @@ export enum IconName {
   Search = "search",
   OpenLink = "open-link",
   Clear = "clear",
+  Copy = "copy",
+  CollapseRail = "collapse-rail",
+  ExpandRail = "expand-rail",
+  Supergraph = "supergraph",
+  Database = "database",
 }

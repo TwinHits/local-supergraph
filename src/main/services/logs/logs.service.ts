@@ -1,5 +1,6 @@
 import { open, stat } from "node:fs/promises";
 
+import { DATABASE_CONNECTION_LOG_FILE } from "@/main/services/databases/databases.constants";
 import { type LogSource } from "@/main/services/logs/logs.types";
 import { ROVER_LOG_FILE } from "@/main/services/rover/rover.constants";
 import { type Awaitable } from "@/shared/contract/contract.types";
@@ -92,6 +93,9 @@ function buildFileLogSource(path: string): LogSource {
 
 const sources: Record<LogSourceId, LogSource> = {
   [LogSourceId.Rover]: buildFileLogSource(ROVER_LOG_FILE),
+  [LogSourceId.DatabaseConnection]: buildFileLogSource(
+    DATABASE_CONNECTION_LOG_FILE
+  ),
 };
 
 export const logs: Awaitable<LogsContract> = {

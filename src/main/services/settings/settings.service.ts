@@ -19,6 +19,8 @@ type PersistedConfig = {
   variantFilter: string[];
   subgraphOverrides: Record<string, OverrideMap>;
   disabledSubgraphs: Record<string, DisabledSubgraphs>;
+  selectedDatabase: string;
+  selectedEnvironment: string;
 };
 
 let configFilePath: string | null = null;
@@ -29,6 +31,8 @@ let doc: PersistedConfig = {
   variantFilter: [],
   subgraphOverrides: {},
   disabledSubgraphs: {},
+  selectedDatabase: "",
+  selectedEnvironment: "",
 };
 
 /** Gives the service the file its settings are read from and written to. */
@@ -59,6 +63,8 @@ function load(): void {
     variantFilter: saved.variantFilter ?? [],
     subgraphOverrides: saved.subgraphOverrides ?? {},
     disabledSubgraphs: saved.disabledSubgraphs ?? {},
+    selectedDatabase: saved.selectedDatabase ?? "",
+    selectedEnvironment: saved.selectedEnvironment ?? "",
   };
 }
 
@@ -189,4 +195,32 @@ export function setSubgraphEnabled(
   const next = enabled ? withoutName : [...withoutName, name];
   writeDisabledSubgraphs(variant, next);
   return next;
+}
+
+/** The database currently picked in the Databases tab. */
+export function selectedDatabase(): string {
+  load();
+  return doc.selectedDatabase;
+}
+
+/** Changes the picked database. */
+export function updateSelectedDatabase(name: string): string {
+  load();
+  doc.selectedDatabase = name;
+  persist();
+  return doc.selectedDatabase;
+}
+
+/** The environment currently picked in the Databases tab. */
+export function selectedEnvironment(): string {
+  load();
+  return doc.selectedEnvironment;
+}
+
+/** Changes the picked environment. */
+export function updateSelectedEnvironment(name: string): string {
+  load();
+  doc.selectedEnvironment = name;
+  persist();
+  return doc.selectedEnvironment;
 }

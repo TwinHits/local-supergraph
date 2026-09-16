@@ -5,6 +5,9 @@ CLAUDE.md
 # Environment configuration
 .env
 
+# Database catalog
+databases.json
+
 # Node.js dependencies
 node_modules/
 

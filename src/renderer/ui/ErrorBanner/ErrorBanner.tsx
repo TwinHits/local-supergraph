@@ -1,21 +1,18 @@
 import { useState } from "react";
 
-import styles from "@/renderer/features/SupergraphWorkspace/components/SupergraphError/SupergraphError.module.scss";
-import { buildDiagnosisMessage } from "@/renderer/features/SupergraphWorkspace/supergraphWorkspace.utils";
 import AlertBanner from "@/renderer/ui/AlertBanner";
+import styles from "@/renderer/ui/ErrorBanner/ErrorBanner.module.scss";
 import PagerArrows from "@/renderer/ui/PagerArrows";
+import { buildDiagnosisMessage } from "@/renderer/utils/diagnosis.utils";
 import { type Diagnosis } from "@/shared/errors/errors.types";
 
-type SupergraphErrorProps = {
+type ErrorBannerProps = {
   diagnoses: Diagnosis[];
-  onShowErrors: () => void;
+  onClick?: () => void;
 };
 
-/** Shows the supergraph's failures one at a time. */
-export default function SupergraphError({
-  diagnoses,
-  onShowErrors,
-}: SupergraphErrorProps) {
+/** Shows a list of failures one at a time. */
+export default function ErrorBanner({ diagnoses, onClick }: ErrorBannerProps) {
   const [index, setIndex] = useState(0);
   const diagnosis = diagnoses[index] ?? diagnoses[0];
 
@@ -24,7 +21,7 @@ export default function SupergraphError({
   }
 
   return (
-    <div className={styles.supergraphError}>
+    <div className={styles.errorBanner}>
       <AlertBanner
         message={buildDiagnosisMessage(diagnosis)}
         actions={
@@ -35,7 +32,7 @@ export default function SupergraphError({
             onChange={setIndex}
           />
         }
-        onClick={onShowErrors}
+        onClick={onClick}
       />
     </div>
   );

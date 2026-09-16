@@ -3,6 +3,8 @@ export enum ErrorKey {
   GraphRefUnset = "GRAPH_REF_UNSET",
   ApolloKeyInvalid = "APOLLO_KEY_INVALID",
   GraphNotFound = "GRAPH_NOT_FOUND",
+  AwsCliMissing = "AWS_CLI_MISSING",
+  SessionManagerPluginMissing = "SESSION_MANAGER_PLUGIN_MISSING",
   AwsSsoExpired = "AWS_SSO_EXPIRED",
   PortInUse = "PORT_IN_USE",
   PortInvalid = "PORT_INVALID",

@@ -1,12 +1,17 @@
 /* v8 ignore file -- only real Electron runs this */
 import { join } from "node:path";
 
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, clipboard, shell } from "electron";
 
+import {
+  databases,
+  registerClipboardWriter,
+} from "@/main/services/databases/databases.service";
 import { supergraph } from "@/main/services/rover/rover.service";
 import { registerConfigFile } from "@/main/services/settings/settings.service";
 import { startServices } from "@/main/services/startup/startup.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
+import { DatabaseConnectionState } from "@/shared/databases/databases.types";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 import { registerBridge } from "./bridge";
@@ -72,15 +77,24 @@ function quitApp(): void {
 
 let quitting = false;
 
-/** Stops rover before the app quits, so it doesn't keep running after the window closes. */
-function stopSupergraphBeforeQuit(event: Electron.Event): void {
-  if (quitting || supergraph.status() === SupergraphState.Stopped) {
+/** Stops rover and any open database connection before the app quits, so neither outlives the window. */
+function stopBackgroundProcessesBeforeQuit(event: Electron.Event): void {
+  const supergraphRunning = supergraph.status() !== SupergraphState.Stopped;
+  const databaseConnected =
+    databases.status() !== DatabaseConnectionState.Disconnected;
+
+  if (quitting || (!supergraphRunning && !databaseConnected)) {
     return;
   }
   event.preventDefault();
   quitting = true;
 
-  const stopped = Promise.resolve(supergraph.stop());
+  const stopped = Promise.all([
+    supergraphRunning ? Promise.resolve(supergraph.stop()) : Promise.resolve(),
+    databaseConnected
+      ? Promise.resolve(databases.disconnect())
+      : Promise.resolve(),
+  ]);
   const gaveUp = new Promise<void>(function wait(resolve) {
     setTimeout(resolve, QUIT_STOP_TIMEOUT_MS);
   });
@@ -91,6 +105,7 @@ function stopSupergraphBeforeQuit(event: Electron.Event): void {
 }
 
 registerBridge();
+registerClipboardWriter(clipboard.writeText);
 void app.whenReady().then(function ready() {
   registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
   startServices();
@@ -98,4 +113,4 @@ void app.whenReady().then(function ready() {
   createWindow();
 });
 app.on("window-all-closed", quitApp);
-app.on("before-quit", stopSupergraphBeforeQuit);
+app.on("before-quit", stopBackgroundProcessesBeforeQuit);

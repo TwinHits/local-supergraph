@@ -37,6 +37,23 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
       "Check that the key belongs to the same organization",
     ],
   },
+  [ErrorKey.AwsCliMissing]: {
+    key: ErrorKey.AwsCliMissing,
+    summary: "The aws CLI is not installed",
+    cause: "aws isn't installed, or isn't on your PATH.",
+    resolution: [
+      "Install the AWS CLI, then reopen the app so it picks up your PATH",
+    ],
+  },
+  [ErrorKey.SessionManagerPluginMissing]: {
+    key: ErrorKey.SessionManagerPluginMissing,
+    summary: "The Session Manager plugin is not installed",
+    cause:
+      "aws ssm start-session needs session-manager-plugin to forward a port.",
+    resolution: [
+      "Install the Session Manager plugin, then try connecting again",
+    ],
+  },
   [ErrorKey.AwsSsoExpired]: {
     key: ErrorKey.AwsSsoExpired,
     summary: "AWS credentials are stale",
@@ -103,6 +120,10 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
     /401 unauthorized/i,
   ],
   [ErrorKey.GraphNotFound]: [/\bE009\b/, /could not find graph/i],
+  [ErrorKey.AwsCliMissing]: [],
+  [ErrorKey.SessionManagerPluginMissing]: [
+    /SessionManagerPlugin is not found/i,
+  ],
   [ErrorKey.AwsSsoExpired]: [
     /\bexpiredtoken\b/i,
     /sso session .*expired/i,
@@ -128,6 +149,8 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.GraphRefUnset,
   ErrorKey.ApolloKeyInvalid,
   ErrorKey.GraphNotFound,
+  ErrorKey.AwsCliMissing,
+  ErrorKey.SessionManagerPluginMissing,
   ErrorKey.AwsSsoExpired,
   ErrorKey.PortInUse,
   ErrorKey.PortInvalid,

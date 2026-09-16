@@ -26,7 +26,9 @@
 }
 
 .header__logo {
-  padding: 0 12px;
+  width: sizes.$tab-rail-collapsed-width;
+  box-sizing: border-box;
+  justify-content: center;
 }
 
 .header__logoImage {

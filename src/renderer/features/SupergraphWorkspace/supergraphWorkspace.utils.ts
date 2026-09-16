@@ -15,11 +15,6 @@ import {
   SortColumn,
 } from "@/shared/subgraph/subgraph.types";
 
-/** Writes one failure as a single line. */
-export function buildDiagnosisMessage(diagnosis: Diagnosis): string {
-  return `${diagnosis.summary}: ${diagnosis.cause}`;
-}
-
 type Signals = {
   local: boolean;
   reachability: Reachability;
