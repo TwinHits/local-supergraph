@@ -2,18 +2,19 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
+import { DatabaseConnectionState } from "@/shared/databases/databases.types";
 
 const api = vi.hoisted(() => ({
   catalog: vi.fn(),
-  selectedDatabase: vi.fn(),
-  selectedEnvironment: vi.fn(),
-  connectionInfo: vi.fn(),
-  status: vi.fn(),
-  copyPasswordToClipboard: vi.fn(),
-  updateSelectedDatabase: vi.fn(),
-  updateSelectedEnvironment: vi.fn(),
+  localPort: vi.fn(),
+  updateLocalPort: vi.fn(),
+  statuses: vi.fn(),
   connect: vi.fn(),
   disconnect: vi.fn(),
+  copyPasswordToClipboard: vi.fn(),
+  copyPasswordUrlEncodedToClipboard: vi.fn(),
+  currentEnvironment: vi.fn(),
+  updateEnvironment: vi.fn(),
   databaseConnectionErrors: vi.fn(),
 }));
 
@@ -21,20 +22,23 @@ vi.mock("@/renderer/api", () => ({
   api: {
     databases: {
       catalog: () => api.catalog(),
-      selectedDatabase: () => api.selectedDatabase(),
-      selectedEnvironment: () => api.selectedEnvironment(),
-      connectionInfo: (database: string, environment: string) =>
-        api.connectionInfo(database, environment),
-      status: () => api.status(),
-      copyPasswordToClipboard: (database: string, environment: string) =>
-        api.copyPasswordToClipboard(database, environment),
-      updateSelectedDatabase: (name: string) =>
-        api.updateSelectedDatabase(name),
-      updateSelectedEnvironment: (name: string) =>
-        api.updateSelectedEnvironment(name),
+      localPort: (database: string) => api.localPort(database),
+      updateLocalPort: (database: string, port: number) =>
+        api.updateLocalPort(database, port),
+      statuses: () => api.statuses(),
       connect: (database: string, environment: string) =>
         api.connect(database, environment),
-      disconnect: () => api.disconnect(),
+      disconnect: (database: string) => api.disconnect(database),
+      copyPasswordToClipboard: (database: string, environment: string) =>
+        api.copyPasswordToClipboard(database, environment),
+      copyPasswordUrlEncodedToClipboard: (
+        database: string,
+        environment: string
+      ) => api.copyPasswordUrlEncodedToClipboard(database, environment),
+    },
+    settings: {
+      currentEnvironment: () => api.currentEnvironment(),
+      updateEnvironment: (name: string) => api.updateEnvironment(name),
     },
     errors: {
       databaseConnectionErrors: () => api.databaseConnectionErrors(),
@@ -44,138 +48,175 @@ vi.mock("@/renderer/api", () => ({
 
 beforeEach(function isolate() {
   api.catalog.mockReset().mockResolvedValue({});
-  api.selectedDatabase.mockReset().mockResolvedValue("");
-  api.selectedEnvironment.mockReset().mockResolvedValue("");
-  api.connectionInfo.mockReset().mockResolvedValue(null);
-  api.status.mockReset().mockResolvedValue("disconnected");
+  api.localPort.mockReset().mockResolvedValue(0);
+  api.updateLocalPort
+    .mockReset()
+    .mockImplementation((_database, port) => Promise.resolve(port));
+  api.statuses.mockReset().mockResolvedValue({});
+  api.connect.mockReset().mockResolvedValue(DatabaseConnectionState.Connecting);
+  api.disconnect
+    .mockReset()
+    .mockResolvedValue(DatabaseConnectionState.Disconnected);
   api.copyPasswordToClipboard.mockReset().mockResolvedValue(true);
-  api.updateSelectedDatabase.mockReset();
-  api.updateSelectedEnvironment.mockReset();
-  api.connect.mockReset().mockResolvedValue("connecting");
-  api.disconnect.mockReset().mockResolvedValue("disconnected");
+  api.copyPasswordUrlEncodedToClipboard.mockReset().mockResolvedValue(true);
+  api.currentEnvironment.mockReset().mockResolvedValue("dev");
+  api.updateEnvironment
+    .mockReset()
+    .mockImplementation((name: string) => Promise.resolve(name));
   api.databaseConnectionErrors.mockReset().mockResolvedValue([]);
 });
 
-describe("loading the catalog and the saved selection on mount", () => {
-  it("loads the catalog", async () => {
-    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "prod"] });
-    const { result } = renderHook(() => useDatabases());
-
-    await waitFor(function loaded() {
-      expect(result.current.catalog).toEqual({
-        TEAM_MEMBER: ["dev", "prod"],
-      });
-    });
-  });
-
-  it("loads the previously selected database and environment", async () => {
-    api.selectedDatabase.mockResolvedValue("TEAM_MEMBER");
-    api.selectedEnvironment.mockResolvedValue("dev");
-    const { result } = renderHook(() => useDatabases());
-
-    await waitFor(function loaded() {
-      expect(result.current.database).toBe("TEAM_MEMBER");
-      expect(result.current.environment).toBe("dev");
-    });
-  });
+afterEach(function restoreRealTimers() {
+  vi.useRealTimers();
 });
 
-describe("connection info only loads once both a database and environment are picked", () => {
-  it("stays null when nothing is picked yet", async () => {
+describe("loading the catalog and the saved environment on mount", () => {
+  it("shows a row for every database offered in the current environment", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "prod"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const { result } = renderHook(() => useDatabases());
+
+    await waitFor(function loaded() {
+      expect(result.current.rows.map((row) => row.name)).toEqual([
+        "TEAM_MEMBER",
+      ]);
+    });
+    expect(result.current.environment).toBe("dev");
+    expect(result.current.environments).toEqual(["dev", "prod"]);
+  });
+
+  it("falls back to the catalog's first environment when the saved one is gone", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "prod"] });
+    api.currentEnvironment.mockResolvedValue("retired-environment");
+    const { result } = renderHook(() => useDatabases());
+
+    await waitFor(function fellBack() {
+      expect(result.current.environment).toBe("dev");
+    });
+    expect(api.updateEnvironment).toHaveBeenCalledWith("dev");
+  });
+
+  it("does not list a database that isn't offered in any environment yet", async () => {
     const { result } = renderHook(() => useDatabases());
 
     await waitFor(function settled() {
       expect(api.catalog).toHaveBeenCalled();
     });
 
-    expect(result.current.connectionInfo).toBeNull();
-    expect(api.connectionInfo).not.toHaveBeenCalled();
-  });
-
-  it("loads connection info once both are set", async () => {
-    api.selectedDatabase.mockResolvedValue("TEAM_MEMBER");
-    api.selectedEnvironment.mockResolvedValue("dev");
-    api.connectionInfo.mockResolvedValue({
-      host: "team-member.example.com",
-      port: 5432,
-      localPort: 5432,
-      databaseName: "team_member_subgraph",
-      username: "tm_user",
-    });
-    const { result } = renderHook(() => useDatabases());
-
-    await waitFor(function loaded() {
-      expect(result.current.connectionInfo).toEqual({
-        host: "team-member.example.com",
-        port: 5432,
-        localPort: 5432,
-        databaseName: "team_member_subgraph",
-        username: "tm_user",
-      });
-    });
-    expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
+    expect(result.current.rows).toEqual([]);
   });
 });
 
-describe("selecting a database or environment persists the choice", () => {
-  it("selectDatabase calls the bridge and adopts what it returns", async () => {
-    // Resolved to something distinct from the update, so the mount effect's
-    // own async resolution is provably finished before selectDatabase runs —
-    // otherwise it can land after and stomp the just-picked value back down.
-    api.selectedDatabase.mockResolvedValue("OTHER_DATABASE");
-    api.updateSelectedDatabase.mockResolvedValue("TEAM_MEMBER");
+describe("a row stays visible with its real state even outside the current environment", () => {
+  it("keeps showing a connected database after the environment no longer lists it", async () => {
+    api.catalog.mockResolvedValue({
+      TEAM_MEMBER: ["dev"],
+      OTHER_DATABASE: ["dev", "staging"],
+    });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "dev",
+      },
+    });
+    vi.useFakeTimers();
     const { result } = renderHook(() => useDatabases());
-    await waitFor(function mounted() {
-      expect(result.current.database).toBe("OTHER_DATABASE");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(result.current.rows.map((row) => row.name)).toContain("TEAM_MEMBER");
+
+    act(function switchToStaging() {
+      result.current.selectEnvironment("staging");
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
     });
 
-    act(function select() {
-      result.current.selectDatabase("TEAM_MEMBER");
+    const row = result.current.rows.find((each) => each.name === "TEAM_MEMBER");
+    expect(row).toBeDefined();
+    expect(row?.state).toBe(DatabaseConnectionState.Connected);
+  });
+});
+
+describe("switching the environment disconnects everything connected first", () => {
+  it("disconnects every connecting or connected database before adopting the new environment", async () => {
+    api.catalog.mockResolvedValue({
+      TEAM_MEMBER: ["dev", "staging"],
+      OTHER_DATABASE: ["dev", "staging"],
+    });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "dev",
+      },
+      OTHER_DATABASE: {
+        state: DatabaseConnectionState.Disconnected,
+        environment: null,
+      },
+    });
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDatabases());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
     });
 
-    await waitFor(function updated() {
-      expect(result.current.database).toBe("TEAM_MEMBER");
+    act(function switchToStaging() {
+      result.current.selectEnvironment("staging");
     });
-    expect(api.updateSelectedDatabase).toHaveBeenCalledWith("TEAM_MEMBER");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(api.disconnect).toHaveBeenCalledExactlyOnceWith("TEAM_MEMBER");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(result.current.environment).toBe("staging");
+    expect(api.updateEnvironment).toHaveBeenCalledWith("staging");
   });
 
-  it("selectEnvironment calls the bridge and adopts what it returns", async () => {
-    api.selectedEnvironment.mockResolvedValue("iceqa01");
-    api.updateSelectedEnvironment.mockResolvedValue("dev");
+  it("does not disconnect anything when nothing is connected", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
+    api.currentEnvironment.mockResolvedValue("dev");
     const { result } = renderHook(() => useDatabases());
-    await waitFor(function mounted() {
-      expect(result.current.environment).toBe("iceqa01");
-    });
-
-    act(function select() {
-      result.current.selectEnvironment("dev");
-    });
-
-    await waitFor(function updated() {
+    await waitFor(function loaded() {
       expect(result.current.environment).toBe("dev");
     });
-    expect(api.updateSelectedEnvironment).toHaveBeenCalledWith("dev");
+
+    act(function switchToStaging() {
+      result.current.selectEnvironment("staging");
+    });
+
+    await waitFor(function switched() {
+      expect(result.current.environment).toBe("staging");
+    });
+    expect(api.disconnect).not.toHaveBeenCalled();
   });
 });
 
 describe("status and errors are polled on an interval", () => {
-  beforeEach(function useFakeTime() {
-    vi.useFakeTimers();
-  });
-
-  afterEach(function useRealTime() {
-    vi.useRealTimers();
-  });
-
   it("picks up a status change from main", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    vi.useFakeTimers();
     const { result } = renderHook(() => useDatabases());
-    api.status.mockResolvedValue("connected");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "dev",
+      },
+    });
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
 
-    expect(result.current.state).toBe("connected");
+    const row = result.current.rows.find((each) => each.name === "TEAM_MEMBER");
+    expect(row?.state).toBe(DatabaseConnectionState.Connected);
   });
 
   it("picks up new database connection errors", async () => {
@@ -186,6 +227,7 @@ describe("status and errors are polled on an interval", () => {
       resolution: ["Sign in again"],
       raw: null,
     };
+    vi.useFakeTimers();
     const { result } = renderHook(() => useDatabases());
     api.databaseConnectionErrors.mockResolvedValue([diagnosis]);
 
@@ -197,65 +239,120 @@ describe("status and errors are polled on an interval", () => {
   });
 });
 
-describe("connect and disconnect act on the current selection", () => {
-  it("connect calls the bridge with the picked database and environment", async () => {
-    api.selectedDatabase.mockResolvedValue("TEAM_MEMBER");
-    api.selectedEnvironment.mockResolvedValue("dev");
+describe("connect and disconnect act on one row", () => {
+  it("connect calls the bridge with the row's name and the current environment", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
     const { result } = renderHook(() => useDatabases());
     await waitFor(function loaded() {
-      expect(result.current.database).toBe("TEAM_MEMBER");
+      expect(result.current.environment).toBe("dev");
     });
 
     act(function connect() {
-      result.current.connect();
+      result.current.connect("TEAM_MEMBER");
     });
 
     await waitFor(function connecting() {
-      expect(result.current.state).toBe("connecting");
+      const row = result.current.rows.find(
+        (each) => each.name === "TEAM_MEMBER"
+      );
+      expect(row?.state).toBe(DatabaseConnectionState.Connecting);
     });
     expect(api.connect).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
   });
 
   it("disconnect calls the bridge and adopts what it returns", async () => {
-    api.selectedDatabase.mockResolvedValue("TEAM_MEMBER");
-    api.selectedEnvironment.mockResolvedValue("dev");
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
     const { result } = renderHook(() => useDatabases());
     await waitFor(function loaded() {
-      expect(result.current.database).toBe("TEAM_MEMBER");
+      expect(result.current.environment).toBe("dev");
     });
     act(function connect() {
-      result.current.connect();
+      result.current.connect("TEAM_MEMBER");
     });
     await waitFor(function connecting() {
-      expect(result.current.state).toBe("connecting");
+      const row = result.current.rows.find(
+        (each) => each.name === "TEAM_MEMBER"
+      );
+      expect(row?.state).toBe(DatabaseConnectionState.Connecting);
     });
 
     act(function disconnect() {
-      result.current.disconnect();
+      result.current.disconnect("TEAM_MEMBER");
     });
 
     await waitFor(function disconnected() {
-      expect(result.current.state).toBe("disconnected");
+      const row = result.current.rows.find(
+        (each) => each.name === "TEAM_MEMBER"
+      );
+      expect(row?.state).toBe(DatabaseConnectionState.Disconnected);
     });
-    expect(api.disconnect).toHaveBeenCalledOnce();
+    expect(api.disconnect).toHaveBeenCalledWith("TEAM_MEMBER");
   });
 });
 
-describe("copying the password calls the bridge with the current selection", () => {
-  it("resolves with whatever the bridge resolves", async () => {
-    api.selectedDatabase.mockResolvedValue("TEAM_MEMBER");
-    api.selectedEnvironment.mockResolvedValue("dev");
+describe("copying the password calls the bridge with the row's own connected environment", () => {
+  it("uses the toolbar's environment when the row isn't connected", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
     const { result } = renderHook(() => useDatabases());
     await waitFor(function loaded() {
-      expect(result.current.database).toBe("TEAM_MEMBER");
+      expect(result.current.environment).toBe("dev");
     });
 
-    const actual = await result.current.copyPassword();
+    const actual = await result.current.copyPassword("TEAM_MEMBER");
 
     expect(api.copyPasswordToClipboard).toHaveBeenCalledWith(
       "TEAM_MEMBER",
       "dev"
     );
     expect(actual).toBe(true);
+  });
+
+  it("uses the environment the row is actually connected under", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "staging",
+      },
+    });
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDatabases());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    await result.current.copyPassword("TEAM_MEMBER");
+
+    expect(api.copyPasswordToClipboard).toHaveBeenCalledWith(
+      "TEAM_MEMBER",
+      "staging"
+    );
+  });
+});
+
+describe("updating a row's local port", () => {
+  it("calls the bridge and adopts the saved value", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    act(function change() {
+      result.current.updateLocalPort("TEAM_MEMBER", 9999);
+    });
+
+    await waitFor(function updated() {
+      const row = result.current.rows.find(
+        (each) => each.name === "TEAM_MEMBER"
+      );
+      expect(row?.localPort).toBe(9999);
+    });
+    expect(api.updateLocalPort).toHaveBeenCalledWith("TEAM_MEMBER", 9999);
   });
 });

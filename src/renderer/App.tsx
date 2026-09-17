@@ -17,6 +17,17 @@ const TAB_ITEMS: TabRailItem[] = [
   { id: AppTab.Databases, icon: IconName.Database, label: "Databases" },
 ];
 
+/**
+ * Classes for a tab's wrapper: visible when active, hidden (not unmounted)
+ * otherwise — so switching tabs doesn't reset a feature's own state (the
+ * Supergraph table's loading state, in particular) back to its first render.
+ */
+function tabClasses(active: boolean): string {
+  return [styles.app__body__tab, active ? "" : styles["app__body__tab--hidden"]]
+    .join(" ")
+    .trim();
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState(AppTab.Supergraph);
 
@@ -32,8 +43,12 @@ export default function App() {
           }}
         />
         <div className={styles.app__body__main}>
-          {activeTab === AppTab.Supergraph && <Supergraph />}
-          {activeTab === AppTab.Databases && <Databases />}
+          <div className={tabClasses(activeTab === AppTab.Supergraph)}>
+            <Supergraph />
+          </div>
+          <div className={tabClasses(activeTab === AppTab.Databases)}>
+            <Databases />
+          </div>
         </div>
       </div>
     </div>

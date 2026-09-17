@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,25 +12,13 @@ import {
   vi,
 } from "vitest";
 
-const GENERATED_DIR = mkdtempSync(
-  join(tmpdir(), "local-supergraph-databases-generated-")
-);
+import { DatabaseConnectionState } from "@/shared/databases/databases.types";
+import { ErrorKey } from "@/shared/errors/errors.types";
+
 const CONFIG_DIR = mkdtempSync(
   join(tmpdir(), "local-supergraph-databases-config-")
 );
 const DATABASES_CONFIG_FILE = join(CONFIG_DIR, "databases.json");
-const DATABASE_CONNECTION_LOG_FILE = join(
-  GENERATED_DIR,
-  "database-connection.log"
-);
-
-vi.mock("@/main/services/rover/rover.constants", async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import("@/main/services/rover/rover.constants")
-    >();
-  return { ...actual, GENERATED_DIR };
-});
 
 vi.mock(
   "@/main/services/databases/databases.constants",
@@ -39,11 +27,7 @@ vi.mock(
       await importOriginal<
         typeof import("@/main/services/databases/databases.constants")
       >();
-    return {
-      ...actual,
-      DATABASES_CONFIG_FILE,
-      DATABASE_CONNECTION_LOG_FILE,
-    };
+    return { ...actual, DATABASES_CONFIG_FILE };
   }
 );
 
@@ -54,7 +38,7 @@ vi.mock("@/main/services/environment/environment.service", () => ({
 }));
 
 const sessionState = vi.hoisted(() => ({
-  onOutput: null as ((chunk: string) => void) | null,
+  onOutput: new Map<string, (chunk: string) => void>(),
 }));
 
 const awsState = vi.hoisted(() => ({
@@ -68,9 +52,9 @@ vi.mock("@/main/services/aws/aws.service", () => ({
   checkCredentials: (...args: unknown[]) => awsState.checkCredentials(...args),
   getSecretValue: (...args: unknown[]) => awsState.getSecretValue(...args),
   startPortForward: (...args: unknown[]) => {
-    const [params, onOutput] = args as [unknown, (chunk: string) => void];
-    sessionState.onOutput = onOutput;
-    return awsState.startPortForward(params, onOutput);
+    const [id, , onOutput] = args as [string, unknown, (chunk: string) => void];
+    sessionState.onOutput.set(id, onOutput);
+    return awsState.startPortForward(...args);
   },
   stopPortForward: (...args: unknown[]) => awsState.stopPortForward(...args),
 }));
@@ -93,7 +77,7 @@ const CONFIG_FIXTURE = {
         target_instance: "i-0cde9921dd8328ed9",
         host: "team-member-prod.example.com",
         port: 5432,
-        local_port: 5432,
+        local_port: 5433,
         aws_profile: "omfsvcshubprod",
         database_name: "team_member_subgraph",
         username: "tm_user_prod",
@@ -116,7 +100,7 @@ function removeConfigFile(): void {
 beforeEach(function isolate() {
   vi.resetModules();
   removeConfigFile();
-  sessionState.onOutput = null;
+  sessionState.onOutput.clear();
   awsState.checkCredentials.mockReset();
   awsState.getSecretValue.mockReset();
   awsState.startPortForward.mockReset();
@@ -128,7 +112,6 @@ afterEach(function restoreMocks() {
 });
 
 afterAll(function removeTempDirs() {
-  rmSync(GENERATED_DIR, { recursive: true, force: true });
   rmSync(CONFIG_DIR, { recursive: true, force: true });
 });
 
@@ -199,8 +182,10 @@ describe("connecting checks credentials before ever starting a session", () => {
 
     const actual = await databases.connect("TEAM_MEMBER", "dev");
 
-    expect(actual).toBe("disconnected");
-    expect(errors.databaseConnectionErrors()[0]?.key).toBe("AWS_CLI_MISSING");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsCliMissing
+    );
     expect(awsState.startPortForward).not.toHaveBeenCalled();
   });
 
@@ -216,19 +201,24 @@ describe("connecting checks credentials before ever starting a session", () => {
 
     const actual = await databases.connect("TEAM_MEMBER", "dev");
 
-    expect(actual).toBe("disconnected");
-    expect(errors.databaseConnectionErrors()[0]?.key).toBe("AWS_SSO_EXPIRED");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsSsoExpired
+    );
     expect(awsState.startPortForward).not.toHaveBeenCalled();
   });
 
-  it("is a no-op for a pick that isn't in the catalog", async () => {
+  it("reports DatabaseEntryMissing and stays disconnected for a pick that isn't in the catalog", async () => {
     writeConfigFile(CONFIG_FIXTURE);
-    const { databases } = await freshDatabases();
+    const { databases, errors } = await freshDatabases();
 
     const actual = await databases.connect("NOT_A_DATABASE", "dev");
 
-    expect(actual).toBe("disconnected");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
     expect(awsState.checkCredentials).not.toHaveBeenCalled();
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.DatabaseEntryMissing
+    );
   });
 
   it("starts the port-forwarding session once credentials are valid", async () => {
@@ -248,8 +238,9 @@ describe("connecting checks credentials before ever starting a session", () => {
 
     const actual = await databases.connect("TEAM_MEMBER", "dev");
 
-    expect(actual).toBe("connecting");
+    expect(actual).toBe(DatabaseConnectionState.Connecting);
     expect(awsState.startPortForward).toHaveBeenCalledWith(
+      "TEAM_MEMBER",
       {
         target: "i-0f8d1aa5cbf4b87a1",
         host: "team-member.example.com",
@@ -257,6 +248,55 @@ describe("connecting checks credentials before ever starting a session", () => {
         localPort: 5432,
         profile: "omfsvcshubdev",
       },
+      expect.any(Function)
+    );
+  });
+
+  it("uses the target environment's own local_port, not another environment's", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "{}",
+      stderr: "",
+    });
+    awsState.startPortForward.mockResolvedValue({
+      started: true,
+      found: true,
+      error: null,
+    });
+    const { databases } = await freshDatabases();
+
+    await databases.connect("TEAM_MEMBER", "prod");
+
+    expect(awsState.startPortForward).toHaveBeenCalledWith(
+      "TEAM_MEMBER",
+      expect.objectContaining({ localPort: 5433 }),
+      expect.any(Function)
+    );
+  });
+
+  it("prefers a session-only local port override over the config default", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "{}",
+      stderr: "",
+    });
+    awsState.startPortForward.mockResolvedValue({
+      started: true,
+      found: true,
+      error: null,
+    });
+    const { databases } = await freshDatabases();
+    databases.updateLocalPort("TEAM_MEMBER", 9999);
+
+    await databases.connect("TEAM_MEMBER", "dev");
+
+    expect(awsState.startPortForward).toHaveBeenCalledWith(
+      "TEAM_MEMBER",
+      expect.objectContaining({ localPort: 9999 }),
       expect.any(Function)
     );
   });
@@ -299,8 +339,10 @@ describe("connecting checks credentials before ever starting a session", () => {
 
     const actual = await databases.connect("TEAM_MEMBER", "dev");
 
-    expect(actual).toBe("disconnected");
-    expect(errors.databaseConnectionErrors()[0]?.key).toBe("AWS_CLI_MISSING");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsCliMissing
+    );
   });
 
   it("reports the spawn error when the session fails to start for another reason", async () => {
@@ -320,8 +362,81 @@ describe("connecting checks credentials before ever starting a session", () => {
 
     const actual = await databases.connect("TEAM_MEMBER", "dev");
 
-    expect(actual).toBe("disconnected");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
     expect(errors.databaseConnectionErrors().length).toBeGreaterThan(0);
+  });
+});
+
+describe("a disconnect that lands while connect() is still in flight always wins", () => {
+  it("does not leave the database connecting if disconnected while credentials are still resolving", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    let resolveCredentials: (value: {
+      found: boolean;
+      succeeded: boolean;
+      stdout: string;
+      stderr: string;
+    }) => void = () => {};
+    awsState.checkCredentials.mockImplementationOnce(
+      () =>
+        new Promise(function pending(resolve) {
+          resolveCredentials = resolve;
+        })
+    );
+    const { databases } = await freshDatabases();
+
+    const connecting = databases.connect("TEAM_MEMBER", "dev");
+    await databases.disconnect("TEAM_MEMBER");
+    resolveCredentials({
+      found: true,
+      succeeded: true,
+      stdout: "{}",
+      stderr: "",
+    });
+    const actual = await connecting;
+
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Disconnected
+    );
+    expect(awsState.startPortForward).not.toHaveBeenCalled();
+  });
+
+  it("stops a port forward that already started if disconnected before connect() settles", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "{}",
+      stderr: "",
+    });
+    let resolveForward: (value: {
+      started: boolean;
+      found: boolean;
+      error: string | null;
+    }) => void = () => {};
+    awsState.startPortForward.mockImplementationOnce(
+      () =>
+        new Promise(function pending(resolve) {
+          resolveForward = resolve;
+        })
+    );
+    const { databases } = await freshDatabases();
+
+    const connecting = databases.connect("TEAM_MEMBER", "dev");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(awsState.startPortForward).toHaveBeenCalledOnce();
+
+    await databases.disconnect("TEAM_MEMBER");
+    resolveForward({ started: true, found: true, error: null });
+    const actual = await connecting;
+
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Disconnected
+    );
+    expect(awsState.stopPortForward).toHaveBeenCalledTimes(2);
+    expect(awsState.stopPortForward).toHaveBeenCalledWith("TEAM_MEMBER");
   });
 });
 
@@ -330,7 +445,7 @@ describe("the open session's own output drives its state from Connecting to Conn
     connect: (
       database: string,
       environment: string
-    ) => Promise<string> | string;
+    ) => DatabaseConnectionState | Promise<DatabaseConnectionState>;
   }): Promise<void> {
     awsState.checkCredentials.mockResolvedValue({
       found: true,
@@ -351,11 +466,10 @@ describe("the open session's own output drives its state from Connecting to Conn
     const { databases } = await freshDatabases();
     await connectSuccessfully(databases);
 
-    sessionState.onOutput?.("Waiting for connections...\n");
+    sessionState.onOutput.get("TEAM_MEMBER")?.("Waiting for connections...\n");
 
-    expect(databases.status()).toBe("connected");
-    expect(readFileSync(DATABASE_CONNECTION_LOG_FILE, "utf8")).toContain(
-      "Waiting for connections"
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Connected
     );
   });
 
@@ -364,11 +478,15 @@ describe("the open session's own output drives its state from Connecting to Conn
     const { databases, errors } = await freshDatabases();
     await connectSuccessfully(databases);
 
-    sessionState.onOutput?.("SessionManagerPlugin is not found.\n");
+    sessionState.onOutput.get("TEAM_MEMBER")?.(
+      "SessionManagerPlugin is not found.\n"
+    );
 
-    expect(databases.status()).toBe("disconnected");
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Disconnected
+    );
     expect(errors.databaseConnectionErrors()[0]?.key).toBe(
-      "SESSION_MANAGER_PLUGIN_MISSING"
+      ErrorKey.SessionManagerPluginMissing
     );
   });
 });
@@ -390,18 +508,18 @@ describe("disconnecting always returns to disconnected", () => {
     const { databases } = await freshDatabases();
     await databases.connect("TEAM_MEMBER", "dev");
 
-    const actual = await databases.disconnect();
+    const actual = await databases.disconnect("TEAM_MEMBER");
 
-    expect(actual).toBe("disconnected");
-    expect(awsState.stopPortForward).toHaveBeenCalledOnce();
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
+    expect(awsState.stopPortForward).toHaveBeenCalledWith("TEAM_MEMBER");
   });
 
   it("is safe to call while already disconnected", async () => {
     const { databases } = await freshDatabases();
 
-    const actual = await databases.disconnect();
+    const actual = await databases.disconnect("TEAM_MEMBER");
 
-    expect(actual).toBe("disconnected");
+    expect(actual).toBe(DatabaseConnectionState.Disconnected);
   });
 });
 
@@ -411,6 +529,9 @@ describe("copying the password writes the secret to the clipboard, never returni
     awsState.getSecretValue.mockResolvedValue({
       password: "s3cr3t",
       found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
     });
     const { databases } = await freshDatabases();
     const writer = vi.fn();
@@ -465,7 +586,13 @@ describe("copying the password writes the secret to the clipboard, never returni
 
   it("reports AwsCliMissing and resolves false when aws isn't found", async () => {
     writeConfigFile(CONFIG_FIXTURE);
-    awsState.getSecretValue.mockResolvedValue({ password: null, found: false });
+    awsState.getSecretValue.mockResolvedValue({
+      password: null,
+      found: false,
+      succeeded: false,
+      stdout: "",
+      stderr: "",
+    });
     const { databases, errors } = await freshDatabases();
 
     const actual = await databases.copyPasswordToClipboard(
@@ -474,12 +601,20 @@ describe("copying the password writes the secret to the clipboard, never returni
     );
 
     expect(actual).toBe(false);
-    expect(errors.databaseConnectionErrors()[0]?.key).toBe("AWS_CLI_MISSING");
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsCliMissing
+    );
   });
 
-  it("resolves false without reporting an error when the secret lookup fails for another reason", async () => {
+  it("reports an error and resolves false when the secret lookup fails for another reason", async () => {
     writeConfigFile(CONFIG_FIXTURE);
-    awsState.getSecretValue.mockResolvedValue({ password: null, found: true });
+    awsState.getSecretValue.mockResolvedValue({
+      password: null,
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr: "access denied",
+    });
     const { databases, errors } = await freshDatabases();
 
     const actual = await databases.copyPasswordToClipboard(
@@ -488,18 +623,6 @@ describe("copying the password writes the secret to the clipboard, never returni
     );
 
     expect(actual).toBe(false);
-    expect(errors.databaseConnectionErrors()).toEqual([]);
-  });
-});
-
-describe("the selected database and environment are read through settings", () => {
-  it("writes through updateSelectedDatabase/updateSelectedEnvironment and reads them back", async () => {
-    const { databases } = await freshDatabases();
-
-    await databases.updateSelectedDatabase("TEAM_MEMBER");
-    await databases.updateSelectedEnvironment("dev");
-
-    expect(databases.selectedDatabase()).toBe("TEAM_MEMBER");
-    expect(databases.selectedEnvironment()).toBe("dev");
+    expect(errors.databaseConnectionErrors().length).toBeGreaterThan(0);
   });
 });

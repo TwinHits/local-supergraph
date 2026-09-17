@@ -1,7 +1,6 @@
 /** Which log the renderer is reading. */
 export enum LogSourceId {
   Rover = "rover",
-  DatabaseConnection = "database-connection",
 }
 
 /** A source's position in its own log, opaque to everything but that source. */

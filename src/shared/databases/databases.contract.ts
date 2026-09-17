@@ -2,6 +2,7 @@ import {
   type DatabaseCatalog,
   type DatabaseConnectionInfo,
   type DatabaseConnectionState,
+  type DatabaseRowState,
 } from "@/shared/databases/databases.types";
 
 /** What the renderer may do with database connections. */
@@ -12,11 +13,13 @@ export type DatabasesContract = {
     environment: string
   ): DatabaseConnectionInfo | null;
   connect(database: string, environment: string): DatabaseConnectionState;
-  disconnect(): DatabaseConnectionState;
-  status(): DatabaseConnectionState;
+  disconnect(database: string): DatabaseConnectionState;
+  statuses(): Record<string, DatabaseRowState>;
+  localPort(database: string): number;
+  updateLocalPort(database: string, port: number): number;
   copyPasswordToClipboard(database: string, environment: string): boolean;
-  selectedDatabase(): string;
-  updateSelectedDatabase(name: string): string;
-  selectedEnvironment(): string;
-  updateSelectedEnvironment(name: string): string;
+  copyPasswordUrlEncodedToClipboard(
+    database: string,
+    environment: string
+  ): boolean;
 };

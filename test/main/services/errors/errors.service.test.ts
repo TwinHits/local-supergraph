@@ -21,7 +21,7 @@ function keysOf(diagnoses: { key: ErrorKey }[]): ErrorKey[] {
 beforeEach(function forgetEverything() {
   clearSupergraphFailure();
   clearSubgraphFailure("characters");
-  clearDatabaseConnectionFailure();
+  clearDatabaseConnectionFailure("TEAM_MEMBER");
 });
 
 describe("each subgraph tracks its own failures", () => {
@@ -109,7 +109,11 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 
   it("reports separately from the supergraph and subgraphs", () => {
-    reportDatabaseConnectionFailure([ErrorKey.AwsSsoExpired], "");
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
     reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
@@ -120,9 +124,35 @@ describe("the database connection tracks its own failure, separate from the supe
     ]);
   });
 
-  it("a later report replaces the one before it", () => {
-    reportDatabaseConnectionFailure([ErrorKey.AwsCliMissing], "");
-    reportDatabaseConnectionFailure([ErrorKey.AwsSsoExpired], "");
+  it("a later report for the same database replaces the one before it", () => {
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsCliMissing],
+      ""
+    );
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+
+    expect(keysOf(errors.databaseConnectionErrors())).toEqual([
+      ErrorKey.AwsSsoExpired,
+    ]);
+  });
+
+  it("one database's failure is not another's", () => {
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+
+    expect(keysOf(errors.databaseConnectionErrors())).toEqual([
+      ErrorKey.AwsSsoExpired,
+    ]);
+
+    clearDatabaseConnectionFailure("OTHER_DATABASE");
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.AwsSsoExpired,
@@ -130,14 +160,22 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 
   it("clearing forgets the last failure", () => {
-    reportDatabaseConnectionFailure([ErrorKey.AwsSsoExpired], "");
-    clearDatabaseConnectionFailure();
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+    clearDatabaseConnectionFailure("TEAM_MEMBER");
 
     expect(errors.databaseConnectionErrors()).toEqual([]);
   });
 
   it("the text is read for a signature the caller did not name explicitly", () => {
-    reportDatabaseConnectionFailure([], "SessionManagerPlugin is not found.");
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [],
+      "SessionManagerPlugin is not found."
+    );
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.SessionManagerPluginMissing,

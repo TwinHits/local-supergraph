@@ -1,54 +1,71 @@
+import DatabaseRow from "@/renderer/features/Databases/components/DatabaseRow";
 import styles from "@/renderer/features/Databases/Databases.module.scss";
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
-import LogsDrawer, { useLogsDrawer } from "@/renderer/features/LogsDrawer";
+import DataTable, { type Column } from "@/renderer/ui/DataTable";
+import DropdownSelect from "@/renderer/ui/DropdownSelect";
 import ErrorBanner from "@/renderer/ui/ErrorBanner";
-import TextLabel from "@/renderer/ui/TextLabel";
-import { DatabaseConnectionState } from "@/shared/databases/databases.types";
-import { LogSourceId } from "@/shared/logs/logs.types";
 
-const STATUS_LABELS: Record<DatabaseConnectionState, string> = {
-  [DatabaseConnectionState.Disconnected]: "Disconnected",
-  [DatabaseConnectionState.Connecting]: "Connecting",
-  [DatabaseConnectionState.Connected]: "Connected",
-};
+const NO_SORT = "";
 
-/** Connects to an RDS database over an SSM port-forwarding session. */
+const COLUMNS: Column[] = [
+  { key: "status", label: "Status", sortable: false },
+  { key: "name", label: "Name", sortable: false },
+  { key: "localPort", label: "Local port", sortable: false },
+  { key: "connection", label: "", sortable: false },
+  { key: "copyPassword", label: "", sortable: false },
+  { key: "copyPasswordUrlEncoded", label: "", sortable: false },
+];
+
+/** Connects to RDS databases over SSM port-forwarding sessions. */
 export default function Databases() {
   const databases = useDatabases();
-  const logsDrawer = useLogsDrawer(LogSourceId.DatabaseConnection);
 
   return (
     <>
+      <div className={styles.databases__toolbar}>
+        <DropdownSelect
+          value={databases.environment}
+          label="Environment"
+          options={databases.environments}
+          onChange={databases.selectEnvironment}
+        />
+      </div>
       <div className={styles.databases__content}>
         {databases.errors.length > 0 && (
           <ErrorBanner diagnoses={databases.errors} />
         )}
-        {databases.connectionInfo !== null && (
-          <div className={styles.databases__info}>
-            <span className={styles.databases__field}>
-              <TextLabel muted>Host</TextLabel>
-              <TextLabel>{databases.connectionInfo.host}</TextLabel>
-            </span>
-            <span className={styles.databases__field}>
-              <TextLabel muted>Port</TextLabel>
-              <TextLabel>{databases.connectionInfo.localPort}</TextLabel>
-            </span>
-            <span className={styles.databases__field}>
-              <TextLabel muted>Database</TextLabel>
-              <TextLabel>{databases.connectionInfo.databaseName}</TextLabel>
-            </span>
-            <span className={styles.databases__field}>
-              <TextLabel muted>Username</TextLabel>
-              <TextLabel>{databases.connectionInfo.username}</TextLabel>
-            </span>
-            <span className={styles.databases__field}>
-              <TextLabel muted>Status</TextLabel>
-              <TextLabel>{STATUS_LABELS[databases.state]}</TextLabel>
-            </span>
-          </div>
-        )}
+        <DataTable
+          columns={COLUMNS}
+          sortKey={NO_SORT}
+          onSort={function noop() {}}
+        >
+          {databases.rows.map(function toRow(row) {
+            return (
+              <DatabaseRow
+                key={row.name}
+                name={row.name}
+                state={row.state}
+                localPort={row.localPort}
+                onConnect={function connect() {
+                  databases.connect(row.name);
+                }}
+                onDisconnect={function disconnect() {
+                  databases.disconnect(row.name);
+                }}
+                onPortChange={function changePort(port) {
+                  databases.updateLocalPort(row.name, port);
+                }}
+                onCopyPassword={function copy() {
+                  return databases.copyPassword(row.name);
+                }}
+                onCopyPasswordUrlEncoded={function copy() {
+                  return databases.copyPasswordUrlEncoded(row.name);
+                }}
+              />
+            );
+          })}
+        </DataTable>
       </div>
-      <LogsDrawer drawer={logsDrawer} />
     </>
   );
 }

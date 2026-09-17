@@ -139,31 +139,28 @@ describe("the variant filter is what SUPERGRAPH_VARIANTS used to be — a settin
   });
 });
 
-describe("the selected database and environment are stored alongside the other settings", () => {
-  it("start out empty", async () => {
-    const { selectedDatabase, selectedEnvironment } = await freshSettings();
+describe("the current environment is stored alongside the other settings", () => {
+  it("starts out empty", async () => {
+    const { settings } = await freshSettings();
 
-    expect(selectedDatabase()).toBe("");
-    expect(selectedEnvironment()).toBe("");
+    expect(settings.currentEnvironment()).toBe("");
   });
 
-  it("remember an updated pick", async () => {
-    const { selectedDatabase, updateSelectedDatabase } = await freshSettings();
+  it("remembers an updated pick", async () => {
+    const { settings } = await freshSettings();
 
-    updateSelectedDatabase("TEAM_MEMBER");
+    settings.updateEnvironment("dev");
 
-    expect(selectedDatabase()).toBe("TEAM_MEMBER");
+    expect(settings.currentEnvironment()).toBe("dev");
   });
 
   it("a saved pick survives being reloaded from disk", async () => {
     const first = await freshSettings();
-    first.updateSelectedDatabase("TEAM_MEMBER");
-    first.updateSelectedEnvironment("dev");
+    first.settings.updateEnvironment("dev");
 
     const second = await freshSettings();
 
-    expect(second.selectedDatabase()).toBe("TEAM_MEMBER");
-    expect(second.selectedEnvironment()).toBe("dev");
+    expect(second.settings.currentEnvironment()).toBe("dev");
   });
 });
 

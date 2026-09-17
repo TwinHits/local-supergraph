@@ -18,3 +18,14 @@
   display: flex;
   flex-direction: column;
 }
+
+// display:contents so an active tab's children lay out exactly as if they
+// were direct flex children of .app__body__main, same as before this
+// wrapper existed.
+.app__body__tab {
+  display: contents;
+}
+
+.app__body__tab--hidden {
+  display: none;
+}

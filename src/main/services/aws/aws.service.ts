@@ -93,11 +93,23 @@ export async function getSecretValue(
   ]);
 
   if (!result.found || !result.succeeded) {
-    return { password: null, found: result.found };
+    return {
+      password: null,
+      found: result.found,
+      succeeded: result.succeeded,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    };
   }
 
   const raw = result.stdout.trim();
-  return { password: raw === "" ? null : extractPassword(raw), found: true };
+  return {
+    password: raw === "" ? null : extractPassword(raw),
+    found: true,
+    succeeded: true,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
 }
 
 /** Signals a process group, tolerating one that is already gone. */
@@ -110,19 +122,21 @@ function signalGroup(pid: number, signal: NodeJS.Signals): boolean {
   }
 }
 
-let sessionProcess: ChildProcess | null = null;
+const sessions = new Map<string, ChildProcess>();
 
 /**
  * Spawns `aws ssm start-session` for port forwarding, detached so the
  * session-manager-plugin child it spawns is killed along with it. Sets
  * `USE_BASTION`, matching the reference script's own env — the session
- * doesn't route through the bastion without it.
+ * doesn't route through the bastion without it. Keyed by `id` (the database
+ * name) since more than one session can be open at once.
  */
 export function startPortForward(
+  id: string,
   params: PortForwardParams,
   onOutput: (chunk: string) => void
 ): Promise<PortForwardStartResult> {
-  if (sessionProcess !== null) {
+  if (sessions.has(id)) {
     return Promise.resolve({ started: false, found: true, error: null });
   }
 
@@ -148,7 +162,7 @@ export function startPortForward(
       }
     );
 
-    sessionProcess = child;
+    sessions.set(id, child);
 
     function captureOutput(chunk: Buffer): void {
       onOutput(chunk.toString("utf8"));
@@ -158,7 +172,7 @@ export function startPortForward(
     child.stderr?.on("data", captureOutput);
 
     child.once("error", function failedToStart(error: NodeJS.ErrnoException) {
-      sessionProcess = null;
+      sessions.delete(id);
       const found = error.code !== NOT_FOUND_CODE;
       resolve({ started: false, found, error: found ? error.message : null });
     });
@@ -168,18 +182,18 @@ export function startPortForward(
     });
 
     child.once("close", function stopped() {
-      sessionProcess = null;
+      sessions.delete(id);
     });
   });
 }
 
-/** Kills the open session and everything it spawned. */
-export function stopPortForward(): Promise<void> {
-  if (sessionProcess === null) {
+/** Kills one open session and everything it spawned. */
+export function stopPortForward(id: string): Promise<void> {
+  const stoppingProcess = sessions.get(id);
+  if (stoppingProcess === undefined) {
     return Promise.resolve();
   }
 
-  const stoppingProcess = sessionProcess;
   const pid = stoppingProcess.pid;
 
   if (pid === undefined) {
@@ -202,7 +216,7 @@ export function stopPortForward(): Promise<void> {
     }
 
     setTimeout(function forceKill() {
-      if (sessionProcess === stoppingProcess) {
+      if (sessions.get(id) === stoppingProcess) {
         signalGroup(pid, "SIGKILL");
       }
     }, SHUTDOWN_GRACE_MS);

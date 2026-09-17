@@ -9,5 +9,9 @@ type TableCellProps = {
 
 /** One cell of a TableRow. */
 export default function TableCell({ children }: TableCellProps) {
-  return <MuiTableCell className={styles.tableCell}>{children}</MuiTableCell>;
+  return (
+    <MuiTableCell className={styles.tableCell}>
+      <span className={styles.tableCell__inner}>{children}</span>
+    </MuiTableCell>
+  );
 }

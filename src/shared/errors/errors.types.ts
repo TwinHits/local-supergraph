@@ -5,6 +5,8 @@ export enum ErrorKey {
   GraphNotFound = "GRAPH_NOT_FOUND",
   AwsCliMissing = "AWS_CLI_MISSING",
   SessionManagerPluginMissing = "SESSION_MANAGER_PLUGIN_MISSING",
+  AwsProfileMissing = "AWS_PROFILE_MISSING",
+  DatabaseEntryMissing = "DATABASE_ENTRY_MISSING",
   AwsSsoExpired = "AWS_SSO_EXPIRED",
   PortInUse = "PORT_IN_USE",
   PortInvalid = "PORT_INVALID",

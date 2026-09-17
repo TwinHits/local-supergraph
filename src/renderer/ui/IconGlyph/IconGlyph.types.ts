@@ -14,6 +14,8 @@ export enum IconName {
   OpenLink = "open-link",
   Clear = "clear",
   Copy = "copy",
+  CopyUrlEncoded = "copy-url-encoded",
+  Success = "success",
   CollapseRail = "collapse-rail",
   ExpandRail = "expand-rail",
   Supergraph = "supergraph",

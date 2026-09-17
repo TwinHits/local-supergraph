@@ -16,3 +16,9 @@ export type DatabaseConnectionInfo = {
   databaseName: string;
   username: string;
 };
+
+/** One database's connection state, and which environment it's tied to. */
+export type DatabaseRowState = {
+  state: DatabaseConnectionState;
+  environment: string | null;
+};

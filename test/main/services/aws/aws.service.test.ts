@@ -143,7 +143,13 @@ describe("reading a secret's value tries the bash script's known fields before f
 
     const actual = await getSecretValue("secret-id", "profile", "us-east-1");
 
-    expect(actual).toEqual({ password: "topsecret", found: true });
+    expect(actual).toEqual({
+      password: "topsecret",
+      found: true,
+      succeeded: true,
+      stdout: '{"password":"topsecret"}',
+      stderr: "",
+    });
     expect(execState.calls[0]).toEqual([
       "aws",
       [
@@ -198,7 +204,13 @@ describe("reading a secret's value tries the bash script's known fields before f
 
     const actual = await getSecretValue("secret-id", "profile", "us-east-1");
 
-    expect(actual).toEqual({ password: null, found: false });
+    expect(actual).toEqual({
+      password: null,
+      found: false,
+      succeeded: false,
+      stdout: "",
+      stderr: "",
+    });
   });
 
   it("resolves password: null when the call fails for another reason", async () => {
@@ -207,7 +219,13 @@ describe("reading a secret's value tries the bash script's known fields before f
 
     const actual = await getSecretValue("secret-id", "profile", "us-east-1");
 
-    expect(actual).toEqual({ password: null, found: true });
+    expect(actual).toEqual({
+      password: null,
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr: "",
+    });
   });
 
   it("resolves password: null when the secret string is empty", async () => {
@@ -216,7 +234,13 @@ describe("reading a secret's value tries the bash script's known fields before f
 
     const actual = await getSecretValue("secret-id", "profile", "us-east-1");
 
-    expect(actual).toEqual({ password: null, found: true });
+    expect(actual).toEqual({
+      password: null,
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
   });
 });
 
@@ -225,6 +249,7 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
     const { startPortForward } = await freshAws();
 
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -265,6 +290,7 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
     const chunks: string[] = [];
 
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -290,6 +316,7 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
     const { startPortForward } = await freshAws();
 
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -311,6 +338,7 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
     const { startPortForward } = await freshAws();
 
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -326,7 +354,7 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
     expect(actual).toEqual({ started: false, found: true, error: "EACCES" });
   });
 
-  it("is a no-op while a session is already open", async () => {
+  it("is a no-op for the same id while a session is already open", async () => {
     const { startPortForward } = await freshAws();
     const params = {
       target: "i-0123",
@@ -335,11 +363,19 @@ describe("starting a port-forwarding session spawns aws ssm with the bastion env
       localPort: 5432,
       profile: "omfsvcshubdev",
     };
-    const first = startPortForward(params, function onOutput() {});
+    const first = startPortForward(
+      "TEAM_MEMBER",
+      params,
+      function onOutput() {}
+    );
     latestProcess().emit("spawn");
     await first;
 
-    const second = await startPortForward(params, function onOutput() {});
+    const second = await startPortForward(
+      "TEAM_MEMBER",
+      params,
+      function onOutput() {}
+    );
 
     expect(second).toEqual({ started: false, found: true, error: null });
     expect(spawnMock).toHaveBeenCalledOnce();
@@ -350,13 +386,14 @@ describe("stopping kills the open session and everything it spawned", () => {
   it("resolves immediately when nothing is running", async () => {
     const { stopPortForward } = await freshAws();
 
-    await expect(stopPortForward()).resolves.toBeUndefined();
+    await expect(stopPortForward("TEAM_MEMBER")).resolves.toBeUndefined();
     expect(process.kill).not.toHaveBeenCalled();
   });
 
   it("signals the process and resolves once it closes", async () => {
     const { startPortForward, stopPortForward } = await freshAws();
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -370,7 +407,7 @@ describe("stopping kills the open session and everything it spawned", () => {
     child.emit("spawn");
     await starting;
 
-    const stopping = stopPortForward();
+    const stopping = stopPortForward("TEAM_MEMBER");
     child.emit("close");
     await stopping;
 
@@ -381,6 +418,7 @@ describe("stopping kills the open session and everything it spawned", () => {
     vi.useFakeTimers();
     const { startPortForward, stopPortForward } = await freshAws();
     const starting = startPortForward(
+      "TEAM_MEMBER",
       {
         target: "i-0123",
         host: "db.example.com",
@@ -393,7 +431,7 @@ describe("stopping kills the open session and everything it spawned", () => {
     latestProcess().emit("spawn");
     await starting;
 
-    const stopping = stopPortForward();
+    const stopping = stopPortForward("TEAM_MEMBER");
     await vi.advanceTimersByTimeAsync(5000);
     latestProcess().emit("close");
     await stopping;

@@ -9,5 +9,7 @@ export type SettingsContract = {
   updateVariant(name: string): string;
   variantFilter(): string[];
   updateVariantFilter(names: string[]): string[];
+  currentEnvironment(): string;
+  updateEnvironment(name: string): string;
   localAddress(port: number | null): string;
 };

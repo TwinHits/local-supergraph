@@ -1,10 +1,4 @@
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 import {
   checkCredentials,
@@ -13,7 +7,7 @@ import {
   stopPortForward,
 } from "@/main/services/aws/aws.service";
 import {
-  DATABASE_CONNECTION_LOG_FILE,
+  CLIPBOARD_CLEAR_MS,
   DATABASES_CONFIG_FILE,
 } from "@/main/services/databases/databases.constants";
 import {
@@ -25,32 +19,51 @@ import {
   clearDatabaseConnectionFailure,
   reportDatabaseConnectionFailure,
 } from "@/main/services/errors/errors.service";
-import { GENERATED_DIR } from "@/main/services/rover/rover.constants";
-import {
-  selectedDatabase,
-  selectedEnvironment,
-  updateSelectedDatabase,
-  updateSelectedEnvironment,
-} from "@/main/services/settings/settings.service";
 import { type Awaitable } from "@/shared/contract/contract.types";
 import { type DatabasesContract } from "@/shared/databases/databases.contract";
 import {
   type DatabaseCatalog,
   type DatabaseConnectionInfo,
   DatabaseConnectionState,
+  type DatabaseRowState,
 } from "@/shared/databases/databases.types";
 import { ErrorKey } from "@/shared/errors/errors.types";
 
 const READY_MARKER = /waiting for connections/i;
 const PLUGIN_MISSING_MARKER = /SessionManagerPlugin is not found/i;
 
-let state: DatabaseConnectionState = DatabaseConnectionState.Disconnected;
+const connections = new Map<string, DatabaseRowState>();
+const localPortOverrides = new Map<string, number>();
 
 let writeToClipboard: (text: string) => void = function noopWriter() {};
+let readClipboard: () => Promise<string> = function noopReader() {
+  return Promise.resolve("");
+};
 
 /** Gives the service the clipboard writer it copies passwords through. */
 export function registerClipboardWriter(writer: (text: string) => void): void {
   writeToClipboard = writer;
+}
+
+/** Gives the service the clipboard reader it checks before auto-clearing a copied password. */
+export function registerClipboardReader(reader: () => Promise<string>): void {
+  readClipboard = reader;
+}
+
+/**
+ * Copies text to the clipboard, then clears it after CLIPBOARD_CLEAR_MS —
+ * but only if the clipboard still holds exactly what was copied, so this
+ * never clobbers something else the developer copied in the meantime.
+ */
+function copyToClipboardWithExpiration(text: string): void {
+  writeToClipboard(text);
+  setTimeout(function clear() {
+    void readClipboard().then(function maybeClear(current) {
+      if (current === text) {
+        writeToClipboard("");
+      }
+    });
+  }, CLIPBOARD_CLEAR_MS);
 }
 
 /** Reads databases.json fresh, since it may be hand-edited without restarting the app. */
@@ -73,6 +86,15 @@ function lookupEntry(
   targetEnvironment: string
 ): DatabaseConfigEntry | null {
   return readConfigFile().databases[database]?.[targetEnvironment] ?? null;
+}
+
+/** A database's config, under whichever of its environments happens to be listed first. */
+function anyEntry(database: string): DatabaseConfigEntry | null {
+  const environments = readConfigFile().databases[database];
+  if (environments === undefined) {
+    return null;
+  }
+  return Object.values(environments)[0] ?? null;
 }
 
 /** Pulls the Secrets Manager id out of the config's console URL. */
@@ -112,104 +134,186 @@ function connectionInfo(
   };
 }
 
-/** Appends the session's raw output to its log, and watches for the lines that change its state. */
-function watchSessionOutput(chunk: string): void {
-  appendFileSync(DATABASE_CONNECTION_LOG_FILE, chunk);
+/** The local port a database's row should show: a session override, else its config default. */
+function localPort(database: string): number {
+  const override = localPortOverrides.get(database);
+  if (override !== undefined) {
+    return override;
+  }
+  return anyEntry(database)?.local_port ?? 0;
+}
 
+/** Overrides a database's local port for this session only. */
+function updateLocalPort(database: string, port: number): number {
+  localPortOverrides.set(database, port);
+  return port;
+}
+
+/** Watches one database session's raw output for the lines that change its state. */
+function watchSessionOutput(database: string, chunk: string): void {
   if (PLUGIN_MISSING_MARKER.test(chunk)) {
     reportDatabaseConnectionFailure(
+      database,
       [ErrorKey.SessionManagerPluginMissing],
       chunk
     );
-    state = DatabaseConnectionState.Disconnected;
+    connections.set(database, {
+      state: DatabaseConnectionState.Disconnected,
+      environment: null,
+    });
     return;
   }
 
   if (READY_MARKER.test(chunk)) {
-    clearDatabaseConnectionFailure();
-    state = DatabaseConnectionState.Connected;
+    clearDatabaseConnectionFailure(database);
+    const current = connections.get(database);
+    if (current !== undefined) {
+      connections.set(database, {
+        ...current,
+        state: DatabaseConnectionState.Connected,
+      });
+    }
   }
 }
 
-/** Connects to a (database, environment) pick. A no-op while already connecting or connected. */
+/**
+ * Whether a disconnect (or a competing connect) has replaced the
+ * (database, targetEnvironment) attempt still running in connect().
+ */
+function wasSuperseded(database: string, targetEnvironment: string): boolean {
+  const current = connections.get(database);
+  return (
+    current === undefined ||
+    current.state !== DatabaseConnectionState.Connecting ||
+    current.environment !== targetEnvironment
+  );
+}
+
+/**
+ * Connects to a (database, environment) pick. A no-op while that database is
+ * already connecting or connected — under whichever environment it was
+ * started with, not necessarily this one.
+ */
 async function connect(
   database: string,
   targetEnvironment: string
 ): Promise<DatabaseConnectionState> {
-  if (state !== DatabaseConnectionState.Disconnected) {
-    return state;
+  const existing = connections.get(database);
+  if (
+    existing !== undefined &&
+    existing.state !== DatabaseConnectionState.Disconnected
+  ) {
+    return existing.state;
   }
 
   const entry = lookupEntry(database, targetEnvironment);
   if (entry === null) {
-    return state;
+    reportDatabaseConnectionFailure(
+      database,
+      [ErrorKey.DatabaseEntryMissing],
+      null
+    );
+    return existing?.state ?? DatabaseConnectionState.Disconnected;
   }
 
-  state = DatabaseConnectionState.Connecting;
+  connections.set(database, {
+    state: DatabaseConnectionState.Connecting,
+    environment: targetEnvironment,
+  });
 
   const credentials = await checkCredentials(entry.aws_profile);
+  if (wasSuperseded(database, targetEnvironment)) {
+    return DatabaseConnectionState.Disconnected;
+  }
   if (!credentials.found) {
-    reportDatabaseConnectionFailure([ErrorKey.AwsCliMissing], null);
-    state = DatabaseConnectionState.Disconnected;
-    return state;
+    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    connections.set(database, {
+      state: DatabaseConnectionState.Disconnected,
+      environment: null,
+    });
+    return DatabaseConnectionState.Disconnected;
   }
   if (!credentials.succeeded) {
     reportDatabaseConnectionFailure(
-      [ErrorKey.AwsSsoExpired],
+      database,
+      [],
       credentials.stderr === "" ? credentials.stdout : credentials.stderr
     );
-    state = DatabaseConnectionState.Disconnected;
-    return state;
+    connections.set(database, {
+      state: DatabaseConnectionState.Disconnected,
+      environment: null,
+    });
+    return DatabaseConnectionState.Disconnected;
   }
 
-  mkdirSync(GENERATED_DIR, { recursive: true });
-  writeFileSync(DATABASE_CONNECTION_LOG_FILE, "");
-
   const forward = await startPortForward(
+    database,
     {
       target: entry.target_instance,
       host: entry.host,
       port: entry.port,
-      localPort: entry.local_port,
+      localPort: localPortOverrides.get(database) ?? entry.local_port,
       profile: entry.aws_profile,
     },
-    watchSessionOutput
+    function onOutput(chunk) {
+      watchSessionOutput(database, chunk);
+    }
   );
 
+  if (wasSuperseded(database, targetEnvironment)) {
+    if (forward.started) {
+      await stopPortForward(database);
+    }
+    return DatabaseConnectionState.Disconnected;
+  }
   if (!forward.found) {
-    reportDatabaseConnectionFailure([ErrorKey.AwsCliMissing], null);
-    state = DatabaseConnectionState.Disconnected;
-    return state;
+    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    connections.set(database, {
+      state: DatabaseConnectionState.Disconnected,
+      environment: null,
+    });
+    return DatabaseConnectionState.Disconnected;
   }
   if (!forward.started) {
-    reportDatabaseConnectionFailure([], forward.error);
-    state = DatabaseConnectionState.Disconnected;
-    return state;
+    reportDatabaseConnectionFailure(database, [], forward.error);
+    connections.set(database, {
+      state: DatabaseConnectionState.Disconnected,
+      environment: null,
+    });
+    return DatabaseConnectionState.Disconnected;
   }
 
-  return state;
+  return DatabaseConnectionState.Connecting;
 }
 
-/** Disconnects the open session, if there is one. */
-async function disconnect(): Promise<DatabaseConnectionState> {
-  await stopPortForward();
-  state = DatabaseConnectionState.Disconnected;
-  return state;
+/** Disconnects one database's open session, if it has one. */
+async function disconnect(database: string): Promise<DatabaseConnectionState> {
+  await stopPortForward(database);
+  connections.set(database, {
+    state: DatabaseConnectionState.Disconnected,
+    environment: null,
+  });
+  return DatabaseConnectionState.Disconnected;
 }
 
-/** Copies a (database, environment) pick's password to the clipboard. The secret itself never crosses IPC. */
-async function copyPasswordToClipboard(
+/** Every database touched this session (connecting, connected, or failed), and its state. */
+function statuses(): Record<string, DatabaseRowState> {
+  return Object.fromEntries(connections);
+}
+
+/** Resolves a (database, environment) pick's password, or null if either lookup step fails. */
+async function resolvePassword(
   database: string,
   targetEnvironment: string
-): Promise<boolean> {
+): Promise<string | null> {
   const entry = lookupEntry(database, targetEnvironment);
   if (entry === null) {
-    return false;
+    return null;
   }
 
   const secretId = secretIdFromPasswordUrl(entry.password_url);
   if (secretId === null) {
-    return false;
+    return null;
   }
 
   const secret = await getSecretValue(
@@ -218,14 +322,43 @@ async function copyPasswordToClipboard(
     environment.awsRegion()
   );
   if (!secret.found) {
-    reportDatabaseConnectionFailure([ErrorKey.AwsCliMissing], null);
-    return false;
+    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    return null;
   }
-  if (secret.password === null) {
-    return false;
+  if (!secret.succeeded) {
+    reportDatabaseConnectionFailure(
+      database,
+      [],
+      secret.stderr === "" ? secret.stdout : secret.stderr
+    );
+    return null;
   }
+  return secret.password;
+}
 
-  writeToClipboard(secret.password);
+/** Copies a (database, environment) pick's password to the clipboard. The secret itself never crosses IPC. */
+async function copyPasswordToClipboard(
+  database: string,
+  targetEnvironment: string
+): Promise<boolean> {
+  const password = await resolvePassword(database, targetEnvironment);
+  if (password === null) {
+    return false;
+  }
+  copyToClipboardWithExpiration(password);
+  return true;
+}
+
+/** Same as `copyPasswordToClipboard`, URL-encoded for pasting into a connection-string URI. */
+async function copyPasswordUrlEncodedToClipboard(
+  database: string,
+  targetEnvironment: string
+): Promise<boolean> {
+  const password = await resolvePassword(database, targetEnvironment);
+  if (password === null) {
+    return false;
+  }
+  copyToClipboardWithExpiration(encodeURIComponent(password));
   return true;
 }
 
@@ -234,12 +367,9 @@ export const databases: Awaitable<DatabasesContract> = {
   connectionInfo,
   connect,
   disconnect,
-  status(): DatabaseConnectionState {
-    return state;
-  },
+  statuses,
+  localPort,
+  updateLocalPort,
   copyPasswordToClipboard,
-  selectedDatabase,
-  updateSelectedDatabase,
-  selectedEnvironment,
-  updateSelectedEnvironment,
+  copyPasswordUrlEncodedToClipboard,
 };

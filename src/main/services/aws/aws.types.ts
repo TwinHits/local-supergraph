@@ -29,8 +29,11 @@ export type PortForwardStartResult = {
   error: string | null;
 };
 
-/** A secret's resolved password, and whether the binary was found at all. */
+/** A secret's resolved password, and enough of the raw call to explain a failure. */
 export type SecretResult = {
   password: string | null;
   found: boolean;
+  succeeded: boolean;
+  stdout: string;
+  stderr: string;
 };

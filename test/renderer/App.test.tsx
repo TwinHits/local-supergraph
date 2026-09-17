@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -80,6 +80,35 @@ vi.mock("@/renderer/api", function stubBridge() {
         supergraphErrors() {
           return Promise.resolve(stub.supergraphErrors);
         },
+        databaseConnectionErrors() {
+          return Promise.resolve([]);
+        },
+      },
+      databases: {
+        catalog() {
+          return Promise.resolve({});
+        },
+        localPort() {
+          return Promise.resolve(0);
+        },
+        updateLocalPort(_database: string, port: number) {
+          return Promise.resolve(port);
+        },
+        statuses() {
+          return Promise.resolve({});
+        },
+        connect() {
+          return Promise.resolve("connecting");
+        },
+        disconnect() {
+          return Promise.resolve("disconnected");
+        },
+        copyPasswordToClipboard() {
+          return Promise.resolve(true);
+        },
+        copyPasswordUrlEncodedToClipboard() {
+          return Promise.resolve(true);
+        },
       },
       settings: {
         read() {
@@ -99,6 +128,12 @@ vi.mock("@/renderer/api", function stubBridge() {
         },
         updateVariantFilter() {
           return Promise.resolve([]);
+        },
+        currentEnvironment() {
+          return Promise.resolve("");
+        },
+        updateEnvironment(name: string) {
+          return Promise.resolve(name);
         },
         routerAddress() {
           return Promise.resolve("http://localhost:4041");
@@ -141,7 +176,10 @@ describe("the table lists every subgraph from the registry", () => {
     render(<App />);
     await screen.findByText("https://characters.svc/graphql");
 
-    const rows = screen.getAllByRole("row");
+    // The Databases tab renders its own table while hidden, so scope to the
+    // subgraph table specifically rather than every table in the document.
+    const subgraphTable = screen.getAllByRole("table")[0];
+    const rows = within(subgraphTable).getAllByRole("row");
 
     // One heading row, then one per subgraph.
     expect(rows.length).toBe(stub.subgraphs.length + 1);

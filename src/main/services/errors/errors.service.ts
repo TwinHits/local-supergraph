@@ -15,8 +15,8 @@ type Report = {
 };
 
 const subgraphReports = new Map<string, Report>();
+const databaseConnectionReports = new Map<string, Report>();
 let supergraphReport: Report | null = null;
-let databaseConnectionReport: Report | null = null;
 
 /** The keys the caller named plus any found in the text. */
 function buildReport(keys: ErrorKey[], raw: string | null): Report {
@@ -59,17 +59,18 @@ export function clearSubgraphFailure(name: string): void {
   subgraphReports.delete(name);
 }
 
-/** Records what went wrong with the database connection. */
+/** Records what went wrong with one database's connection. */
 export function reportDatabaseConnectionFailure(
+  database: string,
   keys: ErrorKey[],
   raw: string | null
 ): void {
-  databaseConnectionReport = buildReport(keys, raw);
+  databaseConnectionReports.set(database, buildReport(keys, raw));
 }
 
-/** Forgets the database connection's last failure. */
-export function clearDatabaseConnectionFailure(): void {
-  databaseConnectionReport = null;
+/** Forgets one database connection's last failure. */
+export function clearDatabaseConnectionFailure(database: string): void {
+  databaseConnectionReports.delete(database);
 }
 
 export const errors: ErrorsContract = {
@@ -84,6 +85,6 @@ export const errors: ErrorsContract = {
     return toDiagnoses(supergraphReport);
   },
   databaseConnectionErrors(): Diagnosis[] {
-    return toDiagnoses(databaseConnectionReport);
+    return [...databaseConnectionReports.values()].flatMap(toDiagnoses);
   },
 };

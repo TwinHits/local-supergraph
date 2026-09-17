@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import HoverTooltip from "@/renderer/ui/HoverTooltip";
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/TabRail/TabRail.module.scss";
@@ -43,28 +42,27 @@ export default function TabRail({ items, activeId, onChange }: TabRailProps) {
       {items.map(function toItem(item) {
         const active = item.id === activeId;
         return (
-          <HoverTooltip key={item.id} title={item.label}>
-            <button
-              type="button"
-              aria-label={item.label}
-              className={[
-                styles.tabRail__item,
-                active ? styles["tabRail__item--active"] : "",
-              ]
-                .join(" ")
-                .trim()}
-              onClick={function select() {
-                onChange(item.id);
-              }}
-            >
-              <span className={styles.tabRail__icon}>
-                <IconGlyph name={item.icon} />
-              </span>
-              {!collapsed && (
-                <span className={styles.tabRail__label}>{item.label}</span>
-              )}
-            </button>
-          </HoverTooltip>
+          <button
+            key={item.id}
+            type="button"
+            aria-label={item.label}
+            className={[
+              styles.tabRail__item,
+              active ? styles["tabRail__item--active"] : "",
+            ]
+              .join(" ")
+              .trim()}
+            onClick={function select() {
+              onChange(item.id);
+            }}
+          >
+            <span className={styles.tabRail__icon}>
+              <IconGlyph name={item.icon} />
+            </span>
+            {!collapsed && (
+              <span className={styles.tabRail__label}>{item.label}</span>
+            )}
+          </button>
         );
       })}
     </div>

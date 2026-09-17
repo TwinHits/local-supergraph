@@ -5,6 +5,7 @@ import { app, BrowserWindow, clipboard, shell } from "electron";
 
 import {
   databases,
+  registerClipboardReader,
   registerClipboardWriter,
 } from "@/main/services/databases/databases.service";
 import { supergraph } from "@/main/services/rover/rover.service";
@@ -77,13 +78,18 @@ function quitApp(): void {
 
 let quitting = false;
 
-/** Stops rover and any open database connection before the app quits, so neither outlives the window. */
+/** Stops rover and any open database connections before the app quits, so neither outlives the window. */
 function stopBackgroundProcessesBeforeQuit(event: Electron.Event): void {
   const supergraphRunning = supergraph.status() !== SupergraphState.Stopped;
-  const databaseConnected =
-    databases.status() !== DatabaseConnectionState.Disconnected;
+  const connectedDatabases = Object.entries(databases.statuses())
+    .filter(function isConnected([, row]) {
+      return row.state !== DatabaseConnectionState.Disconnected;
+    })
+    .map(function toName([name]) {
+      return name;
+    });
 
-  if (quitting || (!supergraphRunning && !databaseConnected)) {
+  if (quitting || (!supergraphRunning && connectedDatabases.length === 0)) {
     return;
   }
   event.preventDefault();
@@ -91,9 +97,9 @@ function stopBackgroundProcessesBeforeQuit(event: Electron.Event): void {
 
   const stopped = Promise.all([
     supergraphRunning ? Promise.resolve(supergraph.stop()) : Promise.resolve(),
-    databaseConnected
-      ? Promise.resolve(databases.disconnect())
-      : Promise.resolve(),
+    ...connectedDatabases.map(function disconnectOne(name) {
+      return Promise.resolve(databases.disconnect(name));
+    }),
   ]);
   const gaveUp = new Promise<void>(function wait(resolve) {
     setTimeout(resolve, QUIT_STOP_TIMEOUT_MS);
@@ -106,6 +112,7 @@ function stopBackgroundProcessesBeforeQuit(event: Electron.Event): void {
 
 registerBridge();
 registerClipboardWriter(clipboard.writeText);
+registerClipboardReader(clipboard.readText);
 void app.whenReady().then(function ready() {
   registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
   startServices();

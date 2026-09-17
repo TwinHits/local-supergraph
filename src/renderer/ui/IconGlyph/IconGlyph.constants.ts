@@ -1,6 +1,7 @@
 import AccountTreeGlyph from "@mui/icons-material/AccountTree";
 import ArrowLeftGlyph from "@mui/icons-material/ArrowLeft";
 import ArrowRightGlyph from "@mui/icons-material/ArrowRight";
+import CheckGlyph from "@mui/icons-material/Check";
 import ChevronLeftGlyph from "@mui/icons-material/ChevronLeft";
 import ChevronRightGlyph from "@mui/icons-material/ChevronRight";
 import ClearAllGlyph from "@mui/icons-material/ClearAll";
@@ -8,6 +9,7 @@ import CloseGlyph from "@mui/icons-material/Close";
 import ContentCopyGlyph from "@mui/icons-material/ContentCopy";
 import FullscreenGlyph from "@mui/icons-material/Fullscreen";
 import FullscreenExitGlyph from "@mui/icons-material/FullscreenExit";
+import InsertLinkGlyph from "@mui/icons-material/InsertLink";
 import MinimizeGlyph from "@mui/icons-material/Minimize";
 import OpenInNewGlyph from "@mui/icons-material/OpenInNew";
 import PlayArrowGlyph from "@mui/icons-material/PlayArrow";
@@ -38,6 +40,8 @@ export const GLYPHS: Record<IconName, Glyph> = {
   [IconName.OpenLink]: OpenInNewGlyph,
   [IconName.Clear]: ClearAllGlyph,
   [IconName.Copy]: ContentCopyGlyph,
+  [IconName.CopyUrlEncoded]: InsertLinkGlyph,
+  [IconName.Success]: CheckGlyph,
   [IconName.CollapseRail]: ChevronLeftGlyph,
   [IconName.ExpandRail]: ChevronRightGlyph,
   [IconName.Supergraph]: AccountTreeGlyph,

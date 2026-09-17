@@ -54,11 +54,31 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
       "Install the Session Manager plugin, then try connecting again",
     ],
   },
+  [ErrorKey.AwsProfileMissing]: {
+    key: ErrorKey.AwsProfileMissing,
+    summary: "The AWS profile is not configured",
+    cause:
+      "The profile databases.json names for this database isn't set up in your AWS config.",
+    resolution: [
+      "Check the aws_profile value in databases.json matches a profile you have",
+      "Set the profile up (aws configure sso), or fix the name in databases.json",
+    ],
+  },
+  [ErrorKey.DatabaseEntryMissing]: {
+    key: ErrorKey.DatabaseEntryMissing,
+    summary: "No config entry for that database and environment",
+    cause:
+      "databases.json has no entry for this database under the selected environment.",
+    resolution: [
+      "Add an entry for this database under that environment in databases.json",
+      "Pick a different environment",
+    ],
+  },
   [ErrorKey.AwsSsoExpired]: {
     key: ErrorKey.AwsSsoExpired,
     summary: "AWS credentials are stale",
-    cause: "Your SSO session expired, so the subgraph can't start.",
-    resolution: ["Sign in again, then restart the subgraph"],
+    cause: "Your SSO session expired.",
+    resolution: ["Sign in again, then retry"],
   },
   [ErrorKey.PortInUse]: {
     key: ErrorKey.PortInUse,
@@ -124,6 +144,8 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
   [ErrorKey.SessionManagerPluginMissing]: [
     /SessionManagerPlugin is not found/i,
   ],
+  [ErrorKey.AwsProfileMissing]: [/config profile .*could not be found/i],
+  [ErrorKey.DatabaseEntryMissing]: [],
   [ErrorKey.AwsSsoExpired]: [
     /\bexpiredtoken\b/i,
     /sso session .*expired/i,
@@ -151,6 +173,8 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.GraphNotFound,
   ErrorKey.AwsCliMissing,
   ErrorKey.SessionManagerPluginMissing,
+  ErrorKey.AwsProfileMissing,
+  ErrorKey.DatabaseEntryMissing,
   ErrorKey.AwsSsoExpired,
   ErrorKey.PortInUse,
   ErrorKey.PortInvalid,
