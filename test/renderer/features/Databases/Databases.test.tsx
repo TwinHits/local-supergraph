@@ -365,10 +365,15 @@ describe("interactive cells inside a row do not also toggle its drawer", () => {
     api.localPorts.mockResolvedValue({ TEAM_MEMBER: { dev: 5432 } });
     render(<Databases />);
     await screen.findByText("TEAM_MEMBER");
+    await waitFor(function loaded() {
+      expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
+    });
 
     await userEvent.click(screen.getByDisplayValue("5432"));
 
-    expect(api.connectionInfo).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText("No connection info for this environment.")
+    ).toBeNull();
   });
 
   it("does not expand the drawer when the connect control is clicked", async () => {
@@ -376,12 +381,17 @@ describe("interactive cells inside a row do not also toggle its drawer", () => {
     api.currentEnvironment.mockResolvedValue("dev");
     render(<Databases />);
     await screen.findByText("TEAM_MEMBER");
+    await waitFor(function loaded() {
+      expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
+    });
 
     await userEvent.click(
       screen.getByRole("button", { name: "Connect to the database" })
     );
 
     expect(api.connect).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
-    expect(api.connectionInfo).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText("No connection info for this environment.")
+    ).toBeNull();
   });
 });

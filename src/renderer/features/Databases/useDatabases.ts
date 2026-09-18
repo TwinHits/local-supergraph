@@ -38,6 +38,9 @@ export function useDatabases() {
   );
   const [localPorts, setLocalPorts] = useState<LocalPortMap>({});
   const [errors, setErrors] = useState<Diagnosis[]>([]);
+  const [connectionInfoByName, setConnectionInfoByName] = useState<
+    Record<string, DatabaseConnectionInfo | null>
+  >({});
 
   // A ref, not `statuses` itself, so selectEnvironment keeps a stable
   // identity across polls instead of re-running the mount-only catalog effect.
@@ -138,6 +141,33 @@ export function useDatabases() {
     [statuses, environment]
   );
 
+  // Which environment each name's connection info was last fetched for, so a
+  // row that later connects under a different environment gets refetched
+  // instead of showing another environment's stale info.
+  const fetchedEnvironmentByNameRef = useRef<Record<string, string>>({});
+  useEffect(
+    function loadConnectionInfoEagerly() {
+      if (environment === "") {
+        return;
+      }
+      Object.keys(catalog).forEach(function fetchOne(name) {
+        const targetEnvironment = environmentFor(name);
+        if (fetchedEnvironmentByNameRef.current[name] === targetEnvironment) {
+          return;
+        }
+        fetchedEnvironmentByNameRef.current[name] = targetEnvironment;
+        void api.databases
+          .connectionInfo(name, targetEnvironment)
+          .then(function apply(info) {
+            setConnectionInfoByName(function merge(current) {
+              return { ...current, [name]: info };
+            });
+          });
+      });
+    },
+    [catalog, environment, environmentFor]
+  );
+
   const updateLocalPort = useCallback(
     function change(name: string, port: number) {
       const targetEnvironment = environmentFor(name);
@@ -151,13 +181,6 @@ export function useDatabases() {
             };
           });
         });
-    },
-    [environmentFor]
-  );
-
-  const connectionInfo = useCallback(
-    function fetch(name: string): Promise<DatabaseConnectionInfo | null> {
-      return api.databases.connectionInfo(name, environmentFor(name));
     },
     [environmentFor]
   );
@@ -217,10 +240,10 @@ export function useDatabases() {
     selectEnvironment,
     rows,
     errors,
+    connectionInfoByName,
     connect,
     disconnect,
     updateLocalPort,
-    connectionInfo,
     copyPassword,
     copyPasswordUrlEncoded,
     login,

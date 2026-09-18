@@ -356,7 +356,7 @@ describe("copying the password calls the bridge with the row's own connected env
   });
 });
 
-describe("loading a row's connection info calls the bridge with the row's own connected environment", () => {
+describe("connection info loads eagerly in the background, using the row's own connected environment", () => {
   it("uses the toolbar's environment when the row isn't connected", async () => {
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
     api.currentEnvironment.mockResolvedValue("dev");
@@ -369,14 +369,12 @@ describe("loading a row's connection info calls the bridge with the row's own co
     };
     api.connectionInfo.mockResolvedValue(info);
     const { result } = renderHook(() => useDatabases());
+
     await waitFor(function loaded() {
-      expect(result.current.environment).toBe("dev");
+      expect(result.current.connectionInfoByName.TEAM_MEMBER).toEqual(info);
     });
 
-    const actual = await result.current.connectionInfo("TEAM_MEMBER");
-
     expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
-    expect(actual).toEqual(info);
   });
 
   it("uses the environment the row is actually connected under", async () => {
@@ -389,12 +387,10 @@ describe("loading a row's connection info calls the bridge with the row's own co
       },
     });
     vi.useFakeTimers();
-    const { result } = renderHook(() => useDatabases());
+    renderHook(() => useDatabases());
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1000);
     });
-
-    await result.current.connectionInfo("TEAM_MEMBER");
 
     expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "staging");
   });
@@ -404,13 +400,10 @@ describe("loading a row's connection info calls the bridge with the row's own co
     api.currentEnvironment.mockResolvedValue("dev");
     api.connectionInfo.mockResolvedValue(null);
     const { result } = renderHook(() => useDatabases());
+
     await waitFor(function loaded() {
-      expect(result.current.environment).toBe("dev");
+      expect(result.current.connectionInfoByName.TEAM_MEMBER).toBeNull();
     });
-
-    const actual = await result.current.connectionInfo("TEAM_MEMBER");
-
-    expect(actual).toBeNull();
   });
 });
 

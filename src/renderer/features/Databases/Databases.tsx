@@ -10,7 +10,6 @@ import { useErrorModal } from "@/renderer/features/ErrorModal/useErrorModal";
 import DataTable, { type Column } from "@/renderer/ui/DataTable";
 import DropdownSelect from "@/renderer/ui/DropdownSelect";
 import ErrorBanner from "@/renderer/ui/ErrorBanner";
-import { type DatabaseConnectionInfo } from "@/shared/databases/databases.types";
 
 const DATABASES_NAME = "Databases";
 const NAME_COLUMN_KEY = "name";
@@ -30,23 +29,12 @@ export default function Databases() {
   const [expandedNames, setExpandedNames] = useState<Record<string, boolean>>(
     {}
   );
-  const [connectionInfoByName, setConnectionInfoByName] = useState<
-    Record<string, DatabaseConnectionInfo | null>
-  >({});
 
-  /** Opens or closes a row's connection-info drawer, loading its info the first time it opens. */
+  /** Opens or closes a row's connection-info drawer. */
   function toggleExpanded(name: string): void {
-    const expanding = expandedNames[name] !== true;
     setExpandedNames(function toggle(current) {
-      return { ...current, [name]: expanding };
+      return { ...current, [name]: current[name] !== true };
     });
-    if (expanding && connectionInfoByName[name] === undefined) {
-      void databases.connectionInfo(name).then(function apply(info) {
-        setConnectionInfoByName(function merge(current) {
-          return { ...current, [name]: info };
-        });
-      });
-    }
   }
 
   return (
@@ -91,7 +79,7 @@ export default function Databases() {
                 state={row.state}
                 localPort={row.localPort}
                 expanded={expandedNames[row.name] === true}
-                connectionInfo={connectionInfoByName[row.name]}
+                connectionInfo={databases.connectionInfoByName[row.name]}
                 onToggleExpanded={function toggle() {
                   toggleExpanded(row.name);
                 }}
