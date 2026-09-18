@@ -182,3 +182,23 @@ describe("the database connection tracks its own failure, separate from the supe
     ]);
   });
 });
+
+describe("a database connection diagnosis can be traced back to which database it's about", () => {
+  it("carries the database that was reported on each of its diagnoses", () => {
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+
+    expect(errors.databaseConnectionErrors()[0]?.database).toBe("TEAM_MEMBER");
+  });
+
+  it("does not attach a database to a subgraph or supergraph diagnosis", () => {
+    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
+    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
+
+    expect(errors.subgraphErrors()["characters"]?.[0]?.database).toBeNull();
+    expect(errors.supergraphErrors()[0]?.database).toBeNull();
+  });
+});

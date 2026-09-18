@@ -3,6 +3,7 @@ import {
   type DatabaseConnectionInfo,
   type DatabaseConnectionState,
   type DatabaseRowState,
+  type LocalPortMap,
 } from "@/shared/databases/databases.types";
 
 /** What the renderer may do with database connections. */
@@ -15,11 +16,12 @@ export type DatabasesContract = {
   connect(database: string, environment: string): DatabaseConnectionState;
   disconnect(database: string): DatabaseConnectionState;
   statuses(): Record<string, DatabaseRowState>;
-  localPort(database: string): number;
-  updateLocalPort(database: string, port: number): number;
+  localPorts(): LocalPortMap;
+  updateLocalPort(database: string, environment: string, port: number): number;
   copyPasswordToClipboard(database: string, environment: string): boolean;
   copyPasswordUrlEncodedToClipboard(
     database: string,
     environment: string
   ): boolean;
+  ssoLogin(database: string, environment: string): boolean;
 };

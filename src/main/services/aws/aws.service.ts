@@ -50,6 +50,11 @@ export async function checkCredentials(
   return runAws(["sts", "get-caller-identity", "--profile", profile]);
 }
 
+/** Runs the browser-based SSO login flow for one profile. */
+export async function ssoLogin(profile: string): Promise<AwsExecResult> {
+  return runAws(["sso", "login", "--profile", profile]);
+}
+
 /** Tries the bash script's known field names before falling back to the raw string. */
 function extractPassword(rawSecretString: string): string {
   let parsed: unknown;

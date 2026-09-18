@@ -11,6 +11,7 @@ const FIRST: Diagnosis = {
   cause: "APOLLO_KEY is invalid or has expired.",
   resolution: ["Regenerate the key"],
   raw: "401 Unauthorized",
+  database: null,
 };
 
 const SECOND: Diagnosis = {
@@ -19,6 +20,7 @@ const SECOND: Diagnosis = {
   cause: "The graph or variant does not exist.",
   resolution: ["Check the variant"],
   raw: null,
+  database: null,
 };
 
 describe("with no failures, nothing renders", () => {
@@ -94,5 +96,40 @@ describe("clicking the banner is optional", () => {
         "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
       )
     ).toBeDefined();
+  });
+});
+
+describe("the caller can offer its own action for the failure currently shown", () => {
+  it("renders nothing extra when no renderActions is given", () => {
+    render(<ErrorBanner diagnoses={[FIRST]} />);
+
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  });
+
+  it("renders whatever the caller returns for the diagnosis currently shown", () => {
+    render(
+      <ErrorBanner
+        diagnoses={[FIRST]}
+        renderActions={function renderRetry() {
+          return <button type="button">Retry</button>;
+        }}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Retry" })).toBeDefined();
+  });
+
+  it("passes the diagnosis currently shown, not just the first one, to the caller", async () => {
+    const renderActions = vi.fn(function label(diagnosis: Diagnosis) {
+      return <span>{diagnosis.summary}</span>;
+    });
+    render(
+      <ErrorBanner diagnoses={[FIRST, SECOND]} renderActions={renderActions} />
+    );
+    expect(renderActions).toHaveBeenLastCalledWith(FIRST);
+
+    await userEvent.click(screen.getByRole("button", { name: "Next error" }));
+
+    expect(renderActions).toHaveBeenLastCalledWith(SECOND);
   });
 });

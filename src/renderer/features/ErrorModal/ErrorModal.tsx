@@ -16,6 +16,7 @@ const FALLBACK_DIAGNOSIS: Diagnosis = {
   cause: "The app doesn't have a known explanation for this one.",
   resolution: ["No known fix for this error"],
   raw: null,
+  database: null,
 };
 
 type ErrorModalProps = {

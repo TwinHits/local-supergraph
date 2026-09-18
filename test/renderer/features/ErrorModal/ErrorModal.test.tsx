@@ -12,6 +12,7 @@ function diagnosis(key: ErrorKey, summary: string): Diagnosis {
     cause: `${summary} cause`,
     resolution: [`${summary} fix`],
     raw: null,
+    database: null,
   };
 }
 

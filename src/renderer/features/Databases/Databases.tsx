@@ -1,3 +1,4 @@
+import AwsSsoLoginAction from "@/renderer/features/Databases/components/AwsSsoLoginAction";
 import DatabaseRow from "@/renderer/features/Databases/components/DatabaseRow";
 import styles from "@/renderer/features/Databases/Databases.module.scss";
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
@@ -32,7 +33,18 @@ export default function Databases() {
       </div>
       <div className={styles.databases__content}>
         {databases.errors.length > 0 && (
-          <ErrorBanner diagnoses={databases.errors} />
+          <ErrorBanner
+            diagnoses={databases.errors}
+            renderActions={function renderLogin(diagnosis) {
+              return (
+                <AwsSsoLoginAction
+                  key={diagnosis.database ?? diagnosis.summary}
+                  diagnosis={diagnosis}
+                  onLogin={databases.login}
+                />
+              );
+            }}
+          />
         )}
         <DataTable
           columns={COLUMNS}

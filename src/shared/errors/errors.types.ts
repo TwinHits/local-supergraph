@@ -28,4 +28,6 @@ export type Diagnosis = {
   cause: string;
   resolution: string[];
   raw: string | null;
+  /** Which database this is about, for a database connection failure. Null for every other kind. */
+  database: string | null;
 };

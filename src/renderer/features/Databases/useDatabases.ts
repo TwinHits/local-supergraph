@@ -5,6 +5,7 @@ import {
   type DatabaseCatalog,
   DatabaseConnectionState,
   type DatabaseRowState,
+  type LocalPortMap,
 } from "@/shared/databases/databases.types";
 import { type Diagnosis } from "@/shared/errors/errors.types";
 
@@ -34,7 +35,7 @@ export function useDatabases() {
   const [statuses, setStatuses] = useState<Record<string, DatabaseRowState>>(
     {}
   );
-  const [localPorts, setLocalPorts] = useState<Record<string, number>>({});
+  const [localPorts, setLocalPorts] = useState<LocalPortMap>({});
   const [errors, setErrors] = useState<Diagnosis[]>([]);
 
   // A ref, not `statuses` itself, so selectEnvironment keeps a stable
@@ -80,21 +81,11 @@ export function useDatabases() {
     function loadCatalog() {
       void Promise.all([
         api.databases.catalog(),
+        api.databases.localPorts(),
         api.settings.currentEnvironment(),
-      ]).then(function apply([loaded, current]) {
+      ]).then(function apply([loaded, ports, current]) {
         setCatalog(loaded);
-        const names = Object.keys(loaded);
-        void Promise.all(
-          names.map(function readPort(name) {
-            return api.databases.localPort(name);
-          })
-        ).then(function applyPorts(ports) {
-          const next: Record<string, number> = {};
-          names.forEach(function assign(name, index) {
-            next[name] = ports[index];
-          });
-          setLocalPorts(next);
-        });
+        setLocalPorts(ports);
 
         // Falls back to the config's first environment when nothing's been
         // picked yet, or the persisted pick no longer exists in the catalog.
@@ -138,23 +129,29 @@ export function useDatabases() {
     });
   }, []);
 
-  const updateLocalPort = useCallback(function change(
-    name: string,
-    port: number
-  ) {
-    void api.databases.updateLocalPort(name, port).then(function apply(saved) {
-      setLocalPorts(function merge(current) {
-        return { ...current, [name]: saved };
-      });
-    });
-  }, []);
-
   /** Whichever environment a row is connected under, else the toolbar's current pick. */
   const environmentFor = useCallback(
     function resolve(name: string) {
       return statuses[name]?.environment ?? environment;
     },
     [statuses, environment]
+  );
+
+  const updateLocalPort = useCallback(
+    function change(name: string, port: number) {
+      const targetEnvironment = environmentFor(name);
+      void api.databases
+        .updateLocalPort(name, targetEnvironment, port)
+        .then(function apply(saved) {
+          setLocalPorts(function merge(current) {
+            return {
+              ...current,
+              [name]: { ...current[name], [targetEnvironment]: saved },
+            };
+          });
+        });
+    },
+    [environmentFor]
   );
 
   const copyPassword = useCallback(
@@ -169,6 +166,19 @@ export function useDatabases() {
       return api.databases.copyPasswordUrlEncodedToClipboard(
         name,
         environmentFor(name)
+      );
+    },
+    [environmentFor]
+  );
+
+  const login = useCallback(
+    function signIn(diagnosis: Diagnosis) {
+      if (diagnosis.database === null) {
+        return Promise.resolve(false);
+      }
+      return api.databases.ssoLogin(
+        diagnosis.database,
+        environmentFor(diagnosis.database)
       );
     },
     [environmentFor]
@@ -189,7 +199,7 @@ export function useDatabases() {
       return {
         name,
         state: statuses[name]?.state ?? DatabaseConnectionState.Disconnected,
-        localPort: localPorts[name] ?? 0,
+        localPort: localPorts[name]?.[environmentFor(name)] ?? 0,
       };
     });
 
@@ -204,5 +214,6 @@ export function useDatabases() {
     updateLocalPort,
     copyPassword,
     copyPasswordUrlEncoded,
+    login,
   };
 }

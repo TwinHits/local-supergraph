@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import {
   checkCredentials,
   getSecretValue,
+  ssoLogin as runSsoLogin,
   startPortForward,
   stopPortForward,
 } from "@/main/services/aws/aws.service";
@@ -26,6 +27,7 @@ import {
   type DatabaseConnectionInfo,
   DatabaseConnectionState,
   type DatabaseRowState,
+  type LocalPortMap,
 } from "@/shared/databases/databases.types";
 import { ErrorKey } from "@/shared/errors/errors.types";
 
@@ -33,7 +35,15 @@ const READY_MARKER = /waiting for connections/i;
 const PLUGIN_MISSING_MARKER = /SessionManagerPlugin is not found/i;
 
 const connections = new Map<string, DatabaseRowState>();
+/** Session-only local port overrides, keyed by overrideKey(database, environment). */
 const localPortOverrides = new Map<string, number>();
+/** The environment each database's most recent connect() attempt targeted, kept even once it fails. */
+const lastAttemptedEnvironment = new Map<string, string>();
+
+/** A (database, environment) pick's key into `localPortOverrides`. */
+function overrideKey(database: string, targetEnvironment: string): string {
+  return `${database}|${targetEnvironment}`;
+}
 
 let writeToClipboard: (text: string) => void = function noopWriter() {};
 let readClipboard: () => Promise<string> = function noopReader() {
@@ -88,15 +98,6 @@ function lookupEntry(
   return readConfigFile().databases[database]?.[targetEnvironment] ?? null;
 }
 
-/** A database's config, under whichever of its environments happens to be listed first. */
-function anyEntry(database: string): DatabaseConfigEntry | null {
-  const environments = readConfigFile().databases[database];
-  if (environments === undefined) {
-    return null;
-  }
-  return Object.values(environments)[0] ?? null;
-}
-
 /** Pulls the Secrets Manager id out of the config's console URL. */
 function secretIdFromPasswordUrl(passwordUrl: string): string | null {
   try {
@@ -104,6 +105,21 @@ function secretIdFromPasswordUrl(passwordUrl: string): string | null {
   } catch {
     return null;
   }
+}
+
+/** Every database whose entry under `targetEnvironment` uses `profile`, the triggering one included. */
+function databasesUsingProfile(
+  targetEnvironment: string,
+  profile: string
+): string[] {
+  const config = readConfigFile();
+  const matching: string[] = [];
+  for (const [database, environments] of Object.entries(config.databases)) {
+    if (environments[targetEnvironment]?.aws_profile === profile) {
+      matching.push(database);
+    }
+  }
+  return matching;
 }
 
 /** Every database, and the environments it can be reached in. */
@@ -134,18 +150,33 @@ function connectionInfo(
   };
 }
 
-/** The local port a database's row should show: a session override, else its config default. */
-function localPort(database: string): number {
-  const override = localPortOverrides.get(database);
-  if (override !== undefined) {
-    return override;
+/**
+ * Every database's local port, per environment: a session override, else
+ * that (database, environment) entry's configured default. Reads the config
+ * once for the whole catalog rather than once per database.
+ */
+function localPorts(): LocalPortMap {
+  const config = readConfigFile();
+  const result: LocalPortMap = {};
+  for (const [database, environments] of Object.entries(config.databases)) {
+    const ports: Record<string, number> = {};
+    for (const [environmentName, entry] of Object.entries(environments)) {
+      ports[environmentName] =
+        localPortOverrides.get(overrideKey(database, environmentName)) ??
+        entry.local_port;
+    }
+    result[database] = ports;
   }
-  return anyEntry(database)?.local_port ?? 0;
+  return result;
 }
 
-/** Overrides a database's local port for this session only. */
-function updateLocalPort(database: string, port: number): number {
-  localPortOverrides.set(database, port);
+/** Overrides a (database, environment) pick's local port for this session only. */
+function updateLocalPort(
+  database: string,
+  targetEnvironment: string,
+  port: number
+): number {
+  localPortOverrides.set(overrideKey(database, targetEnvironment), port);
   return port;
 }
 
@@ -161,6 +192,10 @@ function watchSessionOutput(database: string, chunk: string): void {
       state: DatabaseConnectionState.Disconnected,
       environment: null,
     });
+    // The plugin can't proceed, but the spawned aws process may still be
+    // sitting in aws.service.ts's session map until it exits on its own;
+    // stop it now so a retry doesn't find the id still taken.
+    void stopPortForward(database);
     return;
   }
 
@@ -205,6 +240,8 @@ async function connect(
   ) {
     return existing.state;
   }
+
+  lastAttemptedEnvironment.set(database, targetEnvironment);
 
   const entry = lookupEntry(database, targetEnvironment);
   if (entry === null) {
@@ -252,7 +289,9 @@ async function connect(
       target: entry.target_instance,
       host: entry.host,
       port: entry.port,
-      localPort: localPortOverrides.get(database) ?? entry.local_port,
+      localPort:
+        localPortOverrides.get(overrideKey(database, targetEnvironment)) ??
+        entry.local_port,
       profile: entry.aws_profile,
     },
     function onOutput(chunk) {
@@ -286,14 +325,60 @@ async function connect(
   return DatabaseConnectionState.Connecting;
 }
 
-/** Disconnects one database's open session, if it has one. */
+/** Disconnects one database's open session, if it has one, and forgets its last reported failure. */
 async function disconnect(database: string): Promise<DatabaseConnectionState> {
   await stopPortForward(database);
   connections.set(database, {
     state: DatabaseConnectionState.Disconnected,
     environment: null,
   });
+  clearDatabaseConnectionFailure(database);
   return DatabaseConnectionState.Disconnected;
+}
+
+/** Runs the browser-based SSO login flow for a (database, environment) pick's configured profile. */
+async function ssoLogin(
+  database: string,
+  targetEnvironment: string
+): Promise<boolean> {
+  // connect() resets connections[database].environment to null on every
+  // failure path, so the renderer's own guess at which environment actually
+  // failed can be stale; main's record of the last real attempt isn't.
+  const resolvedEnvironment =
+    lastAttemptedEnvironment.get(database) ?? targetEnvironment;
+  const entry = lookupEntry(database, resolvedEnvironment);
+  if (entry === null) {
+    reportDatabaseConnectionFailure(
+      database,
+      [ErrorKey.DatabaseEntryMissing],
+      null
+    );
+    return false;
+  }
+
+  const result = await runSsoLogin(entry.aws_profile);
+  if (!result.found) {
+    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    return false;
+  }
+  if (!result.succeeded) {
+    reportDatabaseConnectionFailure(
+      database,
+      [],
+      result.stderr === "" ? result.stdout : result.stderr
+    );
+    return false;
+  }
+
+  // The profile, not the database, is what got fixed, so every database
+  // sharing it under this environment is cleared, not just the trigger.
+  for (const name of databasesUsingProfile(
+    resolvedEnvironment,
+    entry.aws_profile
+  )) {
+    clearDatabaseConnectionFailure(name);
+  }
+  return true;
 }
 
 /** Every database touched this session (connecting, connected, or failed), and its state. */
@@ -368,8 +453,9 @@ export const databases: Awaitable<DatabasesContract> = {
   connect,
   disconnect,
   statuses,
-  localPort,
+  localPorts,
   updateLocalPort,
   copyPasswordToClipboard,
   copyPasswordUrlEncodedToClipboard,
+  ssoLogin,
 };

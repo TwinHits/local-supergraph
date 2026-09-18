@@ -88,10 +88,10 @@ vi.mock("@/renderer/api", function stubBridge() {
         catalog() {
           return Promise.resolve({});
         },
-        localPort() {
-          return Promise.resolve(0);
+        localPorts() {
+          return Promise.resolve({});
         },
-        updateLocalPort(_database: string, port: number) {
+        updateLocalPort(_database: string, _environment: string, port: number) {
           return Promise.resolve(port);
         },
         statuses() {

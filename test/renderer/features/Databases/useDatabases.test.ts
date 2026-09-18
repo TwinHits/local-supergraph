@@ -3,10 +3,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
 import { DatabaseConnectionState } from "@/shared/databases/databases.types";
+import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
+
+function ssoExpired(database: string): Diagnosis {
+  return {
+    key: ErrorKey.AwsSsoExpired,
+    summary: "AWS credentials are stale",
+    cause: "Your SSO session expired.",
+    resolution: ["Sign in again"],
+    raw: null,
+    database,
+  };
+}
 
 const api = vi.hoisted(() => ({
   catalog: vi.fn(),
-  localPort: vi.fn(),
+  localPorts: vi.fn(),
   updateLocalPort: vi.fn(),
   statuses: vi.fn(),
   connect: vi.fn(),
@@ -16,15 +28,16 @@ const api = vi.hoisted(() => ({
   currentEnvironment: vi.fn(),
   updateEnvironment: vi.fn(),
   databaseConnectionErrors: vi.fn(),
+  ssoLogin: vi.fn(),
 }));
 
 vi.mock("@/renderer/api", () => ({
   api: {
     databases: {
       catalog: () => api.catalog(),
-      localPort: (database: string) => api.localPort(database),
-      updateLocalPort: (database: string, port: number) =>
-        api.updateLocalPort(database, port),
+      localPorts: () => api.localPorts(),
+      updateLocalPort: (database: string, environment: string, port: number) =>
+        api.updateLocalPort(database, environment, port),
       statuses: () => api.statuses(),
       connect: (database: string, environment: string) =>
         api.connect(database, environment),
@@ -35,6 +48,8 @@ vi.mock("@/renderer/api", () => ({
         database: string,
         environment: string
       ) => api.copyPasswordUrlEncodedToClipboard(database, environment),
+      ssoLogin: (database: string, environment: string) =>
+        api.ssoLogin(database, environment),
     },
     settings: {
       currentEnvironment: () => api.currentEnvironment(),
@@ -48,10 +63,12 @@ vi.mock("@/renderer/api", () => ({
 
 beforeEach(function isolate() {
   api.catalog.mockReset().mockResolvedValue({});
-  api.localPort.mockReset().mockResolvedValue(0);
+  api.localPorts.mockReset().mockResolvedValue({});
   api.updateLocalPort
     .mockReset()
-    .mockImplementation((_database, port) => Promise.resolve(port));
+    .mockImplementation((_database, _environment, port) =>
+      Promise.resolve(port)
+    );
   api.statuses.mockReset().mockResolvedValue({});
   api.connect.mockReset().mockResolvedValue(DatabaseConnectionState.Connecting);
   api.disconnect
@@ -64,6 +81,7 @@ beforeEach(function isolate() {
     .mockReset()
     .mockImplementation((name: string) => Promise.resolve(name));
   api.databaseConnectionErrors.mockReset().mockResolvedValue([]);
+  api.ssoLogin.mockReset().mockResolvedValue(true);
 });
 
 afterEach(function restoreRealTimers() {
@@ -334,8 +352,65 @@ describe("copying the password calls the bridge with the row's own connected env
   });
 });
 
+describe("signing back in resolves the profile for the database the failure is actually about", () => {
+  it("calls the bridge with the diagnosis's database and the current environment", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    const actual = await result.current.login(ssoExpired("TEAM_MEMBER"));
+
+    expect(api.ssoLogin).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
+    expect(actual).toBe(true);
+  });
+
+  it("uses the environment the database is actually connected under, not the toolbar's", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "staging",
+      },
+    });
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDatabases());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    await result.current.login(ssoExpired("TEAM_MEMBER"));
+
+    expect(api.ssoLogin).toHaveBeenCalledWith("TEAM_MEMBER", "staging");
+  });
+
+  it("resolves false without calling the bridge for a diagnosis with no database", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    const actual = await result.current.login({
+      key: ErrorKey.Unknown,
+      summary: "This error is not recognized",
+      cause: "The app doesn't have a known explanation for this one.",
+      resolution: ["No known fix for this error"],
+      raw: null,
+      database: null,
+    });
+
+    expect(api.ssoLogin).not.toHaveBeenCalled();
+    expect(actual).toBe(false);
+  });
+});
+
 describe("updating a row's local port", () => {
-  it("calls the bridge and adopts the saved value", async () => {
+  it("calls the bridge with the row's own environment and adopts the saved value", async () => {
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
     api.currentEnvironment.mockResolvedValue("dev");
     const { result } = renderHook(() => useDatabases());
@@ -353,6 +428,42 @@ describe("updating a row's local port", () => {
       );
       expect(row?.localPort).toBe(9999);
     });
-    expect(api.updateLocalPort).toHaveBeenCalledWith("TEAM_MEMBER", 9999);
+    expect(api.updateLocalPort).toHaveBeenCalledWith(
+      "TEAM_MEMBER",
+      "dev",
+      9999
+    );
+  });
+
+  it("does not affect the same database's port under a different environment", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "prod"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.localPorts.mockResolvedValue({
+      TEAM_MEMBER: { dev: 5432, prod: 5433 },
+    });
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    act(function change() {
+      result.current.updateLocalPort("TEAM_MEMBER", 9999);
+    });
+    await waitFor(function updated() {
+      const row = result.current.rows.find(
+        (each) => each.name === "TEAM_MEMBER"
+      );
+      expect(row?.localPort).toBe(9999);
+    });
+
+    act(function switchToProd() {
+      result.current.selectEnvironment("prod");
+    });
+
+    await waitFor(function switched() {
+      expect(result.current.environment).toBe("prod");
+    });
+    const row = result.current.rows.find((each) => each.name === "TEAM_MEMBER");
+    expect(row?.localPort).toBe(5433);
   });
 });

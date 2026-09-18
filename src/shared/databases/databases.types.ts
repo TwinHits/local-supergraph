@@ -8,6 +8,9 @@ export enum DatabaseConnectionState {
 /** Every database, and the environments it can be reached in. */
 export type DatabaseCatalog = Record<string, string[]>;
 
+/** Every database's local port, per environment: database name -> environment name -> port. */
+export type LocalPortMap = Record<string, Record<string, number>>;
+
 /** What a DB client needs to connect, once a tunnel is open. */
 export type DatabaseConnectionInfo = {
   host: string;

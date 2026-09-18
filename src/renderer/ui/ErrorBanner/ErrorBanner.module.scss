@@ -1,3 +1,9 @@
 .errorBanner {
   padding: 1.5rem 0;
 }
+
+.errorBanner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

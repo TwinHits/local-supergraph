@@ -136,6 +136,64 @@ describe("checking credentials distinguishes a missing aws CLI from stale creden
   });
 });
 
+describe("signing in through AWS SSO runs the browser-based device flow for one profile", () => {
+  it("resolves found and succeeded once signed in", async () => {
+    execState.stdout =
+      "Successfully logged into Start URL: https://example.awsapps.com/start";
+    const { ssoLogin } = await freshAws();
+
+    const actual = await ssoLogin("omfsvcshubdev");
+
+    expect(actual).toEqual({
+      stdout:
+        "Successfully logged into Start URL: https://example.awsapps.com/start",
+      stderr: "",
+      found: true,
+      succeeded: true,
+    });
+    expect(execState.calls[0]).toEqual([
+      "aws",
+      ["sso", "login", "--profile", "omfsvcshubdev"],
+    ]);
+  });
+
+  it("resolves found: false when the aws binary itself is missing", async () => {
+    const error = new Error("not found") as NodeJS.ErrnoException;
+    error.code = "ENOENT";
+    execState.error = error;
+    const { ssoLogin } = await freshAws();
+
+    const actual = await ssoLogin("omfsvcshubdev");
+
+    expect(actual).toEqual({
+      stdout: "",
+      stderr: "",
+      found: false,
+      succeeded: false,
+    });
+  });
+
+  it("resolves found: true, succeeded: false when the named profile isn't configured locally", async () => {
+    const error = new Error("exit 255") as NodeJS.ErrnoException & {
+      stdout?: string;
+      stderr?: string;
+    };
+    error.stdout = "";
+    error.stderr = "The config profile (omfsvcshubdev) could not be found";
+    execState.error = error;
+    const { ssoLogin } = await freshAws();
+
+    const actual = await ssoLogin("omfsvcshubdev");
+
+    expect(actual).toEqual({
+      stdout: "",
+      stderr: "The config profile (omfsvcshubdev) could not be found",
+      found: true,
+      succeeded: false,
+    });
+  });
+});
+
 describe("reading a secret's value tries the bash script's known fields before falling back to the raw string", () => {
   it("extracts .password when present", async () => {
     execState.stdout = '{"password":"topsecret"}';

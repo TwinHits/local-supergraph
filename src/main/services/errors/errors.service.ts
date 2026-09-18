@@ -24,12 +24,15 @@ function buildReport(keys: ErrorKey[], raw: string | null): Report {
   return { keys: found.length === 0 ? [ErrorKey.Unknown] : found, raw };
 }
 
-/** Turns a report into its diagnoses. */
-function toDiagnoses(report: Report | null): Diagnosis[] {
+/** Turns a report into its diagnoses. `database` names which database it's about, if any. */
+function toDiagnoses(
+  report: Report | null,
+  database: string | null = null
+): Diagnosis[] {
   if (report === null) {
     return [];
   }
-  return buildDiagnoses(report.keys, report.raw);
+  return buildDiagnoses(report.keys, report.raw, database);
 }
 
 /** Records what went wrong with the supergraph. */
@@ -85,6 +88,10 @@ export const errors: ErrorsContract = {
     return toDiagnoses(supergraphReport);
   },
   databaseConnectionErrors(): Diagnosis[] {
-    return [...databaseConnectionReports.values()].flatMap(toDiagnoses);
+    return [...databaseConnectionReports.entries()].flatMap(
+      function toEntryDiagnoses([database, report]) {
+        return toDiagnoses(report, database);
+      }
+    );
   },
 };

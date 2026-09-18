@@ -46,6 +46,7 @@ const awsState = vi.hoisted(() => ({
   getSecretValue: vi.fn(),
   startPortForward: vi.fn(),
   stopPortForward: vi.fn(),
+  ssoLogin: vi.fn(),
 }));
 
 vi.mock("@/main/services/aws/aws.service", () => ({
@@ -57,6 +58,7 @@ vi.mock("@/main/services/aws/aws.service", () => ({
     return awsState.startPortForward(...args);
   },
   stopPortForward: (...args: unknown[]) => awsState.stopPortForward(...args),
+  ssoLogin: (...args: unknown[]) => awsState.ssoLogin(...args),
 }));
 
 const CONFIG_FIXTURE = {
@@ -105,6 +107,7 @@ beforeEach(function isolate() {
   awsState.getSecretValue.mockReset();
   awsState.startPortForward.mockReset();
   awsState.stopPortForward.mockReset().mockResolvedValue(undefined);
+  awsState.ssoLogin.mockReset();
 });
 
 afterEach(function restoreMocks() {
@@ -118,8 +121,16 @@ afterAll(function removeTempDirs() {
 async function freshDatabases() {
   const { databases } =
     await import("@/main/services/databases/databases.service");
-  const { errors } = await import("@/main/services/errors/errors.service");
-  return { databases, errors };
+  const { errors, reportDatabaseConnectionFailure } =
+    await import("@/main/services/errors/errors.service");
+  return { databases, errors, reportDatabaseConnectionFailure };
+}
+
+/** Reads the keys off a list of diagnoses. */
+function keysOf(diagnoses: { key: ErrorKey }[]): ErrorKey[] {
+  return diagnoses.map(function key(each) {
+    return each.key;
+  });
 }
 
 describe("the catalog reflects databases.json: database name to its environments", () => {
@@ -166,6 +177,28 @@ describe("connection info comes from the matching (database, environment) entry,
 
     expect(databases.connectionInfo("TEAM_MEMBER", "staging")).toBeNull();
     expect(databases.connectionInfo("NOT_A_DATABASE", "dev")).toBeNull();
+  });
+});
+
+describe("local ports are scoped per (database, environment), not shared across a database's environments", () => {
+  it("defaults every environment to its own config entry's local_port", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases } = await freshDatabases();
+
+    expect(databases.localPorts()).toEqual({
+      TEAM_MEMBER: { dev: 5432, prod: 5433 },
+    });
+  });
+
+  it("overriding one environment's port does not affect the same database's other environment", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases } = await freshDatabases();
+
+    databases.updateLocalPort("TEAM_MEMBER", "dev", 9999);
+
+    expect(databases.localPorts()).toEqual({
+      TEAM_MEMBER: { dev: 9999, prod: 5433 },
+    });
   });
 });
 
@@ -290,7 +323,7 @@ describe("connecting checks credentials before ever starting a session", () => {
       error: null,
     });
     const { databases } = await freshDatabases();
-    databases.updateLocalPort("TEAM_MEMBER", 9999);
+    databases.updateLocalPort("TEAM_MEMBER", "dev", 9999);
 
     await databases.connect("TEAM_MEMBER", "dev");
 
@@ -489,6 +522,18 @@ describe("the open session's own output drives its state from Connecting to Conn
       ErrorKey.SessionManagerPluginMissing
     );
   });
+
+  it("stops the session's process so a retry doesn't find the id still taken", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases } = await freshDatabases();
+    await connectSuccessfully(databases);
+
+    sessionState.onOutput.get("TEAM_MEMBER")?.(
+      "SessionManagerPlugin is not found.\n"
+    );
+
+    expect(awsState.stopPortForward).toHaveBeenCalledWith("TEAM_MEMBER");
+  });
 });
 
 describe("disconnecting always returns to disconnected", () => {
@@ -520,6 +565,21 @@ describe("disconnecting always returns to disconnected", () => {
     const actual = await databases.disconnect("TEAM_MEMBER");
 
     expect(actual).toBe(DatabaseConnectionState.Disconnected);
+  });
+
+  it("forgets the database's last reported failure, so it doesn't outlive the disconnect", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases, errors, reportDatabaseConnectionFailure } =
+      await freshDatabases();
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.SessionManagerPluginMissing],
+      ""
+    );
+
+    await databases.disconnect("TEAM_MEMBER");
+
+    expect(errors.databaseConnectionErrors()).toEqual([]);
   });
 });
 
@@ -624,5 +684,216 @@ describe("copying the password writes the secret to the clipboard, never returni
 
     expect(actual).toBe(false);
     expect(errors.databaseConnectionErrors().length).toBeGreaterThan(0);
+  });
+});
+
+describe("signing back in through AWS SSO uses the pick's own configured profile", () => {
+  it("resolves false and reports DatabaseEntryMissing for a pick that isn't in the catalog", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases, errors } = await freshDatabases();
+
+    const actual = await databases.ssoLogin("NOT_A_DATABASE", "dev");
+
+    expect(actual).toBe(false);
+    expect(awsState.ssoLogin).not.toHaveBeenCalled();
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.DatabaseEntryMissing
+    );
+  });
+
+  it("signs in with the (database, environment) pick's own aws_profile, not another environment's", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases } = await freshDatabases();
+
+    await databases.ssoLogin("TEAM_MEMBER", "prod");
+
+    expect(awsState.ssoLogin).toHaveBeenCalledWith("omfsvcshubprod");
+  });
+
+  it("uses the environment its own connect() attempt last targeted over whatever environment is passed in", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr: "The SSO session has expired",
+    });
+    const { databases } = await freshDatabases();
+    await databases.connect("TEAM_MEMBER", "dev");
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+
+    // The failure actually happened under "dev", but the caller (e.g. a
+    // renderer that has since switched its toolbar) passes "prod".
+    await databases.ssoLogin("TEAM_MEMBER", "prod");
+
+    expect(awsState.ssoLogin).toHaveBeenCalledWith("omfsvcshubdev");
+  });
+
+  it("falls back to the given environment when connect() was never attempted for that database", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases } = await freshDatabases();
+
+    await databases.ssoLogin("TEAM_MEMBER", "prod");
+
+    expect(awsState.ssoLogin).toHaveBeenCalledWith("omfsvcshubprod");
+  });
+
+  it("reports AwsCliMissing and resolves false when aws isn't found", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.ssoLogin.mockResolvedValue({
+      found: false,
+      succeeded: false,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases, errors } = await freshDatabases();
+
+    const actual = await databases.ssoLogin("TEAM_MEMBER", "dev");
+
+    expect(actual).toBe(false);
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsCliMissing
+    );
+  });
+
+  it("reports the failure and resolves false when sign-in itself fails", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr: "The config profile (omfsvcshubdev) could not be found",
+    });
+    const { databases, errors } = await freshDatabases();
+
+    const actual = await databases.ssoLogin("TEAM_MEMBER", "dev");
+
+    expect(actual).toBe(false);
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsProfileMissing
+    );
+  });
+
+  it("clears the database's failure and resolves true once signed in, without retrying the connection", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr: "The SSO session has expired",
+    });
+    const { databases, errors } = await freshDatabases();
+    await databases.connect("TEAM_MEMBER", "dev");
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsSsoExpired
+    );
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+
+    const actual = await databases.ssoLogin("TEAM_MEMBER", "dev");
+
+    expect(actual).toBe(true);
+    expect(errors.databaseConnectionErrors()).toEqual([]);
+    expect(awsState.startPortForward).not.toHaveBeenCalled();
+  });
+
+  it("clears every database that shares the same profile under the same environment, not just the one that triggered it", async () => {
+    writeConfigFile({
+      databases: {
+        TEAM_MEMBER: {
+          dev: { ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev },
+        },
+        OTHER_MEMBER: {
+          dev: {
+            ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev,
+            target_instance: "i-0other",
+            host: "other-member.example.com",
+          },
+        },
+      },
+    });
+    const { databases, errors, reportDatabaseConnectionFailure } =
+      await freshDatabases();
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+    reportDatabaseConnectionFailure(
+      "OTHER_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+
+    await databases.ssoLogin("TEAM_MEMBER", "dev");
+
+    expect(errors.databaseConnectionErrors()).toEqual([]);
+  });
+
+  it("does not clear a database whose entry under that environment uses a different profile", async () => {
+    writeConfigFile({
+      databases: {
+        TEAM_MEMBER: {
+          dev: { ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev },
+        },
+        OTHER_MEMBER: {
+          dev: {
+            ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev,
+            aws_profile: "a-different-profile",
+          },
+        },
+      },
+    });
+    const { databases, errors, reportDatabaseConnectionFailure } =
+      await freshDatabases();
+    reportDatabaseConnectionFailure(
+      "TEAM_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+    reportDatabaseConnectionFailure(
+      "OTHER_MEMBER",
+      [ErrorKey.AwsSsoExpired],
+      ""
+    );
+    awsState.ssoLogin.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+
+    await databases.ssoLogin("TEAM_MEMBER", "dev");
+
+    expect(keysOf(errors.databaseConnectionErrors())).toEqual([
+      ErrorKey.AwsSsoExpired,
+    ]);
   });
 });
