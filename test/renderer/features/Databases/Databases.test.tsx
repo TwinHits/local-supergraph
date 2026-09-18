@@ -322,6 +322,42 @@ describe("clicking a database row expands its connection-info drawer", () => {
   });
 });
 
+describe("expanding a row's drawer does not resize the columns above it", () => {
+  it("keeps every column's pinned width the same before and after expanding", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.connectionInfo.mockResolvedValue({
+      host: "team-member.cluster-a1b2c3d4e5f6.us-east-1.rds.amazonaws.com",
+      port: 5432,
+      localPort: 5432,
+      databaseName: "team_member",
+      username: "app_user",
+    });
+    const { container } = render(<Databases />);
+    const name = await screen.findByText("TEAM_MEMBER");
+    const widthsBefore = [...container.querySelectorAll("col")].map(
+      function width(col) {
+        return col.style.width;
+      }
+    );
+    expect(
+      widthsBefore.filter(function pinned(each) {
+        return each !== "";
+      }).length
+    ).toBeGreaterThan(0);
+
+    await userEvent.click(name);
+    await screen.findByText("app_user");
+
+    const widthsAfter = [...container.querySelectorAll("col")].map(
+      function width(col) {
+        return col.style.width;
+      }
+    );
+    expect(widthsAfter).toEqual(widthsBefore);
+  });
+});
+
 describe("interactive cells inside a row do not also toggle its drawer", () => {
   it("does not expand the drawer when the local port field is clicked", async () => {
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
