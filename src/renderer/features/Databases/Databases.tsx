@@ -3,6 +3,7 @@ import { useState } from "react";
 import AwsSsoLoginAction from "@/renderer/features/Databases/components/AwsSsoLoginAction";
 import DatabaseRow from "@/renderer/features/Databases/components/DatabaseRow";
 import styles from "@/renderer/features/Databases/Databases.module.scss";
+import { sortDatabaseRowsByName } from "@/renderer/features/Databases/databases.utils";
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
 import ErrorModal from "@/renderer/features/ErrorModal";
 import { useErrorModal } from "@/renderer/features/ErrorModal/useErrorModal";
@@ -12,12 +13,12 @@ import ErrorBanner from "@/renderer/ui/ErrorBanner";
 import { type DatabaseConnectionInfo } from "@/shared/databases/databases.types";
 
 const DATABASES_NAME = "Databases";
-const NO_SORT = "";
+const NAME_COLUMN_KEY = "name";
 
 const COLUMNS: Column[] = [
   { key: "expand", label: "", sortable: false },
   { key: "status", label: "Status", sortable: false },
-  { key: "name", label: "Name", sortable: false },
+  { key: NAME_COLUMN_KEY, label: "Name", sortable: true },
   { key: "localPort", label: "Local port", sortable: false },
   { key: "connection", label: "", sortable: false },
 ];
@@ -78,10 +79,10 @@ export default function Databases() {
         )}
         <DataTable
           columns={COLUMNS}
-          sortKey={NO_SORT}
+          sortKey={NAME_COLUMN_KEY}
           onSort={function noop() {}}
         >
-          {databases.rows.map(function toRow(row) {
+          {sortDatabaseRowsByName(databases.rows).map(function toRow(row) {
             return (
               <DatabaseRow
                 key={row.name}
