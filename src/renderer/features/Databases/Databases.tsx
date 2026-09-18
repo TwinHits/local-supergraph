@@ -16,11 +16,11 @@ const DATABASES_NAME = "Databases";
 const NAME_COLUMN_KEY = "name";
 
 const COLUMNS: Column[] = [
-  { key: "expand", label: "", sortable: false },
-  { key: "status", label: "Status", sortable: false },
+  { key: "expand", label: "", sortable: false, width: "56px" },
+  { key: "status", label: "Status", sortable: false, width: "130px" },
   { key: NAME_COLUMN_KEY, label: "Name", sortable: true },
-  { key: "localPort", label: "Local port", sortable: false },
-  { key: "connection", label: "", sortable: false },
+  { key: "localPort", label: "Local port", sortable: false, width: "200px" },
+  { key: "connection", label: "", sortable: false, width: "120px" },
 ];
 
 /** Connects to RDS databases over SSM port-forwarding sessions. */
@@ -81,6 +81,7 @@ export default function Databases() {
           columns={COLUMNS}
           sortKey={NAME_COLUMN_KEY}
           onSort={function noop() {}}
+          className={styles.databases__table}
         >
           {sortDatabaseRowsByName(databases.rows).map(function toRow(row) {
             return (
