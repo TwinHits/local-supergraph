@@ -1,7 +1,7 @@
 import ErrorModal from "@/renderer/features/ErrorModal";
+import { useErrorModal } from "@/renderer/features/ErrorModal/useErrorModal";
 import SubgraphTable from "@/renderer/features/SubgraphTable";
 import styles from "@/renderer/features/SupergraphWorkspace/SupergraphWorkspace.module.scss";
-import { useErrorModal } from "@/renderer/features/SupergraphWorkspace/useErrorModal";
 import ErrorBanner from "@/renderer/ui/ErrorBanner";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
 import {

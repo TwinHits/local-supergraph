@@ -1,0 +1,22 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+.databaseInfoDrawer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: colors.$surface-raised;
+}
+
+.databaseInfoDrawer__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.databaseInfoDrawer__value {
+  font-family: monospace;
+  color: colors.$text-primary;
+  user-select: text;
+  cursor: text;
+}

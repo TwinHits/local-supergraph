@@ -1,0 +1,6 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+.databaseRow__chevron {
+  display: inline-flex;
+  color: colors.$text-muted;
+}

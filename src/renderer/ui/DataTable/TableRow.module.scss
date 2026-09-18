@@ -4,6 +4,10 @@ tr.tableRow {
   transition: background-color 0.2s ease;
 }
 
+tr.tableRow--clickable {
+  cursor: pointer;
+}
+
 tr.tableRow--highlighted {
   background: rgba(colors.$local, 0.12);
 }

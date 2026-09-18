@@ -23,6 +23,7 @@ const api = vi.hoisted(() => ({
   statuses: vi.fn(),
   connect: vi.fn(),
   disconnect: vi.fn(),
+  connectionInfo: vi.fn(),
   copyPasswordToClipboard: vi.fn(),
   copyPasswordUrlEncodedToClipboard: vi.fn(),
   currentEnvironment: vi.fn(),
@@ -42,6 +43,8 @@ vi.mock("@/renderer/api", () => ({
       connect: (database: string, environment: string) =>
         api.connect(database, environment),
       disconnect: (database: string) => api.disconnect(database),
+      connectionInfo: (database: string, environment: string) =>
+        api.connectionInfo(database, environment),
       copyPasswordToClipboard: (database: string, environment: string) =>
         api.copyPasswordToClipboard(database, environment),
       copyPasswordUrlEncodedToClipboard: (
@@ -74,6 +77,7 @@ beforeEach(function isolate() {
   api.disconnect
     .mockReset()
     .mockResolvedValue(DatabaseConnectionState.Disconnected);
+  api.connectionInfo.mockReset().mockResolvedValue(null);
   api.copyPasswordToClipboard.mockReset().mockResolvedValue(true);
   api.copyPasswordUrlEncodedToClipboard.mockReset().mockResolvedValue(true);
   api.currentEnvironment.mockReset().mockResolvedValue("dev");
@@ -349,6 +353,64 @@ describe("copying the password calls the bridge with the row's own connected env
       "TEAM_MEMBER",
       "staging"
     );
+  });
+});
+
+describe("loading a row's connection info calls the bridge with the row's own connected environment", () => {
+  it("uses the toolbar's environment when the row isn't connected", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const info = {
+      host: "team-member.example.rds.amazonaws.com",
+      port: 5432,
+      localPort: 5432,
+      databaseName: "team_member",
+      username: "app",
+    };
+    api.connectionInfo.mockResolvedValue(info);
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    const actual = await result.current.connectionInfo("TEAM_MEMBER");
+
+    expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "dev");
+    expect(actual).toEqual(info);
+  });
+
+  it("uses the environment the row is actually connected under", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.statuses.mockResolvedValue({
+      TEAM_MEMBER: {
+        state: DatabaseConnectionState.Connected,
+        environment: "staging",
+      },
+    });
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDatabases());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    await result.current.connectionInfo("TEAM_MEMBER");
+
+    expect(api.connectionInfo).toHaveBeenCalledWith("TEAM_MEMBER", "staging");
+  });
+
+  it("resolves null when the bridge has no entry for the pick", async () => {
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.connectionInfo.mockResolvedValue(null);
+    const { result } = renderHook(() => useDatabases());
+    await waitFor(function loaded() {
+      expect(result.current.environment).toBe("dev");
+    });
+
+    const actual = await result.current.connectionInfo("TEAM_MEMBER");
+
+    expect(actual).toBeNull();
   });
 });
 

@@ -10,6 +10,8 @@ import ContentCopyGlyph from "@mui/icons-material/ContentCopy";
 import FullscreenGlyph from "@mui/icons-material/Fullscreen";
 import FullscreenExitGlyph from "@mui/icons-material/FullscreenExit";
 import InsertLinkGlyph from "@mui/icons-material/InsertLink";
+import KeyboardArrowDownGlyph from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowRightGlyph from "@mui/icons-material/KeyboardArrowRight";
 import MinimizeGlyph from "@mui/icons-material/Minimize";
 import OpenInNewGlyph from "@mui/icons-material/OpenInNew";
 import PlayArrowGlyph from "@mui/icons-material/PlayArrow";
@@ -44,6 +46,8 @@ export const GLYPHS: Record<IconName, Glyph> = {
   [IconName.Success]: CheckGlyph,
   [IconName.CollapseRail]: ChevronLeftGlyph,
   [IconName.ExpandRail]: ChevronRightGlyph,
+  [IconName.ExpandRow]: KeyboardArrowRightGlyph,
+  [IconName.CollapseRow]: KeyboardArrowDownGlyph,
   [IconName.Supergraph]: AccountTreeGlyph,
   [IconName.Database]: StorageGlyph,
 };

@@ -18,6 +18,8 @@ export enum IconName {
   Success = "success",
   CollapseRail = "collapse-rail",
   ExpandRail = "expand-rail",
+  ExpandRow = "expand-row",
+  CollapseRow = "collapse-row",
   Supergraph = "supergraph",
   Database = "database",
 }

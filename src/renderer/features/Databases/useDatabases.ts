@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/renderer/api";
 import {
   type DatabaseCatalog,
+  type DatabaseConnectionInfo,
   DatabaseConnectionState,
   type DatabaseRowState,
   type LocalPortMap,
@@ -154,6 +155,13 @@ export function useDatabases() {
     [environmentFor]
   );
 
+  const connectionInfo = useCallback(
+    function fetch(name: string): Promise<DatabaseConnectionInfo | null> {
+      return api.databases.connectionInfo(name, environmentFor(name));
+    },
+    [environmentFor]
+  );
+
   const copyPassword = useCallback(
     function copy(name: string) {
       return api.databases.copyPasswordToClipboard(name, environmentFor(name));
@@ -212,6 +220,7 @@ export function useDatabases() {
     connect,
     disconnect,
     updateLocalPort,
+    connectionInfo,
     copyPassword,
     copyPasswordUrlEncoded,
     login,
