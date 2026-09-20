@@ -1,3 +1,12 @@
+/** Every size an icon can render at. Required on every usage so a new icon can't be left unsized. */
+export enum IconSize {
+  Small = "small",
+  Medium = "medium",
+  Large = "large",
+  ExtraLarge = "extra-large",
+  Jumbo = "jumbo",
+}
+
 /** The icons the app uses, named for the job rather than the glyph. */
 export enum IconName {
   Back = "back",

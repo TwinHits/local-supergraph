@@ -3,7 +3,7 @@ import RefreshButton from "@/renderer/features/SubgraphTable/components/RefreshB
 import styles from "@/renderer/features/Toolbar/Toolbar.module.scss";
 import DropdownSelect from "@/renderer/ui/DropdownSelect";
 import IconButton from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import SearchField from "@/renderer/ui/SearchField";
 import TextLabel from "@/renderer/ui/TextLabel";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
@@ -65,16 +65,18 @@ export default function Toolbar({
           label="Open router in browser"
           tooltip="Open Local"
           disabled={launchState !== SupergraphState.Running}
+          stretch
           onClick={onOpenRouter}
         >
-          <IconGlyph name={IconName.OpenLink} />
+          <IconGlyph name={IconName.OpenLink} size={IconSize.Large} />
         </IconButton>
         <IconButton
           label="Settings"
           tooltip="Settings"
+          stretch
           onClick={onOpenSettings}
         >
-          <IconGlyph name={IconName.Settings} />
+          <IconGlyph name={IconName.Settings} size={IconSize.Large} />
         </IconButton>
       </span>
     </div>

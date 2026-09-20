@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/TabRail/TabRail.module.scss";
 import { type TabRailItem } from "@/renderer/ui/TabRail/TabRail.types";
 
@@ -26,6 +26,7 @@ export default function TabRail({ items, activeId, onChange }: TabRailProps) {
           label={collapsed ? "Expand tabs" : "Collapse tabs"}
           tooltip={collapsed ? "Expand" : "Collapse"}
           variant={IconButtonVariant.Muted}
+          stretch
           onClick={function toggle() {
             setCollapsed(function flip(current) {
               return !current;
@@ -35,6 +36,7 @@ export default function TabRail({ items, activeId, onChange }: TabRailProps) {
           <span className={styles.tabRail__toggleIcon}>
             <IconGlyph
               name={collapsed ? IconName.ExpandRail : IconName.CollapseRail}
+              size={IconSize.ExtraLarge}
             />
           </span>
         </IconButton>
@@ -57,7 +59,7 @@ export default function TabRail({ items, activeId, onChange }: TabRailProps) {
             }}
           >
             <span className={styles.tabRail__icon}>
-              <IconGlyph name={item.icon} />
+              <IconGlyph name={item.icon} size={IconSize.Medium} />
             </span>
             {!collapsed && (
               <span className={styles.tabRail__label}>{item.label}</span>

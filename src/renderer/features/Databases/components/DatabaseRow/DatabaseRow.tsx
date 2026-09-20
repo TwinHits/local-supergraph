@@ -6,7 +6,7 @@ import DatabaseInfoDrawer from "@/renderer/features/Databases/components/Databas
 import styles from "@/renderer/features/Databases/components/DatabaseRow/DatabaseRow.module.scss";
 import LocalPortField from "@/renderer/features/Databases/components/LocalPortField";
 import { TableCell, TableRow } from "@/renderer/ui/DataTable";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import TextLabel from "@/renderer/ui/TextLabel";
 import {
   type DatabaseConnectionInfo,
@@ -55,6 +55,7 @@ export default function DatabaseRow({
           <span className={styles.databaseRow__chevron}>
             <IconGlyph
               name={expanded ? IconName.CollapseRow : IconName.ExpandRow}
+              size={IconSize.Medium}
             />
           </span>
         </TableCell>

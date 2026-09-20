@@ -20,11 +20,22 @@ import SearchGlyph from "@mui/icons-material/Search";
 import SettingsGlyph from "@mui/icons-material/Settings";
 import StopGlyph from "@mui/icons-material/Stop";
 import StorageGlyph from "@mui/icons-material/Storage";
-import { type ComponentType } from "react";
+import { type ComponentType, type CSSProperties } from "react";
 
-import { IconName } from "@/renderer/ui/IconGlyph/IconGlyph.types";
+import { IconName, IconSize } from "@/renderer/ui/IconGlyph/IconGlyph.types";
 
-export type Glyph = ComponentType<{ fontSize: "inherit" }>;
+export type Glyph = ComponentType<{ style?: CSSProperties }>;
+
+/** The pixel size behind each IconSize, as a rem value. Set directly as an
+ * inline style rather than a CSS class, so an icon's size can never be
+ * silently overridden by whatever font-size happens to surround it. */
+export const ICON_SIZE_REM: Record<IconSize, string> = {
+  [IconSize.Small]: "1rem",
+  [IconSize.Medium]: "1.25rem",
+  [IconSize.Large]: "1.5rem",
+  [IconSize.ExtraLarge]: "1.75rem",
+  [IconSize.Jumbo]: "2.5rem",
+};
 
 /** The only place an icon library is named. */
 export const GLYPHS: Record<IconName, Glyph> = {

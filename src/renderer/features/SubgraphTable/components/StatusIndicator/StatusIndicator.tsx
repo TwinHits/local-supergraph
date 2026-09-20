@@ -53,6 +53,7 @@ export default function StatusIndicator({
       label={`${status}: ${reason}`}
       tooltip={reason}
       variant={IconButtonVariant.Inline}
+      stretch={false}
       onClick={onClick}
     >
       {shape}

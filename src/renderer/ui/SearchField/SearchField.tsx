@@ -1,5 +1,5 @@
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/SearchField/SearchField.module.scss";
 import TextField from "@/renderer/ui/TextField";
 
@@ -17,7 +17,9 @@ export default function SearchField({ value, onChange }: SearchFieldProps) {
       value={value}
       ariaLabel="Search"
       onChange={onChange}
-      startAdornment={<IconGlyph name={IconName.Search} />}
+      startAdornment={
+        <IconGlyph name={IconName.Search} size={IconSize.Medium} />
+      }
       endAdornment={
         <span
           className={empty ? styles["searchField__clear--hidden"] : undefined}
@@ -26,12 +28,13 @@ export default function SearchField({ value, onChange }: SearchFieldProps) {
             label="Clear search"
             tooltip="Clear"
             variant={IconButtonVariant.Inline}
+            stretch={false}
             disabled={empty}
             onClick={function clear() {
               onChange("");
             }}
           >
-            <IconGlyph name={IconName.Close} />
+            <IconGlyph name={IconName.Close} size={IconSize.Large} />
           </IconButton>
         </span>
       }

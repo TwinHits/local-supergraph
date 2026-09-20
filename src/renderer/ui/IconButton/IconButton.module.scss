@@ -2,11 +2,9 @@
 
 button.iconButton {
   position: relative;
-  align-self: stretch;
   aspect-ratio: 1;
   padding: 0;
   color: inherit;
-  font-size: 1.5rem;
   border-radius: 0;
 
   &:hover {
@@ -20,7 +18,6 @@ button.iconButton--inline {
   aspect-ratio: auto;
   width: auto;
   padding: 0;
-  font-size: 1.5rem;
 
   &:hover {
     background: none;
@@ -31,7 +28,6 @@ button.iconButton--small {
   align-self: center;
   width: 24px;
   height: 24px;
-  font-size: 1rem;
 }
 
 button.iconButton--muted {
@@ -43,7 +39,14 @@ button.iconButton--muted {
   }
 }
 
+// Fills the row or column it's placed in, rather than sizing to its own
+// content. Explicit per usage — only the caller knows whether its parent's
+// cross axis is the height (a row) or the width (a column); guessing wrong
+// stretched a button's hover/tooltip area to match an unrelated sibling.
+.iconButton--stretch {
+  align-self: stretch;
+}
+
 .iconButton__tooltip {
   display: flex;
-  align-self: stretch;
 }

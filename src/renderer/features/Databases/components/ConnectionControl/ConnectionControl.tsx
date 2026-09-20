@@ -1,6 +1,6 @@
 import styles from "@/renderer/features/Databases/components/ConnectionControl/ConnectionControl.module.scss";
 import IconButton from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import { DatabaseConnectionState } from "@/shared/databases/databases.types";
 
 type ConnectionControlProps = {
@@ -20,6 +20,7 @@ export default function ConnectionControl({
       <IconButton
         label="Cancel connecting to the database"
         tooltip="Connecting"
+        stretch
         onClick={onDisconnect}
       >
         <span
@@ -28,7 +29,7 @@ export default function ConnectionControl({
             styles["connectionControl--connecting"],
           ].join(" ")}
         >
-          <IconGlyph name={IconName.Stop} />
+          <IconGlyph name={IconName.Stop} size={IconSize.Large} />
         </span>
       </IconButton>
     );
@@ -39,6 +40,7 @@ export default function ConnectionControl({
       <IconButton
         label="Disconnect from the database"
         tooltip="Disconnect"
+        stretch
         onClick={onDisconnect}
       >
         <span
@@ -47,7 +49,7 @@ export default function ConnectionControl({
             styles["connectionControl--connected"],
           ].join(" ")}
         >
-          <IconGlyph name={IconName.Stop} />
+          <IconGlyph name={IconName.Stop} size={IconSize.Large} />
         </span>
       </IconButton>
     );
@@ -57,6 +59,7 @@ export default function ConnectionControl({
     <IconButton
       label="Connect to the database"
       tooltip="Connect"
+      stretch
       onClick={onConnect}
     >
       <span
@@ -65,7 +68,7 @@ export default function ConnectionControl({
           styles["connectionControl--disconnected"],
         ].join(" ")}
       >
-        <IconGlyph name={IconName.Start} />
+        <IconGlyph name={IconName.Start} size={IconSize.Large} />
       </span>
     </IconButton>
   );

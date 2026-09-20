@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import styles from "@/renderer/features/Databases/components/CopyButton/CopyButton.module.scss";
 import IconButton from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
 
 const SUCCESS_DISPLAY_MS = 1000;
@@ -60,15 +60,18 @@ export default function CopyButton({
       label={label}
       tooltip={tooltip}
       disabled={state === CopyButtonState.Loading}
+      stretch={false}
       onClick={click}
     >
       {state === CopyButtonState.Loading && <LoadingSpinner label={label} />}
       {state === CopyButtonState.Success && (
         <span className={styles.copyButton__success}>
-          <IconGlyph name={IconName.Success} />
+          <IconGlyph name={IconName.Success} size={IconSize.Large} />
         </span>
       )}
-      {state === CopyButtonState.Idle && <IconGlyph name={icon} />}
+      {state === CopyButtonState.Idle && (
+        <IconGlyph name={icon} size={IconSize.Large} />
+      )}
     </IconButton>
   );
 }
