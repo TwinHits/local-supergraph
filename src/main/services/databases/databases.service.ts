@@ -98,10 +98,20 @@ function lookupEntry(
   return readConfigFile().databases[database]?.[targetEnvironment] ?? null;
 }
 
-/** Pulls the Secrets Manager id out of the config's console URL. */
-function secretIdFromPasswordUrl(passwordUrl: string): string | null {
+type PasswordUrlParams = {
+  secretId: string;
+  region: string | null;
+};
+
+/** Pulls the Secrets Manager id and region out of the config's console URL. */
+function parsePasswordUrl(passwordUrl: string): PasswordUrlParams | null {
   try {
-    return new URL(passwordUrl).searchParams.get("name");
+    const url = new URL(passwordUrl);
+    const secretId = url.searchParams.get("name");
+    if (secretId === null) {
+      return null;
+    }
+    return { secretId, region: url.searchParams.get("region") };
   } catch {
     return null;
   }
@@ -396,15 +406,15 @@ async function resolvePassword(
     return null;
   }
 
-  const secretId = secretIdFromPasswordUrl(entry.password_url);
-  if (secretId === null) {
+  const parsed = parsePasswordUrl(entry.password_url);
+  if (parsed === null) {
     return null;
   }
 
   const secret = await getSecretValue(
-    secretId,
+    parsed.secretId,
     entry.aws_profile,
-    environment.awsRegion()
+    parsed.region ?? environment.awsRegion()
   );
   if (!secret.found) {
     reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);

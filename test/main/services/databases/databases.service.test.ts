@@ -612,6 +612,66 @@ describe("copying the password writes the secret to the clipboard, never returni
     );
   });
 
+  it("uses the region in the password_url, even when it differs from the app's own configured region", async () => {
+    writeConfigFile({
+      databases: {
+        FAR_AWAY: {
+          dev: {
+            ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev,
+            password_url:
+              "https://example.com/secretsmanager/secret?name=rds%21cluster-far&region=ap-southeast-2",
+          },
+        },
+      },
+    });
+    awsState.getSecretValue.mockResolvedValue({
+      password: "s3cr3t",
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases } = await freshDatabases();
+
+    await databases.copyPasswordToClipboard("FAR_AWAY", "dev");
+
+    expect(awsState.getSecretValue).toHaveBeenCalledWith(
+      "rds!cluster-far",
+      "omfsvcshubdev",
+      "ap-southeast-2"
+    );
+  });
+
+  it("falls back to the app's configured region when the password_url has none", async () => {
+    writeConfigFile({
+      databases: {
+        NO_REGION: {
+          dev: {
+            ...CONFIG_FIXTURE.databases.TEAM_MEMBER.dev,
+            password_url:
+              "https://example.com/secretsmanager/secret?name=rds%21cluster-abc",
+          },
+        },
+      },
+    });
+    awsState.getSecretValue.mockResolvedValue({
+      password: "s3cr3t",
+      found: true,
+      succeeded: true,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases } = await freshDatabases();
+
+    await databases.copyPasswordToClipboard("NO_REGION", "dev");
+
+    expect(awsState.getSecretValue).toHaveBeenCalledWith(
+      "rds!cluster-abc",
+      "omfsvcshubdev",
+      "us-east-1"
+    );
+  });
+
   it("resolves false for a pick that isn't in the catalog", async () => {
     writeConfigFile(CONFIG_FIXTURE);
     const { databases } = await freshDatabases();

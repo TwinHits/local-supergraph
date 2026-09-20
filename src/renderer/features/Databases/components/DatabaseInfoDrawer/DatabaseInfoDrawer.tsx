@@ -64,26 +64,23 @@ export default function DatabaseInfoDrawer({
             );
           })}
         {info !== undefined && info !== null && (
-          <>
-            <div className={styles.databaseInfoDrawer__field}>
-              <TextLabel muted>Password</TextLabel>
+          <div className={styles.databaseInfoDrawer__field}>
+            <TextLabel muted>Password</TextLabel>
+            <span className={styles.databaseInfoDrawer__actions}>
               <CopyButton
                 icon={IconName.Copy}
                 label={`Copy ${name}'s password`}
                 tooltip="Copy password"
                 onCopy={onCopyPassword}
               />
-            </div>
-            <div className={styles.databaseInfoDrawer__field}>
-              <TextLabel muted>Password (URL-encoded)</TextLabel>
               <CopyButton
                 icon={IconName.CopyUrlEncoded}
                 label={`Copy ${name}'s password, URL-encoded`}
-                tooltip="Copy password (URL-encoded)"
+                tooltip="Copy password, URL-encoded"
                 onCopy={onCopyPasswordUrlEncoded}
               />
-            </div>
-          </>
+            </span>
+          </div>
         )}
       </div>
     </TableDrawerRow>

@@ -1,23 +1,35 @@
 @use "@/renderer/styles/colors.module.scss" as colors;
 
+// A two-column label/value grid, one field per row, instead of a wrapping
+// row of cards — a long value (e.g. an RDS host) used to change how many
+// cards fit per line, reflowing every field's position unpredictably.
 .databaseInfoDrawer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  column-gap: 1.5rem;
+  row-gap: 0.5rem;
   padding: 1rem 1.5rem;
   background: colors.$surface-raised;
 }
 
+// display: contents so the label and value below sit directly in the grid
+// as this row's two columns, rather than nesting a layout inside a layout.
 .databaseInfoDrawer__field {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
+  display: contents;
 }
 
 .databaseInfoDrawer__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: monospace;
   color: colors.$text-primary;
   user-select: text;
   cursor: text;
+}
+
+.databaseInfoDrawer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
