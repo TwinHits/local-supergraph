@@ -13,6 +13,7 @@ function diagnosis(key: ErrorKey, summary: string): Diagnosis {
     resolution: [`${summary} fix`],
     raw: null,
     database: null,
+    environment: null,
   };
 }
 

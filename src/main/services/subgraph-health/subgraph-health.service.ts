@@ -1,7 +1,7 @@
 import { apollo } from "@/main/services/apollo/apollo.service";
 import {
-  clearSubgraphFailure,
-  reportSubgraphFailure,
+  addSubgraphError,
+  clearSubgraphError,
 } from "@/main/services/errors/errors.service";
 import {
   currentOverrides,
@@ -99,10 +99,10 @@ async function checkTarget(target: Target): Promise<Reachability> {
     result = await checkEndpoint(target.url);
   }
   if (result.reachable) {
-    clearSubgraphFailure(target.name);
+    clearSubgraphError(target.name);
     return Reachability.Reachable;
   }
-  reportSubgraphFailure(target.name, [result.key ?? target.key], result.raw);
+  addSubgraphError(target.name, [result.key ?? target.key], result.raw);
   return Reachability.Unreachable;
 }
 

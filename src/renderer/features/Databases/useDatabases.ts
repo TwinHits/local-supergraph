@@ -37,7 +37,7 @@ export function useDatabases() {
     {}
   );
   const [localPorts, setLocalPorts] = useState<LocalPortMap>({});
-  const [errors, setErrors] = useState<Diagnosis[]>([]);
+  const [rawErrors, setRawErrors] = useState<Diagnosis[]>([]);
   const [connectionInfoByName, setConnectionInfoByName] = useState<
     Record<string, DatabaseConnectionInfo | null>
   >({});
@@ -107,7 +107,7 @@ export function useDatabases() {
   useEffect(function pollState() {
     const interval = setInterval(function check() {
       void api.databases.statuses().then(setStatuses);
-      void api.errors.databaseConnectionErrors().then(setErrors);
+      void api.errors.databaseConnectionErrors().then(setRawErrors);
     }, STATE_POLL_MS);
     return function stop() {
       clearInterval(interval);
@@ -233,6 +233,16 @@ export function useDatabases() {
         localPort: localPorts[name]?.[environmentFor(name)] ?? 0,
       };
     });
+
+  // Drops a failure left over from an environment the developer has since
+  // moved on from — main keeps it (in case they switch back), but it's not
+  // this row's current story anymore.
+  const errors = rawErrors.filter(function isCurrent(diagnosis) {
+    return (
+      diagnosis.database !== null &&
+      diagnosis.environment === environmentFor(diagnosis.database)
+    );
+  });
 
   return {
     environment,

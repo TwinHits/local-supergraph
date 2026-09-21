@@ -82,6 +82,7 @@ const KEY_REJECTED: Diagnosis = {
   resolution: ["Regenerate the key"],
   raw: "401 Unauthorized",
   database: null,
+  environment: null,
 };
 
 describe("a table row merges the subgraph, its override, its health, and its errors into one line", () => {

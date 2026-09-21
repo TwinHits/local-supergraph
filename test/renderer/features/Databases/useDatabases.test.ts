@@ -13,6 +13,7 @@ function ssoExpired(database: string): Diagnosis {
     resolution: ["Sign in again"],
     raw: null,
     database,
+    environment: "dev",
   };
 }
 
@@ -248,8 +249,11 @@ describe("status and errors are polled on an interval", () => {
       cause: "Your SSO session expired.",
       resolution: ["Sign in again"],
       raw: null,
+      database: "TEAM_MEMBER",
+      environment: "dev",
     };
     vi.useFakeTimers();
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
     const { result } = renderHook(() => useDatabases());
     api.databaseConnectionErrors.mockResolvedValue([diagnosis]);
 
@@ -258,6 +262,41 @@ describe("status and errors are polled on an interval", () => {
     });
 
     expect(result.current.errors).toEqual([diagnosis]);
+  });
+});
+
+describe("a database's error does not outlive a switch away from the environment it happened under", () => {
+  it("drops a failed database's stale diagnosis once the toolbar moves to another environment", async () => {
+    const diagnosis = {
+      key: "AWS_SSO_EXPIRED",
+      summary: "AWS credentials are stale",
+      cause: "Your SSO session expired.",
+      resolution: ["Sign in again"],
+      raw: null,
+      database: "TEAM_MEMBER",
+      environment: "dev",
+    };
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.databaseConnectionErrors.mockResolvedValue([diagnosis]);
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useDatabases());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(result.current.errors).toEqual([diagnosis]);
+
+    // TEAM_MEMBER never connected (it only ever failed), so the disconnect
+    // loop that switching environments runs has nothing to disconnect here —
+    // this is exactly the gap that left a stale diagnosis showing before.
+    act(function switchToStaging() {
+      result.current.selectEnvironment("staging");
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(result.current.errors).toEqual([]);
   });
 });
 
@@ -457,6 +496,7 @@ describe("signing back in resolves the profile for the database the failure is a
       resolution: ["No known fix for this error"],
       raw: null,
       database: null,
+      environment: null,
     });
 
     expect(api.ssoLogin).not.toHaveBeenCalled();

@@ -107,6 +107,9 @@ describe("a reported failure shows as a banner above the table", () => {
         cause: "Your SSO session expired.",
         resolution: ["Sign in again"],
         raw: null,
+        scope: "shared",
+        database: "TEAM_MEMBER",
+        environment: "dev",
       },
     ]);
     render(<Databases />);
@@ -117,6 +120,66 @@ describe("a reported failure shows as a banner above the table", () => {
 
     expect(
       screen.getByText("AWS credentials are stale: Your SSO session expired.")
+    ).toBeDefined();
+  });
+});
+
+describe("a row-specific failure shows only on its own row, not in the table-wide banner", () => {
+  it("does not show a banner for a database's own config problem", async () => {
+    vi.useFakeTimers();
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.databaseConnectionErrors.mockResolvedValue([
+      {
+        key: "DATABASE_ENTRY_MISSING",
+        summary: "No config entry for that database and environment",
+        cause:
+          "databases.json has no entry for this database under the selected environment.",
+        resolution: ["Add an entry", "Pick a different environment"],
+        raw: null,
+        scope: "row-specific",
+        database: "TEAM_MEMBER",
+        environment: "dev",
+      },
+    ]);
+    render(<Databases />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(
+      screen.queryByText(
+        "No config entry for that database and environment: databases.json has no entry for this database under the selected environment."
+      )
+    ).toBeNull();
+  });
+
+  it("explains itself on the row's own status light instead", async () => {
+    vi.useFakeTimers();
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.databaseConnectionErrors.mockResolvedValue([
+      {
+        key: "DATABASE_ENTRY_MISSING",
+        summary: "No config entry for that database and environment",
+        cause:
+          "databases.json has no entry for this database under the selected environment.",
+        resolution: ["Add an entry", "Pick a different environment"],
+        raw: null,
+        scope: "row-specific",
+        database: "TEAM_MEMBER",
+        environment: "dev",
+      },
+    ]);
+    render(<Databases />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+
+    expect(
+      screen.getByLabelText(
+        "disconnected: No config entry for that database and environment"
+      )
     ).toBeDefined();
   });
 });
@@ -133,7 +196,9 @@ describe("a stale AWS session's banner signs the failing database back in", () =
         cause: "Your SSO session expired.",
         resolution: ["Sign in again"],
         raw: null,
+        scope: "shared",
         database: "TEAM_MEMBER",
+        environment: "dev",
       },
     ]);
     render(<Databases />);
@@ -169,7 +234,9 @@ describe("paging away from an in-flight sign-in does not leave the next failure'
         cause: "Your SSO session expired.",
         resolution: ["Sign in again"],
         raw: null,
+        scope: "shared",
         database: "TEAM_MEMBER",
+        environment: "dev",
       },
       {
         key: "AWS_SSO_EXPIRED",
@@ -177,7 +244,9 @@ describe("paging away from an in-flight sign-in does not leave the next failure'
         cause: "Your SSO session expired.",
         resolution: ["Sign in again"],
         raw: null,
+        scope: "shared",
         database: "OTHER_MEMBER",
+        environment: "dev",
       },
     ]);
     vi.useFakeTimers();
@@ -213,6 +282,9 @@ describe("clicking the error banner opens the error modal", () => {
         cause: "Your SSO session expired.",
         resolution: ["Sign in again"],
         raw: null,
+        scope: "shared",
+        database: "TEAM_MEMBER",
+        environment: "dev",
       },
     ]);
     render(<Databases />);

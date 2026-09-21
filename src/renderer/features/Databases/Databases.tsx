@@ -3,7 +3,12 @@ import { useState } from "react";
 import AwsSsoLoginAction from "@/renderer/features/Databases/components/AwsSsoLoginAction";
 import DatabaseRow from "@/renderer/features/Databases/components/DatabaseRow";
 import styles from "@/renderer/features/Databases/Databases.module.scss";
-import { sortDatabaseRowsByName } from "@/renderer/features/Databases/databases.utils";
+import {
+  buildDatabaseRowReason,
+  errorsForDatabase,
+  sharedDatabaseErrors,
+  sortDatabaseRowsByName,
+} from "@/renderer/features/Databases/databases.utils";
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
 import ErrorModal from "@/renderer/features/ErrorModal";
 import { useErrorModal } from "@/renderer/features/ErrorModal/useErrorModal";
@@ -37,6 +42,8 @@ export default function Databases() {
     });
   }
 
+  const bannerErrors = sharedDatabaseErrors(databases.errors);
+
   return (
     <>
       <div className={styles.databases__toolbar}>
@@ -48,11 +55,11 @@ export default function Databases() {
         />
       </div>
       <div className={styles.databases__content}>
-        {databases.errors.length > 0 && (
+        {bannerErrors.length > 0 && (
           <ErrorBanner
-            diagnoses={databases.errors}
+            diagnoses={bannerErrors}
             onClick={function showErrors() {
-              modal.show(DATABASES_NAME, databases.errors);
+              modal.show(DATABASES_NAME, bannerErrors);
             }}
             renderActions={function renderLogin(diagnosis) {
               return (
@@ -77,6 +84,9 @@ export default function Databases() {
                 key={row.name}
                 name={row.name}
                 state={row.state}
+                reason={buildDatabaseRowReason(
+                  errorsForDatabase(databases.errors, row.name)
+                )}
                 localPort={row.localPort}
                 expanded={expandedNames[row.name] === true}
                 connectionInfo={databases.connectionInfoByName[row.name]}

@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
-  clearDatabaseConnectionFailure,
-  clearSubgraphFailure,
-  clearSupergraphFailure,
+  addDatabaseError,
+  addSubgraphError,
+  addSupergraphError,
+  clearDatabaseError,
+  clearSubgraphError,
+  clearSupergraphError,
   errors,
-  reportDatabaseConnectionFailure,
-  reportSubgraphFailure,
-  reportSupergraphFailure,
 } from "@/main/services/errors/errors.service";
 import { ErrorKey } from "@/shared/errors/errors.types";
+
+const DEV = "dev";
+const PROD = "prod";
 
 /** Reads the keys off a list of diagnoses. */
 function keysOf(diagnoses: { key: ErrorKey }[]): ErrorKey[] {
@@ -19,9 +22,10 @@ function keysOf(diagnoses: { key: ErrorKey }[]): ErrorKey[] {
 }
 
 beforeEach(function forgetEverything() {
-  clearSupergraphFailure();
-  clearSubgraphFailure("characters");
-  clearDatabaseConnectionFailure("TEAM_MEMBER");
+  clearSupergraphError();
+  clearSubgraphError("characters");
+  clearDatabaseError("TEAM_MEMBER", DEV);
+  clearDatabaseError("TEAM_MEMBER", PROD);
 });
 
 describe("each subgraph tracks its own failures", () => {
@@ -30,11 +34,7 @@ describe("each subgraph tracks its own failures", () => {
   });
 
   it("a reported subgraph answers with its diagnosis", () => {
-    reportSubgraphFailure(
-      "characters",
-      [ErrorKey.LocalRefused],
-      "ECONNREFUSED"
-    );
+    addSubgraphError("characters", [ErrorKey.LocalRefused], "ECONNREFUSED");
 
     expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
       ErrorKey.LocalRefused,
@@ -42,7 +42,7 @@ describe("each subgraph tracks its own failures", () => {
   });
 
   it("the text is read for signatures the caller did not name", () => {
-    reportSubgraphFailure(
+    addSubgraphError(
       "characters",
       [ErrorKey.LocalRefused],
       "The SSO session has expired"
@@ -55,7 +55,7 @@ describe("each subgraph tracks its own failures", () => {
   });
 
   it("a failure nothing recognizes is still an answer", () => {
-    reportSubgraphFailure("characters", [], "it fell over");
+    addSubgraphError("characters", [], "it fell over");
 
     expect(keysOf(errors.subgraphErrors()["characters"] ?? [])).toEqual([
       ErrorKey.Unknown,
@@ -63,14 +63,14 @@ describe("each subgraph tracks its own failures", () => {
   });
 
   it("clearing a subgraph forgets it", () => {
-    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
-    clearSubgraphFailure("characters");
+    addSubgraphError("characters", [ErrorKey.LocalRefused], "");
+    clearSubgraphError("characters");
 
     expect(errors.subgraphErrors()["characters"] ?? []).toEqual([]);
   });
 
   it("one subgraph's failure is not another's", () => {
-    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
+    addSubgraphError("characters", [ErrorKey.LocalRefused], "");
 
     expect(errors.subgraphErrors()["starships"] ?? []).toEqual([]);
   });
@@ -78,7 +78,7 @@ describe("each subgraph tracks its own failures", () => {
 
 describe("the supergraph tracks its own failure, separate from subgraphs", () => {
   it("the supergraph reports separately from its subgraphs", () => {
-    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "401 Unauthorized");
+    addSupergraphError([ErrorKey.ApolloKeyInvalid], "401 Unauthorized");
 
     expect(keysOf(errors.supergraphErrors())).toEqual([
       ErrorKey.ApolloKeyInvalid,
@@ -87,14 +87,14 @@ describe("the supergraph tracks its own failure, separate from subgraphs", () =>
   });
 
   it("a later report replaces the one before it", () => {
-    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
-    reportSupergraphFailure([ErrorKey.GraphNotFound], "");
+    addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
+    addSupergraphError([ErrorKey.GraphNotFound], "");
 
     expect(keysOf(errors.supergraphErrors())).toEqual([ErrorKey.GraphNotFound]);
   });
 
   it("every diagnosis carries copy for the screen", () => {
-    reportSupergraphFailure([ErrorKey.RoverMissing], "ENOENT");
+    addSupergraphError([ErrorKey.RoverMissing], "ENOENT");
 
     const actual = errors.supergraphErrors()[0];
 
@@ -109,12 +109,8 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 
   it("reports separately from the supergraph and subgraphs", () => {
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
-    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
+    addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.AwsSsoExpired,
@@ -124,17 +120,9 @@ describe("the database connection tracks its own failure, separate from the supe
     ]);
   });
 
-  it("a later report for the same database replaces the one before it", () => {
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsCliMissing],
-      ""
-    );
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
+  it("a later report for the same (database, environment) pick replaces the one before it", () => {
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsCliMissing], "");
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.AwsSsoExpired,
@@ -142,17 +130,13 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 
   it("one database's failure is not another's", () => {
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.AwsSsoExpired,
     ]);
 
-    clearDatabaseConnectionFailure("OTHER_DATABASE");
+    clearDatabaseError("OTHER_DATABASE", DEV);
 
     expect(keysOf(errors.databaseConnectionErrors())).toEqual([
       ErrorKey.AwsSsoExpired,
@@ -160,19 +144,16 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 
   it("clearing forgets the last failure", () => {
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
-    clearDatabaseConnectionFailure("TEAM_MEMBER");
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
+    clearDatabaseError("TEAM_MEMBER", DEV);
 
     expect(errors.databaseConnectionErrors()).toEqual([]);
   });
 
   it("the text is read for a signature the caller did not name explicitly", () => {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       "TEAM_MEMBER",
+      DEV,
       [],
       "SessionManagerPlugin is not found."
     );
@@ -183,22 +164,57 @@ describe("the database connection tracks its own failure, separate from the supe
   });
 });
 
+describe("a database's failure is scoped by environment as well as name", () => {
+  it("a failure under one environment does not show under another", () => {
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
+
+    const prodDiagnoses = errors
+      .databaseConnectionErrors()
+      .filter(function isProd(diagnosis) {
+        return diagnosis.environment === PROD;
+      });
+
+    expect(prodDiagnoses).toEqual([]);
+  });
+
+  it("clearing one environment's failure leaves the other environment's alone", () => {
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
+    addDatabaseError("TEAM_MEMBER", PROD, [ErrorKey.AwsCliMissing], "");
+
+    clearDatabaseError("TEAM_MEMBER", DEV);
+
+    expect(keysOf(errors.databaseConnectionErrors())).toEqual([
+      ErrorKey.AwsCliMissing,
+    ]);
+  });
+
+  it("carries the environment the attempt was made under on each diagnosis", () => {
+    addDatabaseError("TEAM_MEMBER", PROD, [ErrorKey.AwsSsoExpired], "");
+
+    expect(errors.databaseConnectionErrors()[0]?.environment).toBe(PROD);
+  });
+});
+
 describe("a database connection diagnosis can be traced back to which database it's about", () => {
   it("carries the database that was reported on each of its diagnoses", () => {
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
+    addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
 
     expect(errors.databaseConnectionErrors()[0]?.database).toBe("TEAM_MEMBER");
   });
 
   it("does not attach a database to a subgraph or supergraph diagnosis", () => {
-    reportSubgraphFailure("characters", [ErrorKey.LocalRefused], "");
-    reportSupergraphFailure([ErrorKey.ApolloKeyInvalid], "");
+    addSubgraphError("characters", [ErrorKey.LocalRefused], "");
+    addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
 
     expect(errors.subgraphErrors()["characters"]?.[0]?.database).toBeNull();
     expect(errors.supergraphErrors()[0]?.database).toBeNull();
+  });
+
+  it("does not attach an environment to a subgraph or supergraph diagnosis", () => {
+    addSubgraphError("characters", [ErrorKey.LocalRefused], "");
+    addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
+
+    expect(errors.subgraphErrors()["characters"]?.[0]?.environment).toBeNull();
+    expect(errors.supergraphErrors()[0]?.environment).toBeNull();
   });
 });

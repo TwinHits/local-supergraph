@@ -20,6 +20,7 @@ function loadEnvFile(): void {
   }
 }
 
+/** Reads one environment variable, falling back to `defaultValue` when it's unset. */
 function readVariable(key: EnvironmentVariable, defaultValue = ""): string {
   loadEnvFile();
   return process.env[key] ?? defaultValue;
@@ -47,6 +48,7 @@ export const environment = {
   apolloKey(): string {
     return readVariable(EnvironmentVariable.ApolloKey);
   },
+  /** The AWS region for AWS CLI calls, defaulting to DEFAULT_AWS_REGION when unset. */
   awsRegion(): string {
     return readVariable(EnvironmentVariable.AwsRegion, DEFAULT_AWS_REGION);
   },

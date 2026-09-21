@@ -28,6 +28,7 @@ function tabClasses(active: boolean): string {
     .trim();
 }
 
+/** The app's shell: header, tab rail, and whichever feature tab is active. */
 export default function App() {
   const [activeTab, setActiveTab] = useState(AppTab.Supergraph);
 

@@ -178,6 +178,7 @@ export function buildPortDiagnosis(
       resolution: ["Enter a port for this subgraph"],
       raw: null,
       database: null,
+      environment: null,
     };
   }
   if (!isValidPort(port)) {
@@ -188,6 +189,7 @@ export function buildPortDiagnosis(
       resolution: ["Enter a port in that range"],
       raw: null,
       database: null,
+      environment: null,
     };
   }
   if (port === routerPort) {
@@ -198,6 +200,7 @@ export function buildPortDiagnosis(
       resolution: ["Pick a different port"],
       raw: null,
       database: null,
+      environment: null,
     };
   }
   if (takenPorts.includes(port)) {
@@ -208,6 +211,7 @@ export function buildPortDiagnosis(
       resolution: ["Pick a different port"],
       raw: null,
       database: null,
+      environment: null,
     };
   }
   return null;

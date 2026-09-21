@@ -17,6 +17,7 @@ const FALLBACK_DIAGNOSIS: Diagnosis = {
   resolution: ["No known fix for this error"],
   raw: null,
   database: null,
+  environment: null,
 };
 
 type ErrorModalProps = {

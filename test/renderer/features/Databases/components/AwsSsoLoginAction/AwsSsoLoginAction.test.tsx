@@ -12,6 +12,7 @@ const SSO_EXPIRED: Diagnosis = {
   resolution: ["Sign in again"],
   raw: null,
   database: "TEAM_MEMBER",
+  environment: "dev",
 };
 
 const CLI_MISSING: Diagnosis = {
@@ -23,6 +24,7 @@ const CLI_MISSING: Diagnosis = {
   ],
   raw: null,
   database: "TEAM_MEMBER",
+  environment: "dev",
 };
 
 describe("a stale AWS session offers to sign in", () => {

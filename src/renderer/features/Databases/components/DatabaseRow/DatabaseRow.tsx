@@ -18,6 +18,8 @@ const DRAWER_COLUMN_COUNT = 5;
 type DatabaseRowProps = {
   name: string;
   state: DatabaseConnectionState;
+  /** This row's own current error, if it has one. */
+  reason: string | null;
   localPort: number;
   expanded: boolean;
   connectionInfo: DatabaseConnectionInfo | null | undefined;
@@ -38,6 +40,7 @@ function stopPropagation(event: MouseEvent): void {
 export default function DatabaseRow({
   name,
   state,
+  reason,
   localPort,
   expanded,
   connectionInfo,
@@ -60,7 +63,7 @@ export default function DatabaseRow({
           </span>
         </TableCell>
         <TableCell>
-          <ConnectionStatusIndicator state={state} />
+          <ConnectionStatusIndicator state={state} reason={reason} />
         </TableCell>
         <TableCell>
           <TextLabel>{name}</TextLabel>

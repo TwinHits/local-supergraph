@@ -38,6 +38,10 @@ export function registerConfigFile(path: string): void {
   configFilePath = path;
 }
 
+/**
+ * Reads the persisted config file into memory once, if it hasn't been already.
+ * @throws {SyntaxError} if the persisted config file contains invalid JSON.
+ */
 function load(): void {
   if (loaded) {
     return;
@@ -145,10 +149,12 @@ export const settings: SettingsContract = {
     persist();
     return doc.variantFilter;
   },
+  /** The environment last selected in the toolbar. */
   currentEnvironment() {
     load();
     return doc.currentEnvironment;
   },
+  /** Persists the toolbar's newly selected environment. */
   updateEnvironment(name: string) {
     load();
     doc.currentEnvironment = name;

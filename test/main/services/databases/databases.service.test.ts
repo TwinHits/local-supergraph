@@ -121,9 +121,9 @@ afterAll(function removeTempDirs() {
 async function freshDatabases() {
   const { databases } =
     await import("@/main/services/databases/databases.service");
-  const { errors, reportDatabaseConnectionFailure } =
+  const { addDatabaseError, errors } =
     await import("@/main/services/errors/errors.service");
-  return { databases, errors, reportDatabaseConnectionFailure };
+  return { databases, errors, addDatabaseError };
 }
 
 /** Reads the keys off a list of diagnoses. */
@@ -569,13 +569,15 @@ describe("disconnecting always returns to disconnected", () => {
 
   it("forgets the database's last reported failure, so it doesn't outlive the disconnect", async () => {
     writeConfigFile(CONFIG_FIXTURE);
-    const { databases, errors, reportDatabaseConnectionFailure } =
-      await freshDatabases();
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.SessionManagerPluginMissing],
-      ""
-    );
+    awsState.checkCredentials.mockResolvedValue({
+      found: false,
+      succeeded: false,
+      stdout: "",
+      stderr: "",
+    });
+    const { databases, errors } = await freshDatabases();
+    await databases.connect("TEAM_MEMBER", "dev");
+    expect(errors.databaseConnectionErrors()).not.toEqual([]);
 
     await databases.disconnect("TEAM_MEMBER");
 
@@ -893,18 +895,9 @@ describe("signing back in through AWS SSO uses the pick's own configured profile
         },
       },
     });
-    const { databases, errors, reportDatabaseConnectionFailure } =
-      await freshDatabases();
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
-    reportDatabaseConnectionFailure(
-      "OTHER_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
+    const { databases, errors, addDatabaseError } = await freshDatabases();
+    addDatabaseError("TEAM_MEMBER", "dev", [ErrorKey.AwsSsoExpired], "");
+    addDatabaseError("OTHER_MEMBER", "dev", [ErrorKey.AwsSsoExpired], "");
     awsState.ssoLogin.mockResolvedValue({
       found: true,
       succeeded: true,
@@ -931,18 +924,9 @@ describe("signing back in through AWS SSO uses the pick's own configured profile
         },
       },
     });
-    const { databases, errors, reportDatabaseConnectionFailure } =
-      await freshDatabases();
-    reportDatabaseConnectionFailure(
-      "TEAM_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
-    reportDatabaseConnectionFailure(
-      "OTHER_MEMBER",
-      [ErrorKey.AwsSsoExpired],
-      ""
-    );
+    const { databases, errors, addDatabaseError } = await freshDatabases();
+    addDatabaseError("TEAM_MEMBER", "dev", [ErrorKey.AwsSsoExpired], "");
+    addDatabaseError("OTHER_MEMBER", "dev", [ErrorKey.AwsSsoExpired], "");
     awsState.ssoLogin.mockResolvedValue({
       found: true,
       succeeded: true,

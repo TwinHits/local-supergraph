@@ -17,8 +17,8 @@ import {
 } from "@/main/services/databases/databases.types";
 import { environment } from "@/main/services/environment/environment.service";
 import {
-  clearDatabaseConnectionFailure,
-  reportDatabaseConnectionFailure,
+  addDatabaseError,
+  clearDatabaseError,
 } from "@/main/services/errors/errors.service";
 import { type Awaitable } from "@/shared/contract/contract.types";
 import { type DatabasesContract } from "@/shared/databases/databases.contract";
@@ -191,10 +191,15 @@ function updateLocalPort(
 }
 
 /** Watches one database session's raw output for the lines that change its state. */
-function watchSessionOutput(database: string, chunk: string): void {
+function watchSessionOutput(
+  database: string,
+  targetEnvironment: string,
+  chunk: string
+): void {
   if (PLUGIN_MISSING_MARKER.test(chunk)) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      targetEnvironment,
       [ErrorKey.SessionManagerPluginMissing],
       chunk
     );
@@ -210,7 +215,7 @@ function watchSessionOutput(database: string, chunk: string): void {
   }
 
   if (READY_MARKER.test(chunk)) {
-    clearDatabaseConnectionFailure(database);
+    clearDatabaseError(database, targetEnvironment);
     const current = connections.get(database);
     if (current !== undefined) {
       connections.set(database, {
@@ -255,8 +260,9 @@ async function connect(
 
   const entry = lookupEntry(database, targetEnvironment);
   if (entry === null) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      targetEnvironment,
       [ErrorKey.DatabaseEntryMissing],
       null
     );
@@ -273,7 +279,12 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
   if (!credentials.found) {
-    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    addDatabaseError(
+      database,
+      targetEnvironment,
+      [ErrorKey.AwsCliMissing],
+      null
+    );
     connections.set(database, {
       state: DatabaseConnectionState.Disconnected,
       environment: null,
@@ -281,8 +292,9 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
   if (!credentials.succeeded) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      targetEnvironment,
       [],
       credentials.stderr === "" ? credentials.stdout : credentials.stderr
     );
@@ -305,7 +317,7 @@ async function connect(
       profile: entry.aws_profile,
     },
     function onOutput(chunk) {
-      watchSessionOutput(database, chunk);
+      watchSessionOutput(database, targetEnvironment, chunk);
     }
   );
 
@@ -316,7 +328,12 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
   if (!forward.found) {
-    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    addDatabaseError(
+      database,
+      targetEnvironment,
+      [ErrorKey.AwsCliMissing],
+      null
+    );
     connections.set(database, {
       state: DatabaseConnectionState.Disconnected,
       environment: null,
@@ -324,7 +341,7 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
   if (!forward.started) {
-    reportDatabaseConnectionFailure(database, [], forward.error);
+    addDatabaseError(database, targetEnvironment, [], forward.error);
     connections.set(database, {
       state: DatabaseConnectionState.Disconnected,
       environment: null,
@@ -342,7 +359,10 @@ async function disconnect(database: string): Promise<DatabaseConnectionState> {
     state: DatabaseConnectionState.Disconnected,
     environment: null,
   });
-  clearDatabaseConnectionFailure(database);
+  const lastEnvironment = lastAttemptedEnvironment.get(database);
+  if (lastEnvironment !== undefined) {
+    clearDatabaseError(database, lastEnvironment);
+  }
   return DatabaseConnectionState.Disconnected;
 }
 
@@ -358,8 +378,9 @@ async function ssoLogin(
     lastAttemptedEnvironment.get(database) ?? targetEnvironment;
   const entry = lookupEntry(database, resolvedEnvironment);
   if (entry === null) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      resolvedEnvironment,
       [ErrorKey.DatabaseEntryMissing],
       null
     );
@@ -368,12 +389,18 @@ async function ssoLogin(
 
   const result = await runSsoLogin(entry.aws_profile);
   if (!result.found) {
-    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    addDatabaseError(
+      database,
+      resolvedEnvironment,
+      [ErrorKey.AwsCliMissing],
+      null
+    );
     return false;
   }
   if (!result.succeeded) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      resolvedEnvironment,
       [],
       result.stderr === "" ? result.stdout : result.stderr
     );
@@ -386,7 +413,7 @@ async function ssoLogin(
     resolvedEnvironment,
     entry.aws_profile
   )) {
-    clearDatabaseConnectionFailure(name);
+    clearDatabaseError(name, resolvedEnvironment);
   }
   return true;
 }
@@ -417,12 +444,18 @@ async function resolvePassword(
     parsed.region ?? environment.awsRegion()
   );
   if (!secret.found) {
-    reportDatabaseConnectionFailure(database, [ErrorKey.AwsCliMissing], null);
+    addDatabaseError(
+      database,
+      targetEnvironment,
+      [ErrorKey.AwsCliMissing],
+      null
+    );
     return null;
   }
   if (!secret.succeeded) {
-    reportDatabaseConnectionFailure(
+    addDatabaseError(
       database,
+      targetEnvironment,
       [],
       secret.stderr === "" ? secret.stdout : secret.stderr
     );

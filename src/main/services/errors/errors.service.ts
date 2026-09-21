@@ -15,7 +15,8 @@ type Report = {
 };
 
 const subgraphReports = new Map<string, Report>();
-const databaseConnectionReports = new Map<string, Report>();
+/** database name -> environment name -> that pick's current failure. */
+const databaseConnectionReports = new Map<string, Map<string, Report>>();
 let supergraphReport: Report | null = null;
 
 /** The keys the caller named plus any found in the text. */
@@ -27,29 +28,22 @@ function buildReport(keys: ErrorKey[], raw: string | null): Report {
 /** Turns a report into its diagnoses. `database` names which database it's about, if any. */
 function toDiagnoses(
   report: Report | null,
-  database: string | null = null
+  database: string | null = null,
+  environment: string | null = null
 ): Diagnosis[] {
   if (report === null) {
     return [];
   }
-  return buildDiagnoses(report.keys, report.raw, database);
+  return buildDiagnoses(report.keys, report.raw, database, environment);
 }
 
-/** Records what went wrong with the supergraph. */
-export function reportSupergraphFailure(
-  keys: ErrorKey[],
-  raw: string | null
-): void {
-  supergraphReport = buildReport(keys, raw);
-}
-
-/** Forgets the supergraph's last failure. */
-export function clearSupergraphFailure(): void {
-  supergraphReport = null;
-}
-
-/** Records what went wrong with one subgraph. */
-export function reportSubgraphFailure(
+/**
+ * Records one subgraph's current failure, replacing whatever was recorded
+ * for it before. `raw` is also scanned for a signature the caller didn't
+ * name, falling back to ErrorKey.Unknown when nothing matches and `keys` is
+ * otherwise empty.
+ */
+export function addSubgraphError(
   name: string,
   keys: ErrorKey[],
   raw: string | null
@@ -57,23 +51,44 @@ export function reportSubgraphFailure(
   subgraphReports.set(name, buildReport(keys, raw));
 }
 
-/** Forgets one subgraph's last failure. */
-export function clearSubgraphFailure(name: string): void {
+/** Forgets one subgraph's failure — it's healthy again. */
+export function clearSubgraphError(name: string): void {
   subgraphReports.delete(name);
 }
 
-/** Records what went wrong with one database's connection. */
-export function reportDatabaseConnectionFailure(
+/** Records the supergraph's current failure. See addSubgraphError for how `raw` is read. */
+export function addSupergraphError(keys: ErrorKey[], raw: string | null): void {
+  supergraphReport = buildReport(keys, raw);
+}
+
+/** Forgets the supergraph's failure — it's healthy again. */
+export function clearSupergraphError(): void {
+  supergraphReport = null;
+}
+
+/**
+ * Records one (database, environment) pick's current failure. See
+ * addSubgraphError for how `raw` is read. Scoped by environment as well as
+ * database so a failed attempt under one environment doesn't linger once the
+ * developer has moved on to another.
+ */
+export function addDatabaseError(
   database: string,
+  environment: string,
   keys: ErrorKey[],
   raw: string | null
 ): void {
-  databaseConnectionReports.set(database, buildReport(keys, raw));
+  const byEnvironment = databaseConnectionReports.get(database) ?? new Map();
+  byEnvironment.set(environment, buildReport(keys, raw));
+  databaseConnectionReports.set(database, byEnvironment);
 }
 
-/** Forgets one database connection's last failure. */
-export function clearDatabaseConnectionFailure(database: string): void {
-  databaseConnectionReports.delete(database);
+/** Forgets one (database, environment) pick's failure — it's healthy again. */
+export function clearDatabaseError(
+  database: string,
+  environment: string
+): void {
+  databaseConnectionReports.get(database)?.delete(environment);
 }
 
 export const errors: ErrorsContract = {
@@ -89,8 +104,13 @@ export const errors: ErrorsContract = {
   },
   databaseConnectionErrors(): Diagnosis[] {
     return [...databaseConnectionReports.entries()].flatMap(
-      function toEntryDiagnoses([database, report]) {
-        return toDiagnoses(report, database);
+      function toDatabaseDiagnoses([database, byEnvironment]) {
+        return [...byEnvironment.entries()].flatMap(function toEntryDiagnoses([
+          environment,
+          report,
+        ]) {
+          return toDiagnoses(report, database, environment);
+        });
       }
     );
   },
