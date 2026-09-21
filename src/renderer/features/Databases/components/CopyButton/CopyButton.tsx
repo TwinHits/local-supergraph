@@ -17,6 +17,7 @@ type CopyButtonProps = {
   icon: IconName;
   label: string;
   tooltip: string;
+  tooltipDelayMs?: number;
   onCopy: () => Promise<boolean>;
 };
 
@@ -25,6 +26,7 @@ export default function CopyButton({
   icon,
   label,
   tooltip,
+  tooltipDelayMs,
   onCopy,
 }: CopyButtonProps) {
   const [state, setState] = useState(CopyButtonState.Idle);
@@ -59,6 +61,7 @@ export default function CopyButton({
     <IconButton
       label={label}
       tooltip={tooltip}
+      tooltipDelayMs={tooltipDelayMs}
       disabled={state === CopyButtonState.Loading}
       stretch={false}
       onClick={click}

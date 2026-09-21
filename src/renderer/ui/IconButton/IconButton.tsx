@@ -23,6 +23,7 @@ type IconButtonProps = {
   label: string;
   children: ReactNode;
   tooltip?: string;
+  tooltipDelayMs?: number;
   disabled?: boolean;
   variant?: IconButtonVariant;
   size?: IconButtonSize;
@@ -36,6 +37,7 @@ export default function IconButton({
   label,
   children,
   tooltip,
+  tooltipDelayMs,
   disabled,
   variant,
   size,
@@ -68,7 +70,7 @@ export default function IconButton({
   }
 
   return (
-    <HoverTooltip title={tooltip}>
+    <HoverTooltip title={tooltip} enterDelayMs={tooltipDelayMs}>
       <span
         className={[styles.iconButton__tooltip, stretchClass].join(" ").trim()}
       >
