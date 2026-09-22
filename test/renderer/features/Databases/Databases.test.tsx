@@ -184,6 +184,62 @@ describe("a row-specific failure shows only on its own row, not in the table-wid
   });
 });
 
+describe("clicking a row's own status opens the error modal for that row", () => {
+  const rowError = {
+    key: "DATABASE_ENTRY_MISSING",
+    summary: "No config entry for that database and environment",
+    cause:
+      "databases.json has no entry for this database under the selected environment.",
+    resolution: ["Add an entry", "Pick a different environment"],
+    raw: null,
+    scope: "row-specific",
+    database: "TEAM_MEMBER",
+    environment: "dev",
+  };
+
+  it("shows that row's own resolution steps", async () => {
+    vi.useFakeTimers();
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.databaseConnectionErrors.mockResolvedValue([rowError]);
+    render(<Databases />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    vi.useRealTimers();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "disconnected: No config entry for that database and environment",
+      })
+    );
+
+    expect(await screen.findByText("Add an entry")).toBeDefined();
+  });
+
+  it("does not also expand the row's drawer", async () => {
+    vi.useFakeTimers();
+    api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
+    api.currentEnvironment.mockResolvedValue("dev");
+    api.databaseConnectionErrors.mockResolvedValue([rowError]);
+    render(<Databases />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    vi.useRealTimers();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "disconnected: No config entry for that database and environment",
+      })
+    );
+
+    expect(
+      screen.queryByText("No connection info for this environment.")
+    ).toBeNull();
+  });
+});
+
 describe("a stale AWS session's banner signs the failing database back in", () => {
   it("calls the bridge with the failing database and its environment when Login is clicked", async () => {
     vi.useFakeTimers();

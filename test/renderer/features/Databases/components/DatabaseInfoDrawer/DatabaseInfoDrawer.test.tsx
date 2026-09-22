@@ -76,7 +76,7 @@ describe("the two ways to copy the password share a single field", () => {
 
     const field = screen
       .getByText("Password")
-      .closest(`.${styles.databaseInfoDrawer__field}`);
+      .closest(`.${styles.databaseInfoDrawer__groupField}`);
     const copyPassword = screen.getByRole("button", {
       name: "Copy TEAM_MEMBER's password",
     });

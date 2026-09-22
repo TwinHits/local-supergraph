@@ -9,6 +9,7 @@ import {
 } from "@/main/services/aws/aws.service";
 import {
   CLIPBOARD_CLEAR_MS,
+  CONNECT_TIMEOUT_MS,
   DATABASES_CONFIG_FILE,
 } from "@/main/services/databases/databases.constants";
 import {
@@ -39,6 +40,8 @@ const connections = new Map<string, DatabaseRowState>();
 const localPortOverrides = new Map<string, number>();
 /** The environment each database's most recent connect() attempt targeted, kept even once it fails. */
 const lastAttemptedEnvironment = new Map<string, string>();
+/** The pending give-up timer for a database's in-flight connect() attempt, if it hasn't settled yet. */
+const connectTimeouts = new Map<string, NodeJS.Timeout>();
 
 /** A (database, environment) pick's key into `localPortOverrides`. */
 function overrideKey(database: string, targetEnvironment: string): string {
@@ -88,6 +91,11 @@ function readConfigFile(): DatabasesConfigFile {
   } catch {
     return { databases: {} };
   }
+}
+
+/** Leads raw AWS CLI output with the profile it ran under, so a diagnosis names the exact profile even when several profiles share a start URL. */
+function withProfile(profile: string, raw: string | null): string | null {
+  return raw === null ? null : `aws_profile: ${profile}\n${raw}`;
 }
 
 /** One (database, environment) pick's config, or null if either isn't in the file. */
@@ -190,6 +198,15 @@ function updateLocalPort(
   return port;
 }
 
+/** Cancels a database's pending connect-timeout, if one is still waiting. */
+function clearConnectTimeout(database: string): void {
+  const timeout = connectTimeouts.get(database);
+  if (timeout !== undefined) {
+    clearTimeout(timeout);
+    connectTimeouts.delete(database);
+  }
+}
+
 /** Watches one database session's raw output for the lines that change its state. */
 function watchSessionOutput(
   database: string,
@@ -197,6 +214,7 @@ function watchSessionOutput(
   chunk: string
 ): void {
   if (PLUGIN_MISSING_MARKER.test(chunk)) {
+    clearConnectTimeout(database);
     addDatabaseError(
       database,
       targetEnvironment,
@@ -215,6 +233,7 @@ function watchSessionOutput(
   }
 
   if (READY_MARKER.test(chunk)) {
+    clearConnectTimeout(database);
     clearDatabaseError(database, targetEnvironment);
     const current = connections.get(database);
     if (current !== undefined) {
@@ -224,6 +243,25 @@ function watchSessionOutput(
       });
     }
   }
+}
+
+/** Gives up on a connect attempt that never reached READY_MARKER in time. */
+function onConnectTimeout(database: string, targetEnvironment: string): void {
+  connectTimeouts.delete(database);
+  if (wasSuperseded(database, targetEnvironment)) {
+    return;
+  }
+  addDatabaseError(
+    database,
+    targetEnvironment,
+    [ErrorKey.AwsSessionUnreachable],
+    null
+  );
+  connections.set(database, {
+    state: DatabaseConnectionState.Disconnected,
+    environment: null,
+  });
+  void stopPortForward(database);
 }
 
 /**
@@ -296,7 +334,10 @@ async function connect(
       database,
       targetEnvironment,
       [],
-      credentials.stderr === "" ? credentials.stdout : credentials.stderr
+      withProfile(
+        entry.aws_profile,
+        credentials.stderr === "" ? credentials.stdout : credentials.stderr
+      )
     );
     connections.set(database, {
       state: DatabaseConnectionState.Disconnected,
@@ -341,7 +382,12 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
   if (!forward.started) {
-    addDatabaseError(database, targetEnvironment, [], forward.error);
+    addDatabaseError(
+      database,
+      targetEnvironment,
+      [],
+      withProfile(entry.aws_profile, forward.error)
+    );
     connections.set(database, {
       state: DatabaseConnectionState.Disconnected,
       environment: null,
@@ -349,11 +395,19 @@ async function connect(
     return DatabaseConnectionState.Disconnected;
   }
 
+  connectTimeouts.set(
+    database,
+    setTimeout(function connectTimedOut() {
+      onConnectTimeout(database, targetEnvironment);
+    }, CONNECT_TIMEOUT_MS)
+  );
+
   return DatabaseConnectionState.Connecting;
 }
 
 /** Disconnects one database's open session, if it has one, and forgets its last reported failure. */
 async function disconnect(database: string): Promise<DatabaseConnectionState> {
+  clearConnectTimeout(database);
   await stopPortForward(database);
   connections.set(database, {
     state: DatabaseConnectionState.Disconnected,
@@ -402,7 +456,10 @@ async function ssoLogin(
       database,
       resolvedEnvironment,
       [],
-      result.stderr === "" ? result.stdout : result.stderr
+      withProfile(
+        entry.aws_profile,
+        result.stderr === "" ? result.stdout : result.stderr
+      )
     );
     return false;
   }
@@ -457,7 +514,10 @@ async function resolvePassword(
       database,
       targetEnvironment,
       [],
-      secret.stderr === "" ? secret.stdout : secret.stderr
+      withProfile(
+        entry.aws_profile,
+        secret.stderr === "" ? secret.stdout : secret.stderr
+      )
     );
     return null;
   }

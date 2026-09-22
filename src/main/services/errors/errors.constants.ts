@@ -80,6 +80,21 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
     cause: "Your SSO session expired.",
     resolution: ["Sign in again, then retry"],
   },
+  [ErrorKey.AwsProfileNotLoggedIn]: {
+    key: ErrorKey.AwsProfileNotLoggedIn,
+    summary: "Not signed into this profile",
+    cause: "Nobody has signed into AWS SSO under this exact profile name.",
+    resolution: [
+      "Change aws_profile in databases.json to a profile name you already sign into",
+      "Or, run aws configure sso and name the new profile to match aws_profile",
+    ],
+  },
+  [ErrorKey.AwsSessionUnreachable]: {
+    key: ErrorKey.AwsSessionUnreachable,
+    summary: "The AWS session never connected",
+    cause: "aws ssm start-session did not reach AWS in time.",
+    resolution: ["Connect to the VPN", "Try again once AWS is reachable"],
+  },
   [ErrorKey.PortInUse]: {
     key: ErrorKey.PortInUse,
     summary: "Something already holds the port",
@@ -151,6 +166,11 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
     /sso session .*expired/i,
     /token has expired/i,
   ],
+  [ErrorKey.AwsProfileNotLoggedIn]: [
+    /error loading sso token/i,
+    /sso token.*does not exist/i,
+  ],
+  [ErrorKey.AwsSessionUnreachable]: [],
   [ErrorKey.PortInUse]: [/\bEADDRINUSE\b/],
   [ErrorKey.PortInvalid]: [],
   [ErrorKey.CompositionFailed]: [
@@ -176,6 +196,8 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.AwsProfileMissing,
   ErrorKey.DatabaseEntryMissing,
   ErrorKey.AwsSsoExpired,
+  ErrorKey.AwsProfileNotLoggedIn,
+  ErrorKey.AwsSessionUnreachable,
   ErrorKey.PortInUse,
   ErrorKey.PortInvalid,
   ErrorKey.CompositionFailed,

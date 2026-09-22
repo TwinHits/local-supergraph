@@ -38,7 +38,9 @@ export default function ErrorModal({
   const [rawOpen, setRawOpen] = useState(false);
   const shown = diagnoses.length === 0 ? [FALLBACK_DIAGNOSIS] : diagnoses;
   const diagnosis = shown[index];
-  const alwaysShowRaw = diagnosis.key === ErrorKey.Unknown;
+  const alwaysShowRaw =
+    diagnosis.key === ErrorKey.Unknown ||
+    diagnosis.key === ErrorKey.AwsProfileNotLoggedIn;
 
   return (
     <ModalDialog

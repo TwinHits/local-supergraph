@@ -18,7 +18,7 @@ export type DatabaseRow = {
   localPort: number;
 };
 
-/** Every environment named by any database in the catalog, in the order first seen. */
+/** Every environment named by any database in the catalog, sorted alphabetically. */
 function everyEnvironment(catalog: DatabaseCatalog): string[] {
   const seen = new Set<string>();
   for (const environments of Object.values(catalog)) {
@@ -26,7 +26,9 @@ function everyEnvironment(catalog: DatabaseCatalog): string[] {
       seen.add(each);
     }
   }
-  return [...seen];
+  return [...seen].sort(function byName(left, right) {
+    return left.localeCompare(right);
+  });
 }
 
 /** Reads the database catalog, drives every row's connection, and polls real state. */

@@ -1,40 +1,32 @@
-import styles from "@/renderer/features/Databases/components/ConnectionStatusIndicator/ConnectionStatusIndicator.module.scss";
-import HoverTooltip from "@/renderer/ui/HoverTooltip";
+import StatusIndicator, { StatusTone } from "@/renderer/ui/StatusIndicator";
 import { DatabaseConnectionState } from "@/shared/databases/databases.types";
 
 type ConnectionStatusIndicatorProps = {
   state: DatabaseConnectionState;
   /** This row's own current error, if it has one. */
   reason: string | null;
+  onClick?: () => void;
 };
 
-const SHAPES: Record<DatabaseConnectionState, string> = {
-  [DatabaseConnectionState.Disconnected]:
-    styles["connectionStatusIndicator--disconnected"],
-  [DatabaseConnectionState.Connecting]:
-    styles["connectionStatusIndicator--connecting"],
-  [DatabaseConnectionState.Connected]:
-    styles["connectionStatusIndicator--connected"],
+const TONES: Record<DatabaseConnectionState, StatusTone> = {
+  [DatabaseConnectionState.Disconnected]: StatusTone.Idle,
+  [DatabaseConnectionState.Connecting]: StatusTone.Pending,
+  [DatabaseConnectionState.Connected]: StatusTone.Healthy,
 };
 
-/** What disconnected, connecting and connected look like for one database row. */
+/** A database row's connection status dot, red whenever it has a reported error. */
 export default function ConnectionStatusIndicator({
   state,
   reason,
+  onClick,
 }: ConnectionStatusIndicatorProps) {
-  const shape = (
-    <span
-      role="img"
-      aria-label={reason === null ? state : `${state}: ${reason}`}
-      className={[styles.connectionStatusIndicator, SHAPES[state]]
-        .join(" ")
-        .trim()}
+  const tone = reason === null ? TONES[state] : StatusTone.Failed;
+  return (
+    <StatusIndicator
+      tone={tone}
+      label={state}
+      reason={reason}
+      onClick={reason === null ? undefined : onClick}
     />
   );
-
-  if (reason === null) {
-    return shape;
-  }
-
-  return <HoverTooltip title={reason}>{shape}</HoverTooltip>;
 }

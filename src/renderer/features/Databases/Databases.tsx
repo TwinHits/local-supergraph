@@ -93,6 +93,12 @@ export default function Databases() {
                 onToggleExpanded={function toggle() {
                   toggleExpanded(row.name);
                 }}
+                onShowErrors={function showErrors() {
+                  modal.show(
+                    row.name,
+                    errorsForDatabase(databases.errors, row.name)
+                  );
+                }}
                 onConnect={function connect() {
                   databases.connect(row.name);
                 }}

@@ -8,6 +8,8 @@ export enum ErrorKey {
   AwsProfileMissing = "AWS_PROFILE_MISSING",
   DatabaseEntryMissing = "DATABASE_ENTRY_MISSING",
   AwsSsoExpired = "AWS_SSO_EXPIRED",
+  AwsProfileNotLoggedIn = "AWS_PROFILE_NOT_LOGGED_IN",
+  AwsSessionUnreachable = "AWS_SESSION_UNREACHABLE",
   PortInUse = "PORT_IN_USE",
   PortInvalid = "PORT_INVALID",
   CompositionFailed = "COMPOSITION_FAILED",

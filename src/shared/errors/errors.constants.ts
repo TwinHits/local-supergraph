@@ -15,6 +15,8 @@ export const ERROR_SCOPES: Record<ErrorKey, ErrorScope> = {
   [ErrorKey.AwsProfileMissing]: ErrorScope.Shared,
   [ErrorKey.DatabaseEntryMissing]: ErrorScope.RowSpecific,
   [ErrorKey.AwsSsoExpired]: ErrorScope.Shared,
+  [ErrorKey.AwsProfileNotLoggedIn]: ErrorScope.Shared,
+  [ErrorKey.AwsSessionUnreachable]: ErrorScope.Shared,
   [ErrorKey.PortInUse]: ErrorScope.RowSpecific,
   [ErrorKey.PortInvalid]: ErrorScope.RowSpecific,
   [ErrorKey.CompositionFailed]: ErrorScope.Shared,

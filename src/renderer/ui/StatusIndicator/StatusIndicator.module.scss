@@ -9,6 +9,15 @@
   vertical-align: middle;
 }
 
+.statusIndicator--idle {
+  border: 2px solid colors.$pending;
+}
+
+.statusIndicator--pending {
+  border: 2px solid colors.$pending;
+  animation: statusIndicator__pulse 1.4s ease-in-out infinite;
+}
+
 .statusIndicator--healthy {
   background: colors.$healthy;
 }
@@ -33,15 +42,10 @@
   background: colors.$failed;
 }
 
-// A subgraph the running graph actually needs right now, broken right now —
-// more urgent than the calmer pending pulse below, so it's faster.
+// A row the running graph actually needs right now, broken right now — more
+// urgent than the calmer pending pulse above, so it's faster.
 .statusIndicator--running.statusIndicator--failed {
   animation: statusIndicator__pulse 0.8s ease-in-out infinite;
-}
-
-.statusIndicator--pending {
-  border: 2px solid colors.$pending;
-  animation: statusIndicator__pulse 1.4s ease-in-out infinite;
 }
 
 @keyframes statusIndicator__pulse {

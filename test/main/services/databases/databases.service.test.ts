@@ -123,7 +123,9 @@ async function freshDatabases() {
     await import("@/main/services/databases/databases.service");
   const { addDatabaseError, errors } =
     await import("@/main/services/errors/errors.service");
-  return { databases, errors, addDatabaseError };
+  const { CONNECT_TIMEOUT_MS } =
+    await import("@/main/services/databases/databases.constants");
+  return { databases, errors, addDatabaseError, CONNECT_TIMEOUT_MS };
 }
 
 /** Reads the keys off a list of diagnoses. */
@@ -533,6 +535,96 @@ describe("the open session's own output drives its state from Connecting to Conn
     );
 
     expect(awsState.stopPortForward).toHaveBeenCalledWith("TEAM_MEMBER");
+  });
+});
+
+describe("a connect attempt that never reaches READY_MARKER eventually gives up", () => {
+  async function connectAndLetSpawnSettle(databases: {
+    connect: (
+      database: string,
+      environment: string
+    ) => DatabaseConnectionState | Promise<DatabaseConnectionState>;
+  }): Promise<void> {
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: true,
+      stdout: "{}",
+      stderr: "",
+    });
+    awsState.startPortForward.mockResolvedValue({
+      started: true,
+      found: true,
+      error: null,
+    });
+    await databases.connect("TEAM_MEMBER", "dev");
+  }
+
+  it("reports AwsSessionUnreachable and disconnects once the timeout elapses with no output", async () => {
+    vi.useFakeTimers();
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases, errors, CONNECT_TIMEOUT_MS } = await freshDatabases();
+    await connectAndLetSpawnSettle(databases);
+
+    await vi.advanceTimersByTimeAsync(CONNECT_TIMEOUT_MS);
+
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Disconnected
+    );
+    expect(errors.databaseConnectionErrors()[0]?.key).toBe(
+      ErrorKey.AwsSessionUnreachable
+    );
+    expect(awsState.stopPortForward).toHaveBeenCalledWith("TEAM_MEMBER");
+    vi.useRealTimers();
+  });
+
+  it("does not fire once the session announces it's ready first", async () => {
+    vi.useFakeTimers();
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases, errors, CONNECT_TIMEOUT_MS } = await freshDatabases();
+    await connectAndLetSpawnSettle(databases);
+    sessionState.onOutput.get("TEAM_MEMBER")?.("Waiting for connections...\n");
+
+    await vi.advanceTimersByTimeAsync(CONNECT_TIMEOUT_MS);
+
+    expect((await databases.statuses()).TEAM_MEMBER?.state).toBe(
+      DatabaseConnectionState.Connected
+    );
+    expect(errors.databaseConnectionErrors()).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it("does not fire once the database is disconnected first", async () => {
+    vi.useFakeTimers();
+    writeConfigFile(CONFIG_FIXTURE);
+    const { databases, CONNECT_TIMEOUT_MS } = await freshDatabases();
+    await connectAndLetSpawnSettle(databases);
+
+    await databases.disconnect("TEAM_MEMBER");
+    awsState.stopPortForward.mockClear();
+    await vi.advanceTimersByTimeAsync(CONNECT_TIMEOUT_MS);
+
+    expect(awsState.stopPortForward).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+});
+
+describe("a database connection failure's raw output names the exact profile it ran under", () => {
+  it("recognizes a missing SSO login and prefixes the raw output with aws_profile", async () => {
+    writeConfigFile(CONFIG_FIXTURE);
+    awsState.checkCredentials.mockResolvedValue({
+      found: true,
+      succeeded: false,
+      stdout: "",
+      stderr:
+        "Error loading SSO Token: Token for https://d-example.awsapps.com/start/# does not exist",
+    });
+    const { databases, errors } = await freshDatabases();
+
+    await databases.connect("TEAM_MEMBER", "dev");
+
+    const diagnosis = errors.databaseConnectionErrors()[0];
+    expect(diagnosis?.key).toBe(ErrorKey.AwsProfileNotLoggedIn);
+    expect(diagnosis?.raw).toContain("aws_profile: omfsvcshubdev");
   });
 });
 

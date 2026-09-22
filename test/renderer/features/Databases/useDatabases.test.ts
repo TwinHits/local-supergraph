@@ -108,6 +108,19 @@ describe("loading the catalog and the saved environment on mount", () => {
     expect(result.current.environments).toEqual(["dev", "prod"]);
   });
 
+  it("sorts the offered environments alphabetically, regardless of the catalog's own order", async () => {
+    api.catalog.mockResolvedValue({
+      TEAM_MEMBER: ["staging", "dev"],
+      OTHER_DATABASE: ["prod"],
+    });
+    api.currentEnvironment.mockResolvedValue("dev");
+    const { result } = renderHook(() => useDatabases());
+
+    await waitFor(function loaded() {
+      expect(result.current.environments).toEqual(["dev", "prod", "staging"]);
+    });
+  });
+
   it("falls back to the catalog's first environment when the saved one is gone", async () => {
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "prod"] });
     api.currentEnvironment.mockResolvedValue("retired-environment");

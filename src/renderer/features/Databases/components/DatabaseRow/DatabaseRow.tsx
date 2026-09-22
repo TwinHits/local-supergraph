@@ -24,6 +24,7 @@ type DatabaseRowProps = {
   expanded: boolean;
   connectionInfo: DatabaseConnectionInfo | null | undefined;
   onToggleExpanded: () => void;
+  onShowErrors: () => void;
   onConnect: () => void;
   onDisconnect: () => void;
   onPortChange: (port: number) => void;
@@ -45,6 +46,7 @@ export default function DatabaseRow({
   expanded,
   connectionInfo,
   onToggleExpanded,
+  onShowErrors,
   onConnect,
   onDisconnect,
   onPortChange,
@@ -63,7 +65,13 @@ export default function DatabaseRow({
           </span>
         </TableCell>
         <TableCell>
-          <ConnectionStatusIndicator state={state} reason={reason} />
+          <span onClick={stopPropagation}>
+            <ConnectionStatusIndicator
+              state={state}
+              reason={reason}
+              onClick={onShowErrors}
+            />
+          </span>
         </TableCell>
         <TableCell>
           <TextLabel>{name}</TextLabel>
