@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/renderer/api";
 import { LogsDrawerState } from "@/renderer/features/LogsDrawer/LogsDrawer.types";
-import { nextStateAfterLaunch } from "@/renderer/features/LogsDrawer/LogsDrawer.utils";
-import { type LogCursor, LogSourceId } from "@/shared/logs/logs.types";
+import { nextStateAfterStart } from "@/renderer/features/LogsDrawer/LogsDrawer.utils";
+import { type LogCursor, type LogSourceId } from "@/shared/logs/logs.types";
 
 const READ_POLL_MS = 500;
 
-/** Drives the logs drawer's visibility state and its polled content. */
-export function useLogsDrawer() {
+/** Drives one log source's drawer visibility state and its polled content. */
+export function useLogsDrawer(sourceId: LogSourceId) {
   const [state, setState] = useState(LogsDrawerState.Hidden);
   const [lines, setLines] = useState<string[]>([]);
   const cursor = useRef<LogCursor>(null);
@@ -21,7 +21,7 @@ export function useLogsDrawer() {
       }
       const interval = setInterval(function read() {
         void api.logs
-          .read(LogSourceId.Rover, cursor.current)
+          .read(sourceId, cursor.current)
           .then(function apply(chunk) {
             cursor.current = chunk.cursor;
             if (chunk.lines.length === 0 && !chunk.reset) {
@@ -42,11 +42,11 @@ export function useLogsDrawer() {
         clearInterval(interval);
       };
     },
-    [visible]
+    [visible, sourceId]
   );
 
-  const notifyLaunched = useCallback(function openOnLaunch() {
-    setState(nextStateAfterLaunch);
+  const notifyStarted = useCallback(function openOnStart() {
+    setState(nextStateAfterStart);
   }, []);
 
   const minimize = useCallback(function minimizeDrawer() {
@@ -65,5 +65,5 @@ export function useLogsDrawer() {
     setLines([]);
   }, []);
 
-  return { state, lines, notifyLaunched, minimize, maximize, restore, clear };
+  return { state, lines, notifyStarted, minimize, maximize, restore, clear };
 }

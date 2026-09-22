@@ -139,6 +139,31 @@ describe("the variant filter is what SUPERGRAPH_VARIANTS used to be — a settin
   });
 });
 
+describe("the current environment is stored alongside the other settings", () => {
+  it("starts out empty", async () => {
+    const { settings } = await freshSettings();
+
+    expect(settings.currentEnvironment()).toBe("");
+  });
+
+  it("remembers an updated pick", async () => {
+    const { settings } = await freshSettings();
+
+    settings.updateEnvironment("dev");
+
+    expect(settings.currentEnvironment()).toBe("dev");
+  });
+
+  it("a saved pick survives being reloaded from disk", async () => {
+    const first = await freshSettings();
+    first.settings.updateEnvironment("dev");
+
+    const second = await freshSettings();
+
+    expect(second.settings.currentEnvironment()).toBe("dev");
+  });
+});
+
 describe("reading settings before the config file is registered does not lock the service onto empty defaults", () => {
   it("still loads the real file once the path is registered, even if something read settings earlier", async () => {
     writeFileSync(

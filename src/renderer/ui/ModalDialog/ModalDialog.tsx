@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { type ReactNode } from "react";
 
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/ModalDialog/ModalDialog.module.scss";
 import { ModalSeverity } from "@/renderer/ui/ModalDialog/ModalDialog.types";
 
@@ -56,9 +56,10 @@ export default function ModalDialog({
           label="Close"
           tooltip="Close"
           variant={IconButtonVariant.Inline}
+          stretch={false}
           onClick={onClose}
         >
-          <IconGlyph name={IconName.Close} />
+          <IconGlyph name={IconName.Close} size={IconSize.Large} />
         </IconButton>
       </DialogTitle>
       <DialogContent>{children}</DialogContent>

@@ -1,0 +1,9 @@
+.localPortField {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.localPortField__port {
+  max-width: 8rem;
+}

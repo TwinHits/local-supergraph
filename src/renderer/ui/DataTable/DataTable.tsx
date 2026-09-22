@@ -12,6 +12,7 @@ export type Column = {
   key: string;
   label: string;
   sortable: boolean;
+  width?: string;
 };
 
 type DataTableProps = {
@@ -19,6 +20,7 @@ type DataTableProps = {
   sortKey: string;
   children: ReactNode;
   onSort: (key: string) => void;
+  className?: string;
 };
 
 /** A sortable table. */
@@ -27,9 +29,22 @@ export default function DataTable({
   sortKey,
   children,
   onSort,
+  className,
 }: DataTableProps) {
   return (
-    <MuiTable size="small">
+    <MuiTable size="small" className={className}>
+      <colgroup>
+        {columns.map(function toColumn(column) {
+          return (
+            <col
+              key={column.key}
+              style={
+                column.width === undefined ? undefined : { width: column.width }
+              }
+            />
+          );
+        })}
+      </colgroup>
       <TableHead>
         <MuiTableRow>
           {columns.map(function toHeading(column) {

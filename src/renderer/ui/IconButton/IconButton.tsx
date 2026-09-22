@@ -23,9 +23,12 @@ type IconButtonProps = {
   label: string;
   children: ReactNode;
   tooltip?: string;
+  tooltipDelayMs?: number;
   disabled?: boolean;
   variant?: IconButtonVariant;
   size?: IconButtonSize;
+  /** Whether the button fills its parent's cross axis (a row's height, or a column's width) instead of sizing to its own content. */
+  stretch: boolean;
   onClick: () => void;
 };
 
@@ -34,15 +37,19 @@ export default function IconButton({
   label,
   children,
   tooltip,
+  tooltipDelayMs,
   disabled,
   variant,
   size,
+  stretch,
   onClick,
 }: IconButtonProps) {
+  const stretchClass = stretch ? styles["iconButton--stretch"] : "";
   const look = [
     styles.iconButton,
     VARIANTS[variant ?? IconButtonVariant.Default],
     SIZES[size ?? IconButtonSize.Medium],
+    stretchClass,
   ]
     .join(" ")
     .trim();
@@ -63,8 +70,12 @@ export default function IconButton({
   }
 
   return (
-    <HoverTooltip title={tooltip}>
-      <span className={styles.iconButton__tooltip}>{button}</span>
+    <HoverTooltip title={tooltip} enterDelayMs={tooltipDelayMs}>
+      <span
+        className={[styles.iconButton__tooltip, stretchClass].join(" ").trim()}
+      >
+        {button}
+      </span>
     </HoverTooltip>
   );
 }

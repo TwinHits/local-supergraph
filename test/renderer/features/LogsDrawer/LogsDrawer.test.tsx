@@ -11,7 +11,7 @@ function stubDrawer(state: LogsDrawerState): ReturnType<typeof useLogsDrawer> {
   return {
     state,
     lines: [],
-    notifyLaunched: vi.fn(),
+    notifyStarted: vi.fn(),
     minimize: vi.fn(),
     maximize: vi.fn(),
     restore: vi.fn(),

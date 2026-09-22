@@ -2,10 +2,8 @@ import { LogsDrawerState } from "@/renderer/features/LogsDrawer/LogsDrawer.types
 
 const FOLLOW_THRESHOLD_PX = 4;
 
-/** The drawer's state right after the supergraph launches: Hidden opens, anything else stays put. */
-export function nextStateAfterLaunch(
-  current: LogsDrawerState
-): LogsDrawerState {
+/** The drawer's state right after the thing it watches starts: Hidden opens, anything else stays put. */
+export function nextStateAfterStart(current: LogsDrawerState): LogsDrawerState {
   return current === LogsDrawerState.Hidden ? LogsDrawerState.Open : current;
 }
 

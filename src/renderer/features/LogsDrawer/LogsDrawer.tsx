@@ -9,7 +9,7 @@ import IconButton, {
   IconButtonSize,
   IconButtonVariant,
 } from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 
 type LogsDrawerProps = {
   drawer: ReturnType<typeof useLogsDrawer>;
@@ -45,9 +45,10 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             tooltip="Restore"
             variant={IconButtonVariant.Muted}
             size={IconButtonSize.Small}
+            stretch={false}
             onClick={restore}
           >
-            <IconGlyph name={IconName.Restore} />
+            <IconGlyph name={IconName.Restore} size={IconSize.Small} />
           </IconButton>
         </span>
       </div>
@@ -71,28 +72,32 @@ export default function LogsDrawer({ drawer }: LogsDrawerProps) {
             tooltip="Clear"
             variant={IconButtonVariant.Muted}
             size={IconButtonSize.Small}
+            stretch={false}
             onClick={clear}
           >
-            <IconGlyph name={IconName.Clear} />
+            <IconGlyph name={IconName.Clear} size={IconSize.Small} />
           </IconButton>
           <IconButton
             label="Minimize logs"
             tooltip="Minimize"
             variant={IconButtonVariant.Muted}
             size={IconButtonSize.Small}
+            stretch={false}
             onClick={minimize}
           >
-            <IconGlyph name={IconName.Minimize} />
+            <IconGlyph name={IconName.Minimize} size={IconSize.Small} />
           </IconButton>
           <IconButton
             label={maximized ? "Restore logs" : "Maximize logs"}
             tooltip={maximized ? "Restore" : "Maximize"}
             variant={IconButtonVariant.Muted}
             size={IconButtonSize.Small}
+            stretch={false}
             onClick={maximized ? restore : maximize}
           >
             <IconGlyph
               name={maximized ? IconName.Restore : IconName.Maximize}
+              size={IconSize.Small}
             />
           </IconButton>
         </span>

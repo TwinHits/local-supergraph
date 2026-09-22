@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 
 import {
+  DEFAULT_AWS_REGION,
   ENV_FILE,
   EnvironmentVariable,
 } from "@/main/services/environment/environment.constants";
@@ -19,9 +20,10 @@ function loadEnvFile(): void {
   }
 }
 
-function readVariable(key: EnvironmentVariable): string {
+/** Reads one environment variable, falling back to `defaultValue` when it's unset. */
+function readVariable(key: EnvironmentVariable, defaultValue = ""): string {
   loadEnvFile();
-  return process.env[key] ?? "";
+  return process.env[key] ?? defaultValue;
 }
 
 function splitGraphRef(): string[] {
@@ -45,6 +47,10 @@ export const environment = {
 
   apolloKey(): string {
     return readVariable(EnvironmentVariable.ApolloKey);
+  },
+  /** The AWS region for AWS CLI calls, defaulting to DEFAULT_AWS_REGION when unset. */
+  awsRegion(): string {
+    return readVariable(EnvironmentVariable.AwsRegion, DEFAULT_AWS_REGION);
   },
   childEnv(): NodeJS.ProcessEnv {
     return baseChildEnv();

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  clearSubgraphFailure,
+  clearSubgraphError,
   errors,
 } from "@/main/services/errors/errors.service";
 import { checkSubgraphs } from "@/main/services/subgraph-health/subgraph-health.service";
@@ -35,8 +35,8 @@ function neverAnswers(code: string, message: string): void {
 
 beforeEach(function forgetEverything() {
   answer.mockReset();
-  clearSubgraphFailure("characters");
-  clearSubgraphFailure("starships");
+  clearSubgraphError("characters");
+  clearSubgraphError("starships");
 });
 
 describe("checking a subgraph sends a real graphql query, not just a ping", () => {

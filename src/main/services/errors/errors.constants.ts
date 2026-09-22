@@ -1,6 +1,6 @@
 import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
-type Signature = Omit<Diagnosis, "raw">;
+type Signature = Omit<Diagnosis, "raw" | "database" | "environment">;
 
 /** Every error the app knows how to explain. */
 export const SIGNATURES: Record<ErrorKey, Signature> = {
@@ -37,11 +37,63 @@ export const SIGNATURES: Record<ErrorKey, Signature> = {
       "Check that the key belongs to the same organization",
     ],
   },
+  [ErrorKey.AwsCliMissing]: {
+    key: ErrorKey.AwsCliMissing,
+    summary: "The aws CLI is not installed",
+    cause: "aws isn't installed, or isn't on your PATH.",
+    resolution: [
+      "Install the AWS CLI, then reopen the app so it picks up your PATH",
+    ],
+  },
+  [ErrorKey.SessionManagerPluginMissing]: {
+    key: ErrorKey.SessionManagerPluginMissing,
+    summary: "The Session Manager plugin is not installed",
+    cause:
+      "aws ssm start-session needs session-manager-plugin to forward a port.",
+    resolution: [
+      "Install the Session Manager plugin, then try connecting again",
+    ],
+  },
+  [ErrorKey.AwsProfileMissing]: {
+    key: ErrorKey.AwsProfileMissing,
+    summary: "The AWS profile is not configured",
+    cause:
+      "The profile databases.json names for this database isn't set up in your AWS config.",
+    resolution: [
+      "Check the aws_profile value in databases.json matches a profile you have",
+      "Set the profile up (aws configure sso), or fix the name in databases.json",
+    ],
+  },
+  [ErrorKey.DatabaseEntryMissing]: {
+    key: ErrorKey.DatabaseEntryMissing,
+    summary: "No config entry for that database and environment",
+    cause:
+      "databases.json has no entry for this database under the selected environment.",
+    resolution: [
+      "Add an entry for this database under that environment in databases.json",
+      "Pick a different environment",
+    ],
+  },
   [ErrorKey.AwsSsoExpired]: {
     key: ErrorKey.AwsSsoExpired,
     summary: "AWS credentials are stale",
-    cause: "Your SSO session expired, so the subgraph can't start.",
-    resolution: ["Sign in again, then restart the subgraph"],
+    cause: "Your SSO session expired.",
+    resolution: ["Sign in again, then retry"],
+  },
+  [ErrorKey.AwsProfileNotLoggedIn]: {
+    key: ErrorKey.AwsProfileNotLoggedIn,
+    summary: "Not signed into this profile",
+    cause: "Nobody has signed into AWS SSO under this exact profile name.",
+    resolution: [
+      "Change aws_profile in databases.json to a profile name you already sign into",
+      "Or, run aws configure sso and name the new profile to match aws_profile",
+    ],
+  },
+  [ErrorKey.AwsSessionUnreachable]: {
+    key: ErrorKey.AwsSessionUnreachable,
+    summary: "The AWS session never connected",
+    cause: "aws ssm start-session did not reach AWS in time.",
+    resolution: ["Connect to the VPN", "Try again once AWS is reachable"],
   },
   [ErrorKey.PortInUse]: {
     key: ErrorKey.PortInUse,
@@ -103,11 +155,22 @@ export const PATTERNS: Record<ErrorKey, RegExp[]> = {
     /401 unauthorized/i,
   ],
   [ErrorKey.GraphNotFound]: [/\bE009\b/, /could not find graph/i],
+  [ErrorKey.AwsCliMissing]: [],
+  [ErrorKey.SessionManagerPluginMissing]: [
+    /SessionManagerPlugin is not found/i,
+  ],
+  [ErrorKey.AwsProfileMissing]: [/config profile .*could not be found/i],
+  [ErrorKey.DatabaseEntryMissing]: [],
   [ErrorKey.AwsSsoExpired]: [
     /\bexpiredtoken\b/i,
     /sso session .*expired/i,
     /token has expired/i,
   ],
+  [ErrorKey.AwsProfileNotLoggedIn]: [
+    /error loading sso token/i,
+    /sso token.*does not exist/i,
+  ],
+  [ErrorKey.AwsSessionUnreachable]: [],
   [ErrorKey.PortInUse]: [/\bEADDRINUSE\b/],
   [ErrorKey.PortInvalid]: [],
   [ErrorKey.CompositionFailed]: [
@@ -128,7 +191,13 @@ export const PRIORITY: ErrorKey[] = [
   ErrorKey.GraphRefUnset,
   ErrorKey.ApolloKeyInvalid,
   ErrorKey.GraphNotFound,
+  ErrorKey.AwsCliMissing,
+  ErrorKey.SessionManagerPluginMissing,
+  ErrorKey.AwsProfileMissing,
+  ErrorKey.DatabaseEntryMissing,
   ErrorKey.AwsSsoExpired,
+  ErrorKey.AwsProfileNotLoggedIn,
+  ErrorKey.AwsSessionUnreachable,
   ErrorKey.PortInUse,
   ErrorKey.PortInvalid,
   ErrorKey.CompositionFailed,

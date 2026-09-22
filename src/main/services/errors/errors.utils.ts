@@ -24,12 +24,18 @@ export function findMatchingKeys(raw: string | null): ErrorKey[] {
   });
 }
 
-/** Builds a diagnosis for each key. */
+/**
+ * Builds a diagnosis for each key. `database` names which database this
+ * diagnosis is about, and `environment` which environment the attempt was
+ * made under, if either applies.
+ */
 export function buildDiagnoses(
   keys: ErrorKey[],
-  raw: string | null
+  raw: string | null,
+  database: string | null = null,
+  environment: string | null = null
 ): Diagnosis[] {
   return sortByPriority(keys).map(function toDiagnosis(key) {
-    return { ...SIGNATURES[key], raw };
+    return { ...SIGNATURES[key], raw, database, environment };
   });
 }

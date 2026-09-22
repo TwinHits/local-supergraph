@@ -15,11 +15,6 @@ import {
   SortColumn,
 } from "@/shared/subgraph/subgraph.types";
 
-/** Writes one failure as a single line. */
-export function buildDiagnosisMessage(diagnosis: Diagnosis): string {
-  return `${diagnosis.summary}: ${diagnosis.cause}`;
-}
-
 type Signals = {
   local: boolean;
   reachability: Reachability;
@@ -182,6 +177,8 @@ export function buildPortDiagnosis(
       cause: "Running it locally needs a port to listen on.",
       resolution: ["Enter a port for this subgraph"],
       raw: null,
+      database: null,
+      environment: null,
     };
   }
   if (!isValidPort(port)) {
@@ -191,6 +188,8 @@ export function buildPortDiagnosis(
       cause: `Ports run ${LOWEST_PORT} to ${HIGHEST_PORT}.`,
       resolution: ["Enter a port in that range"],
       raw: null,
+      database: null,
+      environment: null,
     };
   }
   if (port === routerPort) {
@@ -200,6 +199,8 @@ export function buildPortDiagnosis(
       cause: "The router and this subgraph can't share a port.",
       resolution: ["Pick a different port"],
       raw: null,
+      database: null,
+      environment: null,
     };
   }
   if (takenPorts.includes(port)) {
@@ -209,6 +210,8 @@ export function buildPortDiagnosis(
       cause: "Two local subgraphs can't share a port.",
       resolution: ["Pick a different port"],
       raw: null,
+      database: null,
+      environment: null,
     };
   }
   return null;

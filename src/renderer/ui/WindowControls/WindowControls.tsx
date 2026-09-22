@@ -1,5 +1,5 @@
 import IconButton, { IconButtonVariant } from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import styles from "@/renderer/ui/WindowControls/WindowControls.module.scss";
 
 type WindowControlsProps = {
@@ -21,23 +21,29 @@ export default function WindowControls({
       <IconButton
         label="Minimize"
         variant={IconButtonVariant.Muted}
+        stretch
         onClick={onMinimize}
       >
-        <IconGlyph name={IconName.Minimize} />
+        <IconGlyph name={IconName.Minimize} size={IconSize.Large} />
       </IconButton>
       <IconButton
         label={maximized ? "Restore" : "Maximize"}
         variant={IconButtonVariant.Muted}
+        stretch
         onClick={onToggleMaximize}
       >
-        <IconGlyph name={maximized ? IconName.Restore : IconName.Maximize} />
+        <IconGlyph
+          name={maximized ? IconName.Restore : IconName.Maximize}
+          size={IconSize.Large}
+        />
       </IconButton>
       <IconButton
         label="Close"
         variant={IconButtonVariant.Muted}
+        stretch
         onClick={onClose}
       >
-        <IconGlyph name={IconName.Close} />
+        <IconGlyph name={IconName.Close} size={IconSize.Large} />
       </IconButton>
     </span>
   );

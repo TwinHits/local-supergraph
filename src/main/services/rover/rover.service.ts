@@ -6,8 +6,8 @@ import { promisify } from "node:util";
 import { apollo } from "@/main/services/apollo/apollo.service";
 import { environment } from "@/main/services/environment/environment.service";
 import {
-  clearSupergraphFailure,
-  reportSupergraphFailure,
+  addSupergraphError,
+  clearSupergraphError,
 } from "@/main/services/errors/errors.service";
 import { findMatchingKeys } from "@/main/services/errors/errors.utils";
 import {
@@ -110,14 +110,14 @@ function attemptFailed(): boolean {
   if (findMatchingKeys(attemptOutput).length === 0) {
     return false;
   }
-  reportSupergraphFailure([], attemptOutput);
+  addSupergraphError([], attemptOutput);
   return true;
 }
 
 /** With no failure and nothing new to say, treats the attempt as composed. */
 function assumeAttemptComposed(): void {
   if (attemptOutput.includes(COMPOSING_MARKER) && roverProcess !== null) {
-    clearSupergraphFailure();
+    clearSupergraphError();
     state = SupergraphState.Running;
   }
 }

@@ -17,6 +17,7 @@ type PersistedConfig = {
   settings: Settings;
   currentVariant: string;
   variantFilter: string[];
+  currentEnvironment: string;
   subgraphOverrides: Record<string, OverrideMap>;
   disabledSubgraphs: Record<string, DisabledSubgraphs>;
 };
@@ -27,6 +28,7 @@ let doc: PersistedConfig = {
   settings: { ...DEFAULT_SETTINGS },
   currentVariant: "",
   variantFilter: [],
+  currentEnvironment: "",
   subgraphOverrides: {},
   disabledSubgraphs: {},
 };
@@ -36,6 +38,10 @@ export function registerConfigFile(path: string): void {
   configFilePath = path;
 }
 
+/**
+ * Reads the persisted config file into memory once, if it hasn't been already.
+ * @throws {SyntaxError} if the persisted config file contains invalid JSON.
+ */
 function load(): void {
   if (loaded) {
     return;
@@ -57,6 +63,7 @@ function load(): void {
     settings: { ...DEFAULT_SETTINGS, ...saved.settings },
     currentVariant: saved.currentVariant ?? "",
     variantFilter: saved.variantFilter ?? [],
+    currentEnvironment: saved.currentEnvironment ?? "",
     subgraphOverrides: saved.subgraphOverrides ?? {},
     disabledSubgraphs: saved.disabledSubgraphs ?? {},
   };
@@ -141,6 +148,18 @@ export const settings: SettingsContract = {
     doc.variantFilter = names;
     persist();
     return doc.variantFilter;
+  },
+  /** The environment last selected in the toolbar. */
+  currentEnvironment() {
+    load();
+    return doc.currentEnvironment;
+  },
+  /** Persists the toolbar's newly selected environment. */
+  updateEnvironment(name: string) {
+    load();
+    doc.currentEnvironment = name;
+    persist();
+    return doc.currentEnvironment;
   },
   routerAddress() {
     load();

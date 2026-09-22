@@ -1,0 +1,61 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+// Two stacked sections — a single Host row, then a fixed-column table for
+// the rest — instead of a wrapping row of cards, whose card count per line
+// changed with a value's length (e.g. an RDS host), reflowing every
+// field's position unpredictably.
+.databaseInfoDrawer {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: colors.$surface-raised;
+}
+
+.databaseInfoDrawer__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+// Three even columns so a field two rows down (e.g. Password) lines up
+// under the field above it (Port), instead of each row sizing to its own
+// fields' widths.
+.databaseInfoDrawer__table {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 1.5rem;
+  row-gap: 1.5rem;
+}
+
+// display: contents so a group's fields become direct items of the table
+// grid above, auto-placed into columns 1-3 in field order.
+.databaseInfoDrawer__group {
+  display: contents;
+}
+
+.databaseInfoDrawer__groupField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.databaseInfoDrawer__label {
+  font-weight: 600;
+}
+
+.databaseInfoDrawer__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  color: colors.$text-primary;
+  user-select: text;
+  cursor: text;
+}
+
+.databaseInfoDrawer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -12,7 +12,13 @@ function diagnosis(key: ErrorKey, summary: string): Diagnosis {
     cause: `${summary} cause`,
     resolution: [`${summary} fix`],
     raw: null,
+    database: null,
+    environment: null,
   };
+}
+
+function diagnosisWithRaw(key: ErrorKey, raw: string): Diagnosis {
+  return { ...diagnosis(key, "Summary"), raw };
 }
 
 const three = [
@@ -94,5 +100,40 @@ describe("a single error needs no paging", () => {
     show([three[0]]);
 
     expect(screen.queryByRole("button", { name: "Next error" })).toBeNull();
+  });
+});
+
+describe("the raw output's More info toggle appears only when the error needs it explained further", () => {
+  it("hides raw output behind a More info toggle for an ordinary error", () => {
+    show([diagnosisWithRaw(ErrorKey.AwsSsoExpired, "raw detail")]);
+
+    expect(screen.getByRole("button", { name: "More info" })).toBeDefined();
+  });
+
+  it("reveals raw output once More info is clicked", async () => {
+    show([diagnosisWithRaw(ErrorKey.AwsSsoExpired, "raw detail")]);
+
+    await userEvent.click(screen.getByRole("button", { name: "More info" }));
+
+    expect(screen.getByText("raw detail")).toBeDefined();
+  });
+
+  it("shows raw output immediately for an unrecognized error, with no toggle to click", () => {
+    show([diagnosisWithRaw(ErrorKey.Unknown, "raw detail")]);
+
+    expect(screen.queryByRole("button", { name: "More info" })).toBeNull();
+    expect(screen.getByText("raw detail")).toBeDefined();
+  });
+
+  it("shows raw output immediately for a profile that was never signed into, since it names the exact profile", () => {
+    show([
+      diagnosisWithRaw(
+        ErrorKey.AwsProfileNotLoggedIn,
+        "aws_profile: omfsvcshubdev"
+      ),
+    ]);
+
+    expect(screen.queryByRole("button", { name: "More info" })).toBeNull();
+    expect(screen.getByText("aws_profile: omfsvcshubdev")).toBeDefined();
   });
 });

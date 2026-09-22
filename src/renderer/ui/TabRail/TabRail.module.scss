@@ -1,0 +1,66 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
+.tabRail {
+  width: sizes.$tab-rail-width;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: colors.$surface;
+  border-right: 1px solid colors.$border;
+}
+
+.tabRail--collapsed {
+  width: sizes.$tab-rail-collapsed-width;
+}
+
+.tabRail__toggle {
+  height: sizes.$toolbar-height;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.5rem;
+}
+
+.tabRail--collapsed .tabRail__toggle {
+  justify-content: center;
+}
+
+.tabRail__toggleIcon {
+  display: flex;
+}
+
+button.tabRail__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: colors.$text-muted;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: colors.$hover;
+    color: colors.$text-primary;
+  }
+}
+
+button.tabRail__item--active {
+  color: colors.$text-primary;
+  background: colors.$hover-muted;
+}
+
+.tabRail__icon {
+  display: flex;
+}
+
+.tabRail__label {
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

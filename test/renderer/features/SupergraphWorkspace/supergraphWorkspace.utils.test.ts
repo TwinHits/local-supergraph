@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildDiagnosisMessage,
   buildPortDiagnosis,
   buildRowStatus,
   buildSubgraphRows,
@@ -82,6 +81,8 @@ const KEY_REJECTED: Diagnosis = {
   cause: "APOLLO_KEY is invalid or has expired.",
   resolution: ["Regenerate the key"],
   raw: "401 Unauthorized",
+  database: null,
+  environment: null,
 };
 
 describe("a table row merges the subgraph, its override, its health, and its errors into one line", () => {
@@ -319,15 +320,5 @@ describe("a local subgraph's port is checked for real conflicts before it's trus
     const actual = buildPortDiagnosis(4002, [4001], ROUTER_PORT);
 
     expect(actual).toBeNull();
-  });
-});
-
-describe("a diagnosis reads as one line: its summary and its cause", () => {
-  it("a failure reads as its summary and its cause", () => {
-    const actual = buildDiagnosisMessage(KEY_REJECTED);
-
-    expect(actual).toBe(
-      "Apollo rejected the key: APOLLO_KEY is invalid or has expired."
-    );
   });
 });

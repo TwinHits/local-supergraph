@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { LogsDrawerState } from "@/renderer/features/LogsDrawer/LogsDrawer.types";
 import { useLogsDrawer } from "@/renderer/features/LogsDrawer/useLogsDrawer";
+import { LogSourceId } from "@/shared/logs/logs.types";
 
 const READ_POLL_MS = 500;
 
@@ -31,13 +32,13 @@ afterEach(function restoreRealTimers() {
 
 describe("the drawer starts hidden and does not poll for logs until it is shown", () => {
   it("starts hidden", () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
 
     expect(result.current.state).toBe(LogsDrawerState.Hidden);
   });
 
   it("never reads the log while hidden", async () => {
-    renderHook(() => useLogsDrawer());
+    renderHook(() => useLogsDrawer(LogSourceId.Rover));
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS * 3);
@@ -48,8 +49,8 @@ describe("the drawer starts hidden and does not poll for logs until it is shown"
 });
 
 describe("once shown, the drawer polls for new lines and keeps them", () => {
-  it("shows lines from the first poll after notifyLaunched opens it", async () => {
-    const { result } = renderHook(() => useLogsDrawer());
+  it("shows lines from the first poll after notifyStarted opens it", async () => {
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
     api.read.mockResolvedValue({
       lines: [{ timestamp: null, text: "starting rover dev" }],
       cursor: "10",
@@ -57,7 +58,7 @@ describe("once shown, the drawer polls for new lines and keeps them", () => {
     });
 
     act(function launch() {
-      result.current.notifyLaunched();
+      result.current.notifyStarted();
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS);
@@ -67,14 +68,14 @@ describe("once shown, the drawer polls for new lines and keeps them", () => {
   });
 
   it("appends the next chunk instead of replacing what's shown", async () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
     api.read.mockResolvedValueOnce({
       lines: [{ timestamp: null, text: "first" }],
       cursor: "10",
       reset: false,
     });
     act(function launch() {
-      result.current.notifyLaunched();
+      result.current.notifyStarted();
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS);
@@ -93,14 +94,14 @@ describe("once shown, the drawer polls for new lines and keeps them", () => {
   });
 
   it("a reset chunk replaces the lines instead of appending to them", async () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
     api.read.mockResolvedValueOnce({
       lines: [{ timestamp: null, text: "before the restart" }],
       cursor: "10",
       reset: false,
     });
     act(function launch() {
-      result.current.notifyLaunched();
+      result.current.notifyStarted();
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS);
@@ -121,14 +122,14 @@ describe("once shown, the drawer polls for new lines and keeps them", () => {
 
 describe("clearing the log empties what's shown without losing the read position", () => {
   it("clear empties the lines", async () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
     api.read.mockResolvedValueOnce({
       lines: [{ timestamp: null, text: "one" }],
       cursor: "10",
       reset: false,
     });
     act(function launch() {
-      result.current.notifyLaunched();
+      result.current.notifyStarted();
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS);
@@ -142,14 +143,14 @@ describe("clearing the log empties what's shown without losing the read position
   });
 
   it("keeps polling from where it left off, not from the start", async () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
     api.read.mockResolvedValueOnce({
       lines: [{ timestamp: null, text: "one" }],
       cursor: "10",
       reset: false,
     });
     act(function launch() {
-      result.current.notifyLaunched();
+      result.current.notifyStarted();
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(READ_POLL_MS);
@@ -171,7 +172,7 @@ describe("clearing the log empties what's shown without losing the read position
 
 describe("minimize, maximize, and restore set the drawer's size directly", () => {
   it("minimize shows the skinny bar", () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
 
     act(function minimizeDrawer() {
       result.current.minimize();
@@ -181,7 +182,7 @@ describe("minimize, maximize, and restore set the drawer's size directly", () =>
   });
 
   it("maximize fills from the toolbar down", () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
 
     act(function maximizeDrawer() {
       result.current.maximize();
@@ -191,7 +192,7 @@ describe("minimize, maximize, and restore set the drawer's size directly", () =>
   });
 
   it("restore returns to the partial-height drawer", () => {
-    const { result } = renderHook(() => useLogsDrawer());
+    const { result } = renderHook(() => useLogsDrawer(LogSourceId.Rover));
 
     act(function restoreDrawer() {
       result.current.restore();

@@ -44,13 +44,13 @@ const answer = vi.fn();
 vi.stubGlobal("fetch", answer);
 
 const errorsState = vi.hoisted(() => ({
-  reportSupergraphFailure: vi.fn(),
-  clearSupergraphFailure: vi.fn(),
+  addSupergraphError: vi.fn(),
+  clearSupergraphError: vi.fn(),
 }));
 
 vi.mock("@/main/services/errors/errors.service", () => ({
-  reportSupergraphFailure: errorsState.reportSupergraphFailure,
-  clearSupergraphFailure: errorsState.clearSupergraphFailure,
+  addSupergraphError: errorsState.addSupergraphError,
+  clearSupergraphError: errorsState.clearSupergraphError,
 }));
 
 /** A fresh module instance so the cache and startup check start empty. */
@@ -84,8 +84,8 @@ beforeEach(function isolate() {
   environmentState.graphName = "my-graph";
   settingsState.currentVariant = "current";
   settingsState.variantFilter = ["current", "staging"];
-  errorsState.reportSupergraphFailure.mockClear();
-  errorsState.clearSupergraphFailure.mockClear();
+  errorsState.addSupergraphError.mockClear();
+  errorsState.clearSupergraphError.mockClear();
   roverState.handler = () =>
     Promise.resolve({ stdout: LISTING, stderr: "", found: true });
   answer.mockReset();
@@ -209,7 +209,7 @@ describe("a graph the app can't read is reported as a failure, not shown as empt
     const result = await apollo.listSubgraphs();
 
     expect(result).toEqual([]);
-    expect(errorsState.reportSupergraphFailure).toHaveBeenCalledWith(
+    expect(errorsState.addSupergraphError).toHaveBeenCalledWith(
       [ErrorKey.RoverMissing],
       "rover is not installed."
     );
@@ -225,7 +225,7 @@ describe("a graph the app can't read is reported as a failure, not shown as empt
 
     expect(result).toEqual([]);
     expect(runRoverSpy).not.toHaveBeenCalled();
-    expect(errorsState.reportSupergraphFailure).toHaveBeenCalledWith(
+    expect(errorsState.addSupergraphError).toHaveBeenCalledWith(
       [ErrorKey.GraphRefUnset],
       expect.stringContaining("is not set")
     );
@@ -236,7 +236,7 @@ describe("a graph the app can't read is reported as a failure, not shown as empt
 
     await apollo.listSubgraphs();
 
-    expect(errorsState.clearSupergraphFailure).toHaveBeenCalled();
+    expect(errorsState.clearSupergraphError).toHaveBeenCalled();
   });
 });
 
@@ -270,7 +270,7 @@ describe("every variant is cached at startup", () => {
     cacheAllVariants();
 
     await vi.waitFor(function reported() {
-      expect(errorsState.reportSupergraphFailure).toHaveBeenCalledWith(
+      expect(errorsState.addSupergraphError).toHaveBeenCalledWith(
         [ErrorKey.RoverMissing],
         "rover is not installed."
       );
@@ -283,7 +283,7 @@ describe("every variant is cached at startup", () => {
     cacheAllVariants();
 
     await vi.waitFor(function cleared() {
-      expect(errorsState.clearSupergraphFailure).toHaveBeenCalled();
+      expect(errorsState.clearSupergraphError).toHaveBeenCalled();
     });
   });
 });

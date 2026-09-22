@@ -7,6 +7,7 @@ type TableRowProps = {
   children: ReactNode;
   highlighted?: boolean;
   faded?: boolean;
+  onClick?: () => void;
 };
 
 /** One line of a DataTable. */
@@ -14,6 +15,7 @@ export default function TableRow({
   children,
   highlighted,
   faded,
+  onClick,
 }: TableRowProps) {
   return (
     <MuiTableRow
@@ -21,9 +23,11 @@ export default function TableRow({
         styles.tableRow,
         highlighted === true ? styles["tableRow--highlighted"] : "",
         faded === true ? styles["tableRow--faded"] : "",
+        onClick === undefined ? "" : styles["tableRow--clickable"],
       ]
         .join(" ")
         .trim()}
+      onClick={onClick}
     >
       {children}
     </MuiTableRow>

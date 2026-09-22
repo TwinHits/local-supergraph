@@ -1,0 +1,26 @@
+{
+  "databases": {
+    "EXAMPLE_DATABASE": {
+      "dev": {
+        "target_instance": "i-0000000000000example",
+        "host": "example-database.cluster-xxxxxxxxxxxx.us-east-1.rds.amazonaws.com",
+        "port": 5432,
+        "local_port": 5432,
+        "aws_profile": "example-profile-dev",
+        "database_name": "example_database",
+        "username": "example_user",
+        "password_url": "https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=example-secret-id&region=us-east-1"
+      },
+      "prod": {
+        "target_instance": "i-1111111111111example",
+        "host": "example-database.cluster-yyyyyyyyyyyy.us-east-1.rds.amazonaws.com",
+        "port": 5432,
+        "local_port": 5432,
+        "aws_profile": "example-profile-prod",
+        "database_name": "example_database",
+        "username": "example_user",
+        "password_url": "https://us-east-1.console.aws.amazon.com/secretsmanager/secret?name=example-secret-id-prod&region=us-east-1"
+      }
+    }
+  }
+}

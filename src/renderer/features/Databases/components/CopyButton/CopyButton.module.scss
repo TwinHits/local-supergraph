@@ -1,0 +1,6 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+
+.copyButton__success {
+  display: inline-flex;
+  color: colors.$healthy;
+}

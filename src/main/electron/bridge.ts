@@ -2,6 +2,7 @@
 import { ipcMain } from "electron";
 
 import { apollo } from "@/main/services/apollo/apollo.service";
+import { databases } from "@/main/services/databases/databases.service";
 import { environmentContract as environment } from "@/main/services/environment/environment.service";
 import { errors } from "@/main/services/errors/errors.service";
 import { logs } from "@/main/services/logs/logs.service";
@@ -35,6 +36,7 @@ const subgraph: Awaitable<SubgraphContract> = {
 
 const handlers = {
   apollo,
+  databases,
   environment,
   errors,
   logs,

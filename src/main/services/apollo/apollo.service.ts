@@ -15,8 +15,8 @@ import {
 } from "@/main/services/apollo/apollo.types";
 import { environment } from "@/main/services/environment/environment.service";
 import {
-  clearSupergraphFailure,
-  reportSupergraphFailure,
+  addSupergraphError,
+  clearSupergraphError,
 } from "@/main/services/errors/errors.service";
 import { runRover } from "@/main/services/rover/rover.service";
 import { settings } from "@/main/services/settings/settings.service";
@@ -129,9 +129,9 @@ export function cacheAllVariants(): void {
       });
 
       if (failure === undefined) {
-        clearSupergraphFailure();
+        clearSupergraphError();
       } else {
-        reportSupergraphFailure(failure.keys, failure.raw);
+        addSupergraphError(failure.keys, failure.raw);
       }
     }
   );
@@ -145,9 +145,9 @@ async function refreshSubgraphs(
   cache.set(variant, check.subgraphs);
 
   if (check.failed) {
-    reportSupergraphFailure(check.keys, check.raw);
+    addSupergraphError(check.keys, check.raw);
   } else {
-    clearSupergraphFailure();
+    clearSupergraphError();
   }
 
   return check.subgraphs;

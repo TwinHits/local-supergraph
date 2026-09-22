@@ -1,6 +1,6 @@
 import styles from "@/renderer/features/LaunchControl/LaunchControl.module.scss";
 import IconButton from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 type LaunchControlProps = {
@@ -20,6 +20,7 @@ export default function LaunchControl({
       <IconButton
         label="Cancel starting the supergraph"
         tooltip="Composing"
+        stretch
         onClick={onStop}
       >
         <span
@@ -28,7 +29,7 @@ export default function LaunchControl({
             styles["launchControl--starting"],
           ].join(" ")}
         >
-          <IconGlyph name={IconName.Stop} />
+          <IconGlyph name={IconName.Stop} size={IconSize.Large} />
         </span>
       </IconButton>
     );
@@ -36,28 +37,38 @@ export default function LaunchControl({
 
   if (state === SupergraphState.Running) {
     return (
-      <IconButton label="Stop supergraph" tooltip="Stop" onClick={onStop}>
+      <IconButton
+        label="Stop supergraph"
+        tooltip="Stop"
+        stretch
+        onClick={onStop}
+      >
         <span
           className={[
             styles.launchControl,
             styles["launchControl--running"],
           ].join(" ")}
         >
-          <IconGlyph name={IconName.Stop} />
+          <IconGlyph name={IconName.Stop} size={IconSize.Large} />
         </span>
       </IconButton>
     );
   }
 
   return (
-    <IconButton label="Start supergraph" tooltip="Start" onClick={onStart}>
+    <IconButton
+      label="Start supergraph"
+      tooltip="Start"
+      stretch
+      onClick={onStart}
+    >
       <span
         className={[
           styles.launchControl,
           styles["launchControl--stopped"],
         ].join(" ")}
       >
-        <IconGlyph name={IconName.Start} />
+        <IconGlyph name={IconName.Start} size={IconSize.Large} />
       </span>
     </IconButton>
   );

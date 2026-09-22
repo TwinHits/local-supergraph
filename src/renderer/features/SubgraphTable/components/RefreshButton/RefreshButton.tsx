@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import styles from "@/renderer/features/SubgraphTable/components/RefreshButton/RefreshButton.module.scss";
 import IconButton from "@/renderer/ui/IconButton";
-import IconGlyph, { IconName } from "@/renderer/ui/IconGlyph";
+import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 
 type RefreshButtonProps = {
   refreshing: boolean;
@@ -28,6 +28,7 @@ export default function RefreshButton({
     <IconButton
       label="Refresh subgraphs"
       tooltip="Refetch Subgraphs"
+      stretch
       onClick={onClick}
     >
       <span
@@ -42,7 +43,7 @@ export default function RefreshButton({
           }
         }}
       >
-        <IconGlyph name={IconName.Refresh} />
+        <IconGlyph name={IconName.Refresh} size={IconSize.Large} />
       </span>
     </IconButton>
   );

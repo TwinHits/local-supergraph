@@ -7,4 +7,5 @@ import {
 export type ErrorsContract = {
   subgraphErrors(): SubgraphErrorMap;
   supergraphErrors(): Diagnosis[];
+  databaseConnectionErrors(): Diagnosis[];
 };

@@ -1,12 +1,18 @@
 /* v8 ignore file -- only real Electron runs this */
 import { join } from "node:path";
 
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, clipboard, shell } from "electron";
 
+import {
+  databases,
+  registerClipboardReader,
+  registerClipboardWriter,
+} from "@/main/services/databases/databases.service";
 import { supergraph } from "@/main/services/rover/rover.service";
 import { registerConfigFile } from "@/main/services/settings/settings.service";
 import { startServices } from "@/main/services/startup/startup.service";
 import { registerWindowActions } from "@/main/services/window/window.service";
+import { DatabaseConnectionState } from "@/shared/databases/databases.types";
 import { SupergraphState } from "@/shared/supergraph/supergraph.types";
 
 import { registerBridge } from "./bridge";
@@ -72,15 +78,29 @@ function quitApp(): void {
 
 let quitting = false;
 
-/** Stops rover before the app quits, so it doesn't keep running after the window closes. */
-function stopSupergraphBeforeQuit(event: Electron.Event): void {
-  if (quitting || supergraph.status() === SupergraphState.Stopped) {
+/** Stops rover and any open database connections before the app quits, so neither outlives the window. */
+function stopBackgroundProcessesBeforeQuit(event: Electron.Event): void {
+  const supergraphRunning = supergraph.status() !== SupergraphState.Stopped;
+  const connectedDatabases = Object.entries(databases.statuses())
+    .filter(function isConnected([, row]) {
+      return row.state !== DatabaseConnectionState.Disconnected;
+    })
+    .map(function toName([name]) {
+      return name;
+    });
+
+  if (quitting || (!supergraphRunning && connectedDatabases.length === 0)) {
     return;
   }
   event.preventDefault();
   quitting = true;
 
-  const stopped = Promise.resolve(supergraph.stop());
+  const stopped = Promise.all([
+    supergraphRunning ? Promise.resolve(supergraph.stop()) : Promise.resolve(),
+    ...connectedDatabases.map(function disconnectOne(name) {
+      return Promise.resolve(databases.disconnect(name));
+    }),
+  ]);
   const gaveUp = new Promise<void>(function wait(resolve) {
     setTimeout(resolve, QUIT_STOP_TIMEOUT_MS);
   });
@@ -91,6 +111,8 @@ function stopSupergraphBeforeQuit(event: Electron.Event): void {
 }
 
 registerBridge();
+registerClipboardWriter(clipboard.writeText);
+registerClipboardReader(clipboard.readText);
 void app.whenReady().then(function ready() {
   registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
   startServices();
@@ -98,4 +120,4 @@ void app.whenReady().then(function ready() {
   createWindow();
 });
 app.on("window-all-closed", quitApp);
-app.on("before-quit", stopSupergraphBeforeQuit);
+app.on("before-quit", stopBackgroundProcessesBeforeQuit);

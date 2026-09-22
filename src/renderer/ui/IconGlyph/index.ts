@@ -1,2 +1,2 @@
 export { default } from "./IconGlyph";
-export { IconName } from "./IconGlyph.types";
+export { IconName, IconSize } from "./IconGlyph.types";
