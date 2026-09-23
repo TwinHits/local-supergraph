@@ -1,5 +1,5 @@
-import CopyButton from "@/renderer/features/Databases/components/CopyButton";
 import styles from "@/renderer/features/Databases/components/DatabaseInfoDrawer/DatabaseInfoDrawer.module.scss";
+import CopyButton from "@/renderer/ui/CopyButton";
 import { TableDrawerRow } from "@/renderer/ui/DataTable";
 import { IconName } from "@/renderer/ui/IconGlyph";
 import TextLabel from "@/renderer/ui/TextLabel";

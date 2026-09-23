@@ -1,0 +1,29 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
+// The element qualifier beats MUI's own same-specificity Modal rule, which
+// pins the modal to the whole viewport and would cover the title bar.
+div.overlayPanel {
+  top: sizes.$title-bar-height;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+// Same for the Backdrop, which positions itself separately from the Modal.
+div.overlayPanel__backdrop {
+  top: sizes.$title-bar-height;
+}
+
+.overlayPanel__panel {
+  position: relative;
+  display: flex;
+  width: min(880px, 100%);
+  height: min(560px, 100%);
+  overflow: hidden;
+  background: colors.$surface-raised;
+  border: 1px solid colors.$border;
+  border-radius: 8px;
+  outline: none;
+}

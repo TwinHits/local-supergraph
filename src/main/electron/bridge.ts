@@ -2,10 +2,12 @@
 import { ipcMain } from "electron";
 
 import { apollo } from "@/main/services/apollo/apollo.service";
+import { clipboard } from "@/main/services/clipboard/clipboard.service";
 import { databases } from "@/main/services/databases/databases.service";
 import { environmentContract as environment } from "@/main/services/environment/environment.service";
 import { errors } from "@/main/services/errors/errors.service";
 import { logs } from "@/main/services/logs/logs.service";
+import { onboarding } from "@/main/services/onboarding/onboarding.service";
 import {
   setSubgraphEnabled,
   supergraph,
@@ -36,10 +38,12 @@ const subgraph: Awaitable<SubgraphContract> = {
 
 const handlers = {
   apollo,
+  clipboard,
   databases,
   environment,
   errors,
   logs,
+  onboarding,
   settings,
   subgraph,
   supergraph,

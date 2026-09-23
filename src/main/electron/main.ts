@@ -4,10 +4,11 @@ import { join } from "node:path";
 import { app, BrowserWindow, clipboard, shell } from "electron";
 
 import {
-  databases,
   registerClipboardReader,
   registerClipboardWriter,
-} from "@/main/services/databases/databases.service";
+} from "@/main/services/clipboard/clipboard.service";
+import { databases } from "@/main/services/databases/databases.service";
+import { registerAppVersion } from "@/main/services/onboarding/onboarding.service";
 import { supergraph } from "@/main/services/rover/rover.service";
 import { registerConfigFile } from "@/main/services/settings/settings.service";
 import { startServices } from "@/main/services/startup/startup.service";
@@ -115,6 +116,7 @@ registerClipboardWriter(clipboard.writeText);
 registerClipboardReader(clipboard.readText);
 void app.whenReady().then(function ready() {
   registerConfigFile(join(app.getPath("userData"), CONFIG_FILE_NAME));
+  registerAppVersion(app.getVersion());
   startServices();
   setDockIcon();
   createWindow();

@@ -5,6 +5,7 @@ import {
   AWS_COMMAND,
   BASTION_ENV_VAR,
   NOT_FOUND_CODE,
+  SESSION_MANAGER_PLUGIN_COMMAND,
   SHUTDOWN_GRACE_MS,
   SSM_DOCUMENT_NAME,
 } from "@/main/services/aws/aws.constants";
@@ -19,10 +20,13 @@ import {
 const run = promisify(execFile);
 const WINDOWS = "win32";
 
-/** Runs one aws CLI command and returns its output. */
-async function runAws(args: string[]): Promise<AwsExecResult> {
+/** Runs one binary and returns its output, and whether it was found at all. */
+async function runBinary(
+  command: string,
+  args: string[]
+): Promise<AwsExecResult> {
   try {
-    const result = await run(AWS_COMMAND, args);
+    const result = await run(command, args);
     return {
       stdout: result.stdout,
       stderr: result.stderr,
@@ -43,11 +47,28 @@ async function runAws(args: string[]): Promise<AwsExecResult> {
   }
 }
 
+/** Runs one aws CLI command and returns its output. */
+async function runAws(args: string[]): Promise<AwsExecResult> {
+  return runBinary(AWS_COMMAND, args);
+}
+
 /** Whether the given profile's credentials are currently valid. */
 export async function checkCredentials(
   profile: string
 ): Promise<AwsExecResult> {
   return runAws(["sts", "get-caller-identity", "--profile", profile]);
+}
+
+/** Whether the aws CLI can be found. */
+export async function isAwsCliInstalled(): Promise<boolean> {
+  const result = await runAws(["--version"]);
+  return result.found;
+}
+
+/** Whether the Session Manager plugin can be found. */
+export async function isSessionManagerPluginInstalled(): Promise<boolean> {
+  const result = await runBinary(SESSION_MANAGER_PLUGIN_COMMAND, []);
+  return result.found;
 }
 
 /** Runs the browser-based SSO login flow for one profile. */

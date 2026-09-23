@@ -8,12 +8,18 @@ const MUI_SIZES: Record<TextFieldSize, "medium" | "small"> = {
   [TextFieldSize.Small]: "small",
 };
 
+const MASKED_TYPE = "password";
+const PLAIN_TYPE = "text";
+
 type TextFieldProps = {
   value: string;
   label?: string;
   ariaLabel?: string;
+  placeholder?: string;
   error?: string;
   size?: TextFieldSize;
+  masked?: boolean;
+  disabled?: boolean;
   startAdornment?: ReactNode;
   endAdornment?: ReactNode;
   onChange: (value: string) => void;
@@ -24,8 +30,11 @@ export default function TextField({
   value,
   label,
   ariaLabel,
+  placeholder,
   error,
   size,
+  masked,
+  disabled,
   startAdornment,
   endAdornment,
   onChange,
@@ -36,8 +45,11 @@ export default function TextField({
     <MuiTextField
       size={MUI_SIZES[resolvedSize]}
       variant="outlined"
+      type={masked === true ? MASKED_TYPE : PLAIN_TYPE}
       value={value}
       label={label}
+      placeholder={placeholder}
+      disabled={disabled === true}
       error={message !== ""}
       helperText={message}
       slotProps={{

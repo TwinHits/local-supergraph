@@ -1,8 +1,10 @@
 import { type ApolloContract } from "@/shared/apollo/apollo.contract";
+import { type ClipboardContract } from "@/shared/clipboard/clipboard.contract";
 import { type DatabasesContract } from "@/shared/databases/databases.contract";
 import { type EnvironmentContract } from "@/shared/environment/environment.contract";
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
 import { type LogsContract } from "@/shared/logs/logs.contract";
+import { type OnboardingContract } from "@/shared/onboarding/onboarding.contract";
 import { type SettingsContract } from "@/shared/settings/settings.contract";
 import { type SubgraphContract } from "@/shared/subgraph/subgraph.contract";
 import { type SupergraphContract } from "@/shared/supergraph/supergraph.contract";
@@ -11,10 +13,12 @@ import { type WindowContract } from "@/shared/window/window.contract";
 /** Every domain the renderer can call. */
 export type Contract = {
   apollo: ApolloContract;
+  clipboard: ClipboardContract;
   databases: DatabasesContract;
   environment: EnvironmentContract;
   errors: ErrorsContract;
   logs: LogsContract;
+  onboarding: OnboardingContract;
   settings: SettingsContract;
   subgraph: SubgraphContract;
   supergraph: SupergraphContract;

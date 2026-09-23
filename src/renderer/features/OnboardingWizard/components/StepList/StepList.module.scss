@@ -1,0 +1,49 @@
+@use "@/renderer/styles/colors.module.scss" as colors;
+@use "@/renderer/styles/sizes.scss" as sizes;
+
+.stepList {
+  flex: none;
+  width: sizes.$tab-rail-width;
+  margin: 0;
+  padding: 1.5rem 0.75rem;
+  list-style: none;
+  overflow-y: auto;
+  background: colors.$surface;
+  border-right: 1px solid colors.$border;
+}
+
+.stepList__item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: colors.$text-muted;
+}
+
+.stepList__item--current {
+  color: colors.$text-primary;
+  background: colors.$hover;
+}
+
+.stepList__item--done {
+  color: colors.$text-primary;
+}
+
+.stepList__marker {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid colors.$border;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.stepList__item--done .stepList__marker {
+  color: colors.$healthy;
+  border-color: colors.$healthy;
+}
