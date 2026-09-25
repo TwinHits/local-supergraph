@@ -11,8 +11,7 @@ const FIRST: Diagnosis = {
   cause: "APOLLO_KEY is invalid or has expired.",
   resolution: ["Regenerate the key"],
   raw: "401 Unauthorized",
-  database: null,
-  environment: null,
+  resource: null,
 };
 
 const SECOND: Diagnosis = {
@@ -21,8 +20,7 @@ const SECOND: Diagnosis = {
   cause: "The graph or variant does not exist.",
   resolution: ["Check the variant"],
   raw: null,
-  database: null,
-  environment: null,
+  resource: null,
 };
 
 describe("with no failures, nothing renders", () => {

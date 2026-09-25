@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useDatabases } from "@/renderer/features/Databases/useDatabases";
 import { DatabaseConnectionState } from "@/shared/databases/databases.types";
-import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
+import {
+  type Diagnosis,
+  ErrorKey,
+  ResourceKind,
+} from "@/shared/errors/errors.types";
 
 function ssoExpired(database: string): Diagnosis {
   return {
@@ -12,8 +16,11 @@ function ssoExpired(database: string): Diagnosis {
     cause: "Your SSO session expired.",
     resolution: ["Sign in again"],
     raw: null,
-    database,
-    environment: "dev",
+    resource: {
+      kind: ResourceKind.Database,
+      name: database,
+      environment: "dev",
+    },
   };
 }
 
@@ -262,8 +269,11 @@ describe("status and errors are polled on an interval", () => {
       cause: "Your SSO session expired.",
       resolution: ["Sign in again"],
       raw: null,
-      database: "TEAM_MEMBER",
-      environment: "dev",
+      resource: {
+        kind: ResourceKind.Database,
+        name: "TEAM_MEMBER",
+        environment: "dev",
+      },
     };
     vi.useFakeTimers();
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev"] });
@@ -286,8 +296,11 @@ describe("a database's error does not outlive a switch away from the environment
       cause: "Your SSO session expired.",
       resolution: ["Sign in again"],
       raw: null,
-      database: "TEAM_MEMBER",
-      environment: "dev",
+      resource: {
+        kind: ResourceKind.Database,
+        name: "TEAM_MEMBER",
+        environment: "dev",
+      },
     };
     api.catalog.mockResolvedValue({ TEAM_MEMBER: ["dev", "staging"] });
     api.currentEnvironment.mockResolvedValue("dev");
@@ -508,8 +521,7 @@ describe("signing back in resolves the profile for the database the failure is a
       cause: "The app doesn't have a known explanation for this one.",
       resolution: ["No known fix for this error"],
       raw: null,
-      database: null,
-      environment: null,
+      resource: null,
     });
 
     expect(api.ssoLogin).not.toHaveBeenCalled();

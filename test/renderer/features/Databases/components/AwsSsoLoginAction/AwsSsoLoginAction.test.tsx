@@ -3,7 +3,11 @@ import { userEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import AwsSsoLoginAction from "@/renderer/features/Databases/components/AwsSsoLoginAction";
-import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
+import {
+  type Diagnosis,
+  ErrorKey,
+  ResourceKind,
+} from "@/shared/errors/errors.types";
 
 const SSO_EXPIRED: Diagnosis = {
   key: ErrorKey.AwsSsoExpired,
@@ -11,8 +15,11 @@ const SSO_EXPIRED: Diagnosis = {
   cause: "Your SSO session expired.",
   resolution: ["Sign in again"],
   raw: null,
-  database: "TEAM_MEMBER",
-  environment: "dev",
+  resource: {
+    kind: ResourceKind.Database,
+    name: "TEAM_MEMBER",
+    environment: "dev",
+  },
 };
 
 const CLI_MISSING: Diagnosis = {
@@ -23,8 +30,11 @@ const CLI_MISSING: Diagnosis = {
     "Install the AWS CLI, then reopen the app so it picks up your PATH",
   ],
   raw: null,
-  database: "TEAM_MEMBER",
-  environment: "dev",
+  resource: {
+    kind: ResourceKind.Database,
+    name: "TEAM_MEMBER",
+    environment: "dev",
+  },
 };
 
 describe("a stale AWS session offers to sign in", () => {

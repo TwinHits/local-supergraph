@@ -206,12 +206,12 @@ export function useDatabases() {
 
   const login = useCallback(
     function signIn(diagnosis: Diagnosis) {
-      if (diagnosis.database === null) {
+      if (diagnosis.resource === null) {
         return Promise.resolve(false);
       }
       return api.databases.ssoLogin(
-        diagnosis.database,
-        environmentFor(diagnosis.database)
+        diagnosis.resource.name,
+        environmentFor(diagnosis.resource.name)
       );
     },
     [environmentFor]
@@ -241,8 +241,8 @@ export function useDatabases() {
   // this row's current story anymore.
   const errors = rawErrors.filter(function isCurrent(diagnosis) {
     return (
-      diagnosis.database !== null &&
-      diagnosis.environment === environmentFor(diagnosis.database)
+      diagnosis.resource !== null &&
+      diagnosis.resource.environment === environmentFor(diagnosis.resource.name)
     );
   });
 
