@@ -29,6 +29,9 @@ cp .env.template .env
 cp databases.json.template databases.json
 ```
 
+Get a filled-in `databases.json` from a coworker via 1Password, then set each
+`aws_profile` to the matching profile name in your AWS SSO configuration.
+
 ## Run
 
 ```bash
