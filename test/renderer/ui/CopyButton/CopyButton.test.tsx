@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import CopyButton from "@/renderer/features/Databases/components/CopyButton";
+import CopyButton from "@/renderer/ui/CopyButton";
 import { IconName } from "@/renderer/ui/IconGlyph";
 
 afterEach(function restoreRealTimers() {

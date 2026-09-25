@@ -689,8 +689,9 @@ describe("copying the password writes the secret to the clipboard, never returni
     });
     const { databases } = await freshDatabases();
     const writer = vi.fn();
-    const module = await import("@/main/services/databases/databases.service");
-    module.registerClipboardWriter(writer);
+    const clipboardModule =
+      await import("@/main/services/clipboard/clipboard.service");
+    clipboardModule.registerClipboardWriter(writer);
 
     const actual = await databases.copyPasswordToClipboard(
       "TEAM_MEMBER",

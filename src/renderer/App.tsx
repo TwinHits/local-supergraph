@@ -1,21 +1,17 @@
 import { useState } from "react";
 
+import { TAB_ITEMS } from "@/renderer/App.constants";
 import styles from "@/renderer/App.module.scss";
+import { AppTab } from "@/renderer/App.types";
 import Databases from "@/renderer/features/Databases";
 import Header from "@/renderer/features/Header";
+import OnboardingWizard, {
+  OnboardingState,
+  useOnboardingWizard,
+} from "@/renderer/features/OnboardingWizard";
 import Supergraph from "@/renderer/features/Supergraph";
-import { IconName } from "@/renderer/ui/IconGlyph";
-import TabRail, { type TabRailItem } from "@/renderer/ui/TabRail";
-
-enum AppTab {
-  Supergraph = "supergraph",
-  Databases = "databases",
-}
-
-const TAB_ITEMS: TabRailItem[] = [
-  { id: AppTab.Supergraph, icon: IconName.Supergraph, label: "Supergraph" },
-  { id: AppTab.Databases, icon: IconName.Database, label: "Databases" },
-];
+import LoadingSpinner from "@/renderer/ui/LoadingSpinner";
+import TabRail from "@/renderer/ui/TabRail";
 
 /**
  * Classes for a tab's wrapper: visible when active, hidden (not unmounted)
@@ -28,30 +24,38 @@ function tabClasses(active: boolean): string {
     .trim();
 }
 
-/** The app's shell: header, tab rail, and whichever feature tab is active. */
+/** The app's shell: header, tab rail, whichever feature tab is active, and the setup wizard over them. */
 export default function App() {
   const [activeTab, setActiveTab] = useState(AppTab.Supergraph);
+  const onboarding = useOnboardingWizard();
 
   return (
     <div className={styles.app}>
       <Header />
-      <div className={styles.app__body}>
-        <TabRail
-          items={TAB_ITEMS}
-          activeId={activeTab}
-          onChange={function changeTab(id) {
-            setActiveTab(id as AppTab);
-          }}
-        />
-        <div className={styles.app__body__main}>
-          <div className={tabClasses(activeTab === AppTab.Supergraph)}>
-            <Supergraph />
-          </div>
-          <div className={tabClasses(activeTab === AppTab.Databases)}>
-            <Databases />
+      {onboarding.state === OnboardingState.Checking ? (
+        <div className={styles.app__loading}>
+          <LoadingSpinner label="Checking your setup" />
+        </div>
+      ) : (
+        <div key={onboarding.tabsGeneration} className={styles.app__body}>
+          <TabRail
+            items={TAB_ITEMS}
+            activeId={activeTab}
+            onChange={function changeTab(id) {
+              setActiveTab(id as AppTab);
+            }}
+          />
+          <div className={styles.app__body__main}>
+            <div className={tabClasses(activeTab === AppTab.Supergraph)}>
+              <Supergraph />
+            </div>
+            <div className={tabClasses(activeTab === AppTab.Databases)}>
+              <Databases />
+            </div>
           </div>
         </div>
-      </div>
+      )}
+      <OnboardingWizard wizard={onboarding} />
     </div>
   );
 }

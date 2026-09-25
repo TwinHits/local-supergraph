@@ -8,6 +8,10 @@ import {
   stopPortForward,
 } from "@/main/services/aws/aws.service";
 import {
+  readClipboard,
+  writeClipboard,
+} from "@/main/services/clipboard/clipboard.service";
+import {
   CLIPBOARD_CLEAR_MS,
   CONNECT_TIMEOUT_MS,
   DATABASES_CONFIG_FILE,
@@ -48,35 +52,25 @@ function overrideKey(database: string, targetEnvironment: string): string {
   return `${database}|${targetEnvironment}`;
 }
 
-let writeToClipboard: (text: string) => void = function noopWriter() {};
-let readClipboard: () => Promise<string> = function noopReader() {
-  return Promise.resolve("");
-};
-
-/** Gives the service the clipboard writer it copies passwords through. */
-export function registerClipboardWriter(writer: (text: string) => void): void {
-  writeToClipboard = writer;
-}
-
-/** Gives the service the clipboard reader it checks before auto-clearing a copied password. */
-export function registerClipboardReader(reader: () => Promise<string>): void {
-  readClipboard = reader;
-}
-
 /**
  * Copies text to the clipboard, then clears it after CLIPBOARD_CLEAR_MS —
  * but only if the clipboard still holds exactly what was copied, so this
  * never clobbers something else the developer copied in the meantime.
  */
 function copyToClipboardWithExpiration(text: string): void {
-  writeToClipboard(text);
+  writeClipboard(text);
   setTimeout(function clear() {
     void readClipboard().then(function maybeClear(current) {
       if (current === text) {
-        writeToClipboard("");
+        writeClipboard("");
       }
     });
   }, CLIPBOARD_CLEAR_MS);
+}
+
+/** Whether databases.json exists. */
+export function hasConfigFile(): boolean {
+  return existsSync(DATABASES_CONFIG_FILE);
 }
 
 /** Reads databases.json fresh, since it may be hand-edited without restarting the app. */

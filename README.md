@@ -11,6 +11,8 @@ your machine instead of the deployed one.
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
 
+The app warns you on start up if any of these are missing.
+
 ## Environment Variables
 
 ```bash
@@ -26,6 +28,9 @@ cp .env.template .env
 ```bash
 cp databases.json.template databases.json
 ```
+
+Get a filled-in `databases.json` from a coworker via 1Password, then set each
+`aws_profile` to the matching profile name in your AWS SSO configuration.
 
 ## Run
 

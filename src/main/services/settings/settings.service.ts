@@ -20,6 +20,7 @@ type PersistedConfig = {
   currentEnvironment: string;
   subgraphOverrides: Record<string, OverrideMap>;
   disabledSubgraphs: Record<string, DisabledSubgraphs>;
+  onboardingCompletedVersion: string | null;
 };
 
 let configFilePath: string | null = null;
@@ -31,6 +32,7 @@ let doc: PersistedConfig = {
   currentEnvironment: "",
   subgraphOverrides: {},
   disabledSubgraphs: {},
+  onboardingCompletedVersion: null,
 };
 
 /** Gives the service the file its settings are read from and written to. */
@@ -66,6 +68,7 @@ function load(): void {
     currentEnvironment: saved.currentEnvironment ?? "",
     subgraphOverrides: saved.subgraphOverrides ?? {},
     disabledSubgraphs: saved.disabledSubgraphs ?? {},
+    onboardingCompletedVersion: saved.onboardingCompletedVersion ?? null,
   };
 }
 
@@ -103,6 +106,19 @@ export function writeDisabledSubgraphs(
 ): void {
   load();
   doc.disabledSubgraphs = { ...doc.disabledSubgraphs, [variant]: disabled };
+  persist();
+}
+
+/** The app version the setup wizard was last finished on, or null if it never was. */
+export function readOnboardingCompletedVersion(): string | null {
+  load();
+  return doc.onboardingCompletedVersion;
+}
+
+/** Records that the setup wizard was finished on this app version. */
+export function markOnboardingCompleted(version: string): void {
+  load();
+  doc.onboardingCompletedVersion = version;
   persist();
 }
 

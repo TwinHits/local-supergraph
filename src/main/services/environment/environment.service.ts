@@ -1,11 +1,14 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
   DEFAULT_AWS_REGION,
   ENV_FILE,
   EnvironmentVariable,
 } from "@/main/services/environment/environment.constants";
+import { type EnvironmentValues } from "@/main/services/environment/environment.types";
+import { mergeEnvContents } from "@/main/services/environment/environment.utils";
 import { type EnvironmentContract } from "@/shared/environment/environment.contract";
+import { GRAPH_REF_SEPARATOR } from "@/shared/onboarding/onboarding.constants";
 
 let loaded = false;
 
@@ -27,7 +30,9 @@ function readVariable(key: EnvironmentVariable, defaultValue = ""): string {
 }
 
 function splitGraphRef(): string[] {
-  return readVariable(EnvironmentVariable.ApolloGraphRef).split("@");
+  return readVariable(EnvironmentVariable.ApolloGraphRef).split(
+    GRAPH_REF_SEPARATOR
+  );
 }
 
 function baseChildEnv(): NodeJS.ProcessEnv {
@@ -44,6 +49,10 @@ export const environment = {
   graphName(): string {
     return splitGraphRef()[0] ?? "";
   },
+  /** The variant named in APOLLO_GRAPH_REF, after the graph name. */
+  graphVariant(): string {
+    return splitGraphRef()[1] ?? "";
+  },
 
   apolloKey(): string {
     return readVariable(EnvironmentVariable.ApolloKey);
@@ -54,6 +63,28 @@ export const environment = {
   },
   childEnv(): NodeJS.ProcessEnv {
     return baseChildEnv();
+  },
+  /** Whether the Apollo key, graph name and variant are all set. */
+  isConfigured(): boolean {
+    return (
+      readVariable(EnvironmentVariable.ApolloKey) !== "" &&
+      environment.graphName() !== "" &&
+      environment.graphVariant() !== ""
+    );
+  },
+  /** Sets values in this process only, over anything .env already set. */
+  applyVariables(values: EnvironmentValues): void {
+    loadEnvFile();
+    for (const [name, value] of Object.entries(values)) {
+      if (value !== undefined) {
+        process.env[name] = value;
+      }
+    }
+  },
+  /** Saves values to .env, keeping every other line already in it. */
+  writeVariables(values: EnvironmentValues): void {
+    const existing = existsSync(ENV_FILE) ? readFileSync(ENV_FILE, "utf8") : "";
+    writeFileSync(ENV_FILE, mergeEnvContents(existing, values));
   },
 };
 

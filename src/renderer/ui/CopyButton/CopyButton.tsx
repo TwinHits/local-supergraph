@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import styles from "@/renderer/features/Databases/components/CopyButton/CopyButton.module.scss";
+import styles from "@/renderer/ui/CopyButton/CopyButton.module.scss";
 import IconButton from "@/renderer/ui/IconButton";
 import IconGlyph, { IconName, IconSize } from "@/renderer/ui/IconGlyph";
 import LoadingSpinner from "@/renderer/ui/LoadingSpinner";

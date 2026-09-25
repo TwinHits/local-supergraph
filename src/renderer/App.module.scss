@@ -1,5 +1,7 @@
 @use "@/renderer/styles/sizes.scss" as sizes;
 
+$below-title-bar-height: calc(100vh - #{sizes.$title-bar-height});
+
 .app {
   font-family:
     system-ui,
@@ -9,7 +11,14 @@
 
 .app__body {
   display: flex;
-  height: calc(100vh - #{sizes.$title-bar-height});
+  height: $below-title-bar-height;
+}
+
+.app__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: $below-title-bar-height;
 }
 
 .app__body__main {

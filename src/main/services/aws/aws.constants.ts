@@ -1,6 +1,9 @@
 /** What to run for every AWS CLI invocation. */
 export const AWS_COMMAND = "aws";
 
+/** The binary the AWS CLI calls to forward a port. */
+export const SESSION_MANAGER_PLUGIN_COMMAND = "session-manager-plugin";
+
 /** Node's error code for a command it could not find. */
 export const NOT_FOUND_CODE = "ENOENT";
 
