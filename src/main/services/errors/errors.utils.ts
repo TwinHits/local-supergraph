@@ -3,7 +3,11 @@ import {
   PRIORITY,
   SIGNATURES,
 } from "@/main/services/errors/errors.constants";
-import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
+import {
+  type Diagnosis,
+  type DiagnosisResource,
+  ErrorKey,
+} from "@/shared/errors/errors.types";
 
 /** Sorts keys into priority order. */
 function sortByPriority(keys: ErrorKey[]): ErrorKey[] {
@@ -24,18 +28,13 @@ export function findMatchingKeys(raw: string | null): ErrorKey[] {
   });
 }
 
-/**
- * Builds a diagnosis for each key. `database` names which database this
- * diagnosis is about, and `environment` which environment the attempt was
- * made under, if either applies.
- */
+/** Builds a diagnosis for each key, tagged with the resource it is about, if any. */
 export function buildDiagnoses(
   keys: ErrorKey[],
   raw: string | null,
-  database: string | null = null,
-  environment: string | null = null
+  resource: DiagnosisResource | null = null
 ): Diagnosis[] {
   return sortByPriority(keys).map(function toDiagnosis(key) {
-    return { ...SIGNATURES[key], raw, database, environment };
+    return { ...SIGNATURES[key], raw, resource };
   });
 }

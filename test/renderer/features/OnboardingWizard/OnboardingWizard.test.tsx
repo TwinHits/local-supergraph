@@ -45,8 +45,7 @@ const REJECTED_KEY: Diagnosis = {
   cause: "The key is missing, expired, or doesn't have access to the graph.",
   resolution: ["Regenerate the key at studio.apollographql.com"],
   raw: "401 Unauthorized",
-  database: null,
-  environment: null,
+  resource: null,
 };
 
 const RESTART_HINT = "Still not found after you installed it? Restart the app.";

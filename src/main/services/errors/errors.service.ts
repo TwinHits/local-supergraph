@@ -5,7 +5,9 @@ import {
 import { type ErrorsContract } from "@/shared/errors/errors.contract";
 import {
   type Diagnosis,
+  type DiagnosisResource,
   ErrorKey,
+  ResourceKind,
   type SubgraphErrorMap,
 } from "@/shared/errors/errors.types";
 
@@ -25,16 +27,15 @@ function buildReport(keys: ErrorKey[], raw: string | null): Report {
   return { keys: found.length === 0 ? [ErrorKey.Unknown] : found, raw };
 }
 
-/** Turns a report into its diagnoses. `database` names which database it's about, if any. */
+/** Turns a report into its diagnoses. */
 function toDiagnoses(
   report: Report | null,
-  database: string | null = null,
-  environment: string | null = null
+  resource: DiagnosisResource | null = null
 ): Diagnosis[] {
   if (report === null) {
     return [];
   }
-  return buildDiagnoses(report.keys, report.raw, database, environment);
+  return buildDiagnoses(report.keys, report.raw, resource);
 }
 
 /**
@@ -109,7 +110,11 @@ export const errors: ErrorsContract = {
           environment,
           report,
         ]) {
-          return toDiagnoses(report, database, environment);
+          return toDiagnoses(report, {
+            kind: ResourceKind.Database,
+            name: database,
+            environment,
+          });
         });
       }
     );

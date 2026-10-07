@@ -34,6 +34,18 @@ export enum ErrorScope {
   RowSpecific = "row-specific",
 }
 
+/** What kind of named resource a diagnosis is about. */
+export enum ResourceKind {
+  Database = "database",
+}
+
+/** The named resource a diagnosis is about, and the environment the attempt was made under. */
+export type DiagnosisResource = {
+  kind: ResourceKind;
+  name: string;
+  environment: string;
+};
+
 /** One matched signature with everything the screen shows for it. */
 export type Diagnosis = {
   key: ErrorKey;
@@ -41,8 +53,5 @@ export type Diagnosis = {
   cause: string;
   resolution: string[];
   raw: string | null;
-  /** Which database this is about, for a database connection failure. Null for every other kind. */
-  database: string | null;
-  /** Which environment the database attempt was made under. Null for every other kind. */
-  environment: string | null;
+  resource: DiagnosisResource | null;
 };

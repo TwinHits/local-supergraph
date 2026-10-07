@@ -1,6 +1,6 @@
 import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
 
-type Signature = Omit<Diagnosis, "raw" | "database" | "environment">;
+type Signature = Omit<Diagnosis, "raw" | "resource">;
 
 /** Every error the app knows how to explain. */
 export const SIGNATURES: Record<ErrorKey, Signature> = {

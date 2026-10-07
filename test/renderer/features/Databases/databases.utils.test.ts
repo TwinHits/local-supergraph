@@ -8,7 +8,12 @@ import {
 } from "@/renderer/features/Databases/databases.utils";
 import { type DatabaseRow } from "@/renderer/features/Databases/useDatabases";
 import { DatabaseConnectionState } from "@/shared/databases/databases.types";
-import { type Diagnosis, ErrorKey } from "@/shared/errors/errors.types";
+import {
+  type Diagnosis,
+  type DiagnosisResource,
+  ErrorKey,
+  ResourceKind,
+} from "@/shared/errors/errors.types";
 
 function row(name: string): DatabaseRow {
   return {
@@ -18,6 +23,10 @@ function row(name: string): DatabaseRow {
   };
 }
 
+function databaseResource(name: string): DiagnosisResource {
+  return { kind: ResourceKind.Database, name, environment: "dev" };
+}
+
 function diagnosis(overrides: Partial<Diagnosis>): Diagnosis {
   return {
     key: ErrorKey.Unknown,
@@ -25,8 +34,7 @@ function diagnosis(overrides: Partial<Diagnosis>): Diagnosis {
     cause: "Unspecified.",
     resolution: [],
     raw: null,
-    database: null,
-    environment: null,
+    resource: null,
     ...overrides,
   };
 }
@@ -76,8 +84,10 @@ describe("a table-wide banner only shows shared, AWS-setup errors", () => {
 
 describe("a row's own errors are found by its database name, regardless of scope", () => {
   it("keeps only the diagnoses about that database", () => {
-    const forTeamMember = diagnosis({ database: "TEAM_MEMBER" });
-    const forOther = diagnosis({ database: "OTHER_MEMBER" });
+    const forTeamMember = diagnosis({
+      resource: databaseResource("TEAM_MEMBER"),
+    });
+    const forOther = diagnosis({ resource: databaseResource("OTHER_MEMBER") });
 
     expect(errorsForDatabase([forTeamMember, forOther], "TEAM_MEMBER")).toEqual(
       [forTeamMember]
@@ -85,7 +95,9 @@ describe("a row's own errors are found by its database name, regardless of scope
   });
 
   it("keeps a row-specific diagnosis too, not just shared ones", () => {
-    const rowSpecific = diagnosis({ database: "TEAM_MEMBER" });
+    const rowSpecific = diagnosis({
+      resource: databaseResource("TEAM_MEMBER"),
+    });
 
     expect(errorsForDatabase([rowSpecific], "TEAM_MEMBER")).toEqual([
       rowSpecific,

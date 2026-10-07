@@ -108,8 +108,7 @@ describe("a reported failure shows as a banner above the table", () => {
         resolution: ["Sign in again"],
         raw: null,
         scope: "shared",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
     ]);
     render(<Databases />);
@@ -138,8 +137,7 @@ describe("a row-specific failure shows only on its own row, not in the table-wid
         resolution: ["Add an entry", "Pick a different environment"],
         raw: null,
         scope: "row-specific",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
     ]);
     render(<Databases />);
@@ -167,8 +165,7 @@ describe("a row-specific failure shows only on its own row, not in the table-wid
         resolution: ["Add an entry", "Pick a different environment"],
         raw: null,
         scope: "row-specific",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
     ]);
     render(<Databases />);
@@ -193,8 +190,7 @@ describe("clicking a row's own status opens the error modal for that row", () =>
     resolution: ["Add an entry", "Pick a different environment"],
     raw: null,
     scope: "row-specific",
-    database: "TEAM_MEMBER",
-    environment: "dev",
+    resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
   };
 
   it("shows that row's own resolution steps", async () => {
@@ -253,8 +249,7 @@ describe("a stale AWS session's banner signs the failing database back in", () =
         resolution: ["Sign in again"],
         raw: null,
         scope: "shared",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
     ]);
     render(<Databases />);
@@ -291,8 +286,7 @@ describe("paging away from an in-flight sign-in does not leave the next failure'
         resolution: ["Sign in again"],
         raw: null,
         scope: "shared",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
       {
         key: "AWS_SSO_EXPIRED",
@@ -301,8 +295,11 @@ describe("paging away from an in-flight sign-in does not leave the next failure'
         resolution: ["Sign in again"],
         raw: null,
         scope: "shared",
-        database: "OTHER_MEMBER",
-        environment: "dev",
+        resource: {
+          kind: "database",
+          name: "OTHER_MEMBER",
+          environment: "dev",
+        },
       },
     ]);
     vi.useFakeTimers();
@@ -339,8 +336,7 @@ describe("clicking the error banner opens the error modal", () => {
         resolution: ["Sign in again"],
         raw: null,
         scope: "shared",
-        database: "TEAM_MEMBER",
-        environment: "dev",
+        resource: { kind: "database", name: "TEAM_MEMBER", environment: "dev" },
       },
     ]);
     render(<Databases />);

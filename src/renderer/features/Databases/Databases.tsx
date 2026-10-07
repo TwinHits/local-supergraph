@@ -64,7 +64,7 @@ export default function Databases() {
             renderActions={function renderLogin(diagnosis) {
               return (
                 <AwsSsoLoginAction
-                  key={diagnosis.database ?? diagnosis.summary}
+                  key={diagnosis.resource?.name ?? diagnosis.summary}
                   diagnosis={diagnosis}
                   onLogin={databases.login}
                 />

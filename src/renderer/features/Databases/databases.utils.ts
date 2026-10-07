@@ -22,7 +22,7 @@ export function errorsForDatabase(
   name: string
 ): Diagnosis[] {
   return errors.filter(function isForDatabase(diagnosis) {
-    return diagnosis.database === name;
+    return diagnosis.resource?.name === name;
   });
 }
 

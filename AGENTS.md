@@ -1,187 +1,280 @@
 # Working on this project
 
-How this codebase is meant to be organised. Nothing here is specific to it, so
-it survives being copied into another repo — read against one, the gap between
-this and what is there is the work.
+These rules set how the code is organised and written. None of them are
+specific to this project, so they work the same when copied into another repo.
 
 ## Organisation
 
-Fold the code into zones by which way dependencies run, and let the folder name
-say which zone a file is in.
+Split the code into zones by the direction of their dependencies. The folder
+name tells you which zone a file is in.
 
 ```
 src/
-  shared/      imported by every zone, depends on none
+  shared/      imported by every zone, imports no zone
   <zone>/      one per process, tier, or side of a boundary
 test/          mirrors src/ folder for folder
 ```
 
-### Group by domain, not by kind of file
+### Group by domain
 
-`contract/contract.types.ts`, not `types/contract.ts`. Everything about one
-subject sits together, and a new subject is one folder. Grouping by kind splits
-every subject across two folders and makes a change touch both.
+Put everything about one subject in one folder: `contract/contract.types.ts`.
+A new subject is a new folder, and a change to a subject touches one folder.
 
-Keep the domain on the filename. A tab called `types.ts` says nothing when three
-are open.
+Keep the domain in the file name. Three open tabs called `types.ts` are
+indistinguishable.
 
-### Generic before specific
+### Generic zone
 
-Reusable pieces live in their own zone, and the test is portability: if you
-copied that folder into another project with the same dependencies, it would
-work. No domain types, no app state, no feature knowledge.
+Reusable code lives in its own zone, the generic zone. Code belongs there if
+its folder works unchanged in another project with the same dependencies. It
+holds no domain types, app state or feature logic.
 
-### One folder per feature
+Before writing a component, hook or helper, look in the generic zone first.
+If something close exists, add a prop or a parameter to it.
 
-Everything else is grouped by the feature it serves, composed from the generic
-zone. Features may reference each other.
+### Features
 
-A feature holds everything only it needs: its supporting components under
-`components/<Name>/`, its hooks, and its pure logic in one `<feature>.utils.ts`.
-Those exports are public so they can be unit tested, but nothing outside the
-feature imports them — private functions with a test seam.
+All other code is grouped by the feature it serves, built from the generic
+zone. A feature may use another feature.
 
-When a second feature needs the same helper, it moves to `shared/utils/` and
-keeps its own name, `<thing>.utils.ts`.
+A feature folder holds everything only that feature needs:
 
-### Wrappers that add an element
+- supporting components in `components/<Name>/`
+- hooks
+- pure logic in one `<feature>.utils.ts`
 
-A wrapper that puts its child inside a new element makes that element the one
-the parent lays out. Layout properties have to move onto the wrapper, or the
-child stops obeying the parent it appears to be in.
+These are exported so tests can import them. Only the feature and its tests
+import them.
 
-### A thin entry point
+When a second feature needs a helper, move the helper to the zone's `utils/`
+folder as `<thing>.utils.ts`. If both sides of a boundary need it, move it to
+`shared/utils/`. When a second feature needs a component, move the component
+to the generic zone.
 
-The top-level component wires the parts together and does nothing else. A reader
-starts there and can see where to go next.
+### Entry point
 
-### Everything is a folder
+The top-level component wires the parts together and does nothing else. A
+reader starts there and sees where to go next.
 
-A component folder holds its markup, its stylesheet, and an `index.ts` that
-re-exports the default. Callers import the folder, so the path never stutters
-and the component can grow a second file without touching them.
+### Wrappers
 
-A service folder is named for its domain and holds `<domain>.service.ts`. Its
-types and constants land beside it as `<domain>.types.ts` and
-`<domain>.constants.ts` when they appear, and nothing has to move.
+A wrapper that puts its child inside a new element changes which element the
+parent lays out. Move the child's layout properties onto the wrapper.
 
 ### Naming
 
-- Name the thing, not the category. A folder called `components/` describes
-  every folder in the project; one called `features/` says what is in it.
-- Two words for every component, wrappers included. A one-word name is usually
-  the category, and it collides with the library type it wraps.
-- Never pick a name one character from another name in the same import list.
-- A value belongs in one place. If a default is written twice, one of them is
-  about to be wrong.
+- Name the thing. `features/` says what a folder holds; `components/` fits
+  every folder in the project.
+- Give every component a two-word name, wrappers included. One-word names are
+  usually a category, and they collide with the library type being wrapped.
+- Keep names in the same import list at least two characters apart.
+- Spell words out: `environment`, `response`, `index`. Names fixed by a
+  library or the platform are the exception.
+- Start event props with `on`: `onSelect`. Name the function passed to one
+  for what it does: `selectRow`.
+- Write each value once. A default written in two places will drift.
+
+## Components
+
+```
+<Name>/
+  <Name>.tsx           the component
+  <Name>.module.scss   its styles, if any
+  <Name>.types.ts      enums and types callers need, if any
+  <Name>.constants.ts  values another file needs, if any
+  index.ts             export { default } from "./<Name>";
+```
+
+Callers import the folder. The component can then add files without changing
+any caller.
+
+`<Name>.tsx` contains, in this order:
+
+1. Imports
+2. Constants
+3. A `<Name>Props` type, unexported
+4. One default-exported function with a doc comment
+
+Destructure props in the function signature. Set each optional prop's default
+once, at the top of the function, with `??`.
+
+A generic component defines its own enums for its props. It maps them to the
+library's values in one `Record` inside the component.
+
+A feature's top-level component calls the feature's hooks and passes data down
+as props. Supporting components get everything through props and callbacks.
+
+## Hooks
+
+Name a hook `use<Thing>.ts`, put it beside the component that uses it, and
+export it by name. The hook runs effects, polls, and calls across the
+boundary. It returns one plain object.
+
+Put sorting, filtering and other data decisions in the feature's
+`<feature>.utils.ts`. Tests then call them directly, without rendering.
+
+Name every effect function. An effect that starts a timer or listener returns
+a function that stops it.
+
+## Services
+
+```
+<domain>/
+  <domain>.service.ts     the service
+  <domain>.types.ts       its types, if any
+  <domain>.constants.ts   its constants, if any
+  <domain>.utils.ts       its pure logic, if any
+```
+
+`<domain>.service.ts` contains, in this order:
+
+1. Imports
+2. Constants
+3. State
+4. Private functions
+5. One exported object, typed as the domain's contract
+
+```ts
+export const <domain>: <DomainContract> = {
+  methodOne,
+  methodTwo,
+};
+```
+
+The object is the only export of the contract methods. Export another function
+by name only when another service calls it.
+
+- Each library, program or file belongs to one service. Other code goes
+  through that service, so replacing or faking it changes one file.
+- Logic that runs without that library, program or file goes in
+  `<domain>.utils.ts`, where tests call it directly.
+- Errors stay on their own side of the boundary, because a thrown error loses
+  its type in transit. Return a value that describes the outcome, or record
+  the error where the other side reads it.
+- A config file people edit by hand is gitignored, with a committed
+  `.template` copy. Read it on every call, so edits apply without a restart.
+  Treat a missing or malformed entry as absent.
 
 ## Boundaries
 
-Folders encapsulate nothing on their own. If a boundary matters, make it a lint
+A folder enforces nothing. Enforce each boundary that matters with a lint
 rule.
 
-- The platform or host library may be imported from exactly one folder.
-  Everything else stays testable without it.
-- A component library may be imported only from the generic zone. A feature that
-  needs a control writes a wrapper there first.
-- Zones on either side of a process boundary never import each other. Both may
-  import `shared/`.
-- A global escape hatch is named in one file and nowhere else. Imports rules
-  cannot see a global, so restrict the property too.
+- Import the platform or host library from one folder only. Everything else
+  stays testable without it.
+- Import the component library from the generic zone only. A feature that
+  needs a control gets a wrapper in the generic zone first.
+- Zones on opposite sides of a process boundary never import each other.
+  Both import `shared/`.
+- Name a global escape hatch in one file. Import rules miss globals, so
+  restrict the property as well.
 
-Write these as disjoint lint scopes. `no-restricted-imports` does not merge
-options across configs, so overlapping scopes silently drop a restriction.
+Give each lint rule its own file scope, with no overlap.
+`no-restricted-imports` replaces its options between configs, so an
+overlapping scope drops a restriction without warning.
 
 ## Crossing a process boundary
 
-Describe the whole surface once, as a type, and derive both sides from it.
-Anything hand-kept-in-sync will drift, and the drift only shows up at run time.
+Describe everything that crosses the boundary once, as a TypeScript type
+called the contract. Derive both sides from it. Code kept in sync by hand
+drifts, and the drift only shows at run time.
 
-- Each domain owns its slice. The composed type lists the slices and no
-  signatures.
-- The runtime half — channel names, keys — is checked against the type, with a
-  compile-time assertion that fails when something is missing from it.
-- The implementation declares itself against its slice, so a mismatch is
-  reported where the code is, not three files away.
-- One typed accessor is the only route across. Nothing else names the transport.
+- Each domain defines its part of the contract in
+  `shared/<domain>/<domain>.contract.ts`, with its types beside it in
+  `<domain>.types.ts`. The full contract lists each domain's part and nothing
+  else.
+- Only plain data crosses: objects, arrays, strings, numbers, booleans, `null`
+  and enums. Classes, functions, `Date`, `Map` and `Set` lose their type in
+  transit, while the type still claims them.
+- The runtime list of channel names is checked against the contract by a
+  compile-time assertion that fails when a method is missing.
+- Each service declares itself against its domain's contract, so a mismatch
+  is reported in the service.
+- One typed accessor is the only route across. It is the only code that names
+  the transport.
 
-Adding a method should touch the type, the runtime list, and the implementation.
-Never the wiring.
+Adding a method changes three things: the contract, the channel list and the
+service.
 
 ## Types
 
-- Enums over string unions.
-- No casts where a parameter type will do the narrowing. Erasing a type at a
-  function boundary is usually enough. If a cast is unavoidable, it lives in one
-  place and carries a comment saying what backs it.
-- Signatures show the resolved type. Await inside rather than handing back a
-  promise.
+- Use enums for fixed sets of values.
+- Let a parameter type do the narrowing. If a cast is unavoidable, keep it in
+  one place, with a comment saying what guarantees it.
+- Await inside a function and return the resolved type.
 
 ## Style
 
-- C-style braces. Always.
-- No arrow functions outside `filter`, `map` and `reduce`. Named function
-  expressions everywhere else.
-- No inner functions, except callbacks that must close over something.
+- Use C-style braces on every block.
+- Use arrow functions only inside `filter`, `map` and `reduce`. Use named
+  function expressions everywhere else.
+- Define inner functions only for callbacks that close over local values.
 
 ## Styling
 
-- Stylesheets, not CSS-in-JS. No `styled()`, no `sx`, no style objects in markup.
-- One stylesheet per component, beside it in its folder, named after it.
-- BEM names. The block is the component, in camelCase; parts of it are
-  `block__element`; variations are `block--modifier`. Scoping already isolates
-  the file, so the value is that a class says what it belongs to when you meet
-  it in markup or in a devtools inspector.
-- Overriding a component library needs a stronger selector than its own. A
-  library injects its styles after yours, so equal specificity loses. Add the
-  element to the selector and say in a comment why it is there.
-- Scoped, not global. In a bundler that means the `.module` infix —
-  `Name.module.scss` — which is what makes the import return a class-name object
-  instead of leaking the names into the page. Dropping it gives a silent
-  undefined lookup, so it is not decoration.
-- Colours are written once, in the stylesheets, and reach code from there rather
-  than being retyped.
-- Themes change colours. Spacing is not themed.
-- Names describe the job, not the appearance. Swapping an icon or colour library
-  should be a change to one mapping and nothing else.
+- Write styles in stylesheets. Markup carries class names only: no `styled()`,
+  `sx` or style objects.
+- Give each component one stylesheet, in its folder, named after it.
+- Use BEM class names. The block is the component name in camelCase. Parts are
+  `block__element`. Variations are `block--modifier`. A class then names its
+  owner wherever you see it, in markup or in the browser inspector.
+- Name stylesheets `<Name>.module.scss`. The `.module` part scopes the class
+  names and makes the import return them as an object. Without it, every
+  lookup returns `undefined` with no error.
+- To override the component library, add the element to the selector and
+  comment why. The library loads its styles after yours, so a selector of
+  equal specificity loses.
+- Define each colour once, in a stylesheet. Code reads colours from there.
+- Themes change colours only. Spacing stays the same in every theme.
+- Name classes, colours and icons by their job. Swapping an icon or colour
+  library then changes one mapping.
 
 ## Comments
 
-Two kinds only:
+Write two kinds of comment:
 
-1. Doc comments on functions. One sentence, carrying nothing the code already
-   says.
-2. Explanations of truly unusual behaviour.
+1. A one-sentence doc comment on each function, adding what the code does not
+   already say.
+2. An explanation of unusual behaviour.
 
-Not comments: status notes ("canned until X is wired in"), references to
-external documents, or anything restating the line below it.
-
-Nor the story of how the code got here — what a library does, what broke before
-this line was written, why one selector beat another. That is temporal: true on
-the day it was written, unread later, and wrong once the library changes. A
-comment describes the code as it is. If the reasoning is worth keeping, the
-place for it is the commit message.
+Leave out status notes, links to external documents, and restatements of the
+next line. Leave out history too: what a library used to do, what broke
+before, why one approach beat another. History is true on the day it is
+written and wrong after the next change. Put reasoning worth keeping in the
+commit message.
 
 ## Tests
 
-- `test/` mirrors `src/`. Naming is `.test.ts` / `.test.tsx`.
-- Group `it`s under a `describe` that states a requirement in plain language,
-  not an implementation detail. The `describe` titles alone should read as a
-  spec of what the app promises — a future agent should be able to skim them
-  and know what would break, before reading a single `it`.
-- Classical style, expected/actual. Do not mock what you own.
-- Pure logic lives apart from the view and is tested by calling it. If answering
-  a question needs a rendered component, the logic is in the wrong place.
-- Replace the one accessor at a boundary, never the boundary itself.
-- Assert the requirement, not the mechanism. If the platform blocks an action,
-  test the state that blocks it.
+- Mirror `src/` in `test/`. Name files `.test.ts` or `.test.tsx`.
+- Group tests under a `describe` that states a requirement in plain language.
+  Reading only the `describe` titles tells a reader what the app promises and
+  what a change could break.
+- Write each `it` as a sentence describing one behaviour.
+- Use the classical style with expected and actual values. Use real
+  implementations of your own code.
+- Keep pure logic out of components and test it by calling it. Logic that
+  needs a rendered component to test belongs in a utils file.
+- At a boundary, replace the typed accessor and leave the boundary itself
+  alone.
+- Assert the requirement. If the platform blocks an action, test the state
+  that blocks it.
+- Exclude a file from coverage only if it is boundary wiring with no logic,
+  with a comment on its first line saying why.
+- Ratchet coverage thresholds. When coverage rises, raise the thresholds to
+  match. Never lower them.
+
+## Done
+
+A change is done when formatting, lint, type checks and tests pass, including
+coverage. The commit hooks run these checks. Let them run.
 
 ## What may be committed
 
-- No canned or sample data in a service. A service with nothing yet returns
-  nothing.
-- Nothing in `src/` may reference an ignored path. A fresh clone must build.
-- Delete code whose purpose is gone. A module kept alive only by its own test is
+- A service returns only real data. With nothing to return, it returns an
+  empty result.
+- Code in `src/` references tracked paths only. A fresh clone must build.
+- Delete code whose purpose is gone. A module used only by its own test is
   dead.
-- An exported symbol with no caller outside its own folder is either dead or in
-  the wrong folder.
+- Every exported symbol has a caller outside its own folder. A feature's
+  exports for its tests are the exception. Any other export is dead or in the
+  wrong folder.

@@ -9,7 +9,7 @@ import {
   clearSupergraphError,
   errors,
 } from "@/main/services/errors/errors.service";
-import { ErrorKey } from "@/shared/errors/errors.types";
+import { ErrorKey, ResourceKind } from "@/shared/errors/errors.types";
 
 const DEV = "dev";
 const PROD = "prod";
@@ -171,7 +171,7 @@ describe("a database's failure is scoped by environment as well as name", () => 
     const prodDiagnoses = errors
       .databaseConnectionErrors()
       .filter(function isProd(diagnosis) {
-        return diagnosis.environment === PROD;
+        return diagnosis.resource?.environment === PROD;
       });
 
     expect(prodDiagnoses).toEqual([]);
@@ -191,7 +191,9 @@ describe("a database's failure is scoped by environment as well as name", () => 
   it("carries the environment the attempt was made under on each diagnosis", () => {
     addDatabaseError("TEAM_MEMBER", PROD, [ErrorKey.AwsSsoExpired], "");
 
-    expect(errors.databaseConnectionErrors()[0]?.environment).toBe(PROD);
+    expect(errors.databaseConnectionErrors()[0]?.resource?.environment).toBe(
+      PROD
+    );
   });
 });
 
@@ -199,22 +201,21 @@ describe("a database connection diagnosis can be traced back to which database i
   it("carries the database that was reported on each of its diagnoses", () => {
     addDatabaseError("TEAM_MEMBER", DEV, [ErrorKey.AwsSsoExpired], "");
 
-    expect(errors.databaseConnectionErrors()[0]?.database).toBe("TEAM_MEMBER");
+    const expected = {
+      kind: ResourceKind.Database,
+      name: "TEAM_MEMBER",
+      environment: DEV,
+    };
+    const actual = errors.databaseConnectionErrors()[0]?.resource;
+
+    expect(actual).toEqual(expected);
   });
 
-  it("does not attach a database to a subgraph or supergraph diagnosis", () => {
+  it("does not attach a resource to a subgraph or supergraph diagnosis", () => {
     addSubgraphError("characters", [ErrorKey.LocalRefused], "");
     addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
 
-    expect(errors.subgraphErrors()["characters"]?.[0]?.database).toBeNull();
-    expect(errors.supergraphErrors()[0]?.database).toBeNull();
-  });
-
-  it("does not attach an environment to a subgraph or supergraph diagnosis", () => {
-    addSubgraphError("characters", [ErrorKey.LocalRefused], "");
-    addSupergraphError([ErrorKey.ApolloKeyInvalid], "");
-
-    expect(errors.subgraphErrors()["characters"]?.[0]?.environment).toBeNull();
-    expect(errors.supergraphErrors()[0]?.environment).toBeNull();
+    expect(errors.subgraphErrors()["characters"]?.[0]?.resource).toBeNull();
+    expect(errors.supergraphErrors()[0]?.resource).toBeNull();
   });
 });

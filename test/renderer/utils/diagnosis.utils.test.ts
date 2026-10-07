@@ -9,8 +9,7 @@ const KEY_REJECTED: Diagnosis = {
   cause: "APOLLO_KEY is invalid or has expired.",
   resolution: ["Regenerate the key"],
   raw: "401 Unauthorized",
-  database: null,
-  environment: null,
+  resource: null,
 };
 
 describe("a diagnosis reads as one line: its summary and its cause", () => {
